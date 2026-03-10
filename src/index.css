@@ -103,11 +103,15 @@
   }
 
   .status-active {
-    @apply status-badge bg-emerald-50 text-emerald-700;
+    @apply status-badge;
+    background-color: hsl(140 49% 96%);
+    color: hsl(142 64% 32%);
   }
 
   .status-paused {
-    @apply status-badge bg-amber-50 text-amber-700;
+    @apply status-badge;
+    background-color: hsl(48 96% 95%);
+    color: hsl(32 81% 39%);
   }
 
   .status-completed {
