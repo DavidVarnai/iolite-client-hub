@@ -12,9 +12,10 @@ import ClientCommunications from '@/components/client/Communications';
 import ClientDocuments from '@/components/client/Documents';
 import ClientSettings from '@/components/client/ClientSettings';
 import Campaigns from '@/components/client/Campaigns';
+import GrowthModelView from '@/components/client/GrowthModel';
 
 const TABS = [
-  'overview', 'strategy', 'campaigns', 'performance', 'meetings',
+  'overview', 'strategy', 'growth-model', 'campaigns', 'performance', 'meetings',
   'comments', 'tasks', 'communications', 'documents', 'settings',
 ] as const;
 
@@ -47,6 +48,7 @@ export default function ClientHub() {
     switch (activeTab) {
       case 'overview': return <ClientOverview client={client} />;
       case 'strategy': return <ClientStrategy client={client} proposalMode={proposalMode} />;
+      case 'growth-model': return <GrowthModelView client={client} />;
       case 'campaigns': return <Campaigns client={client} />;
       case 'performance': return <ClientPerformance client={client} />;
       case 'meetings': return <MeetingHub client={client} />;
@@ -97,7 +99,7 @@ export default function ClientHub() {
               activeTab === t ? 'tab-active' : 'tab-inactive'
             }`}
           >
-            {t}
+            {t === 'growth-model' ? 'Growth Model' : t}
           </button>
         ))}
       </div>
