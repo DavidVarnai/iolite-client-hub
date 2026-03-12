@@ -11,9 +11,10 @@ import ClientTasks from '@/components/client/Tasks';
 import ClientCommunications from '@/components/client/Communications';
 import ClientDocuments from '@/components/client/Documents';
 import ClientSettings from '@/components/client/ClientSettings';
+import Campaigns from '@/components/client/Campaigns';
 
 const TABS = [
-  'overview', 'strategy', 'performance', 'meetings',
+  'overview', 'strategy', 'campaigns', 'performance', 'meetings',
   'comments', 'tasks', 'communications', 'documents', 'settings',
 ] as const;
 
