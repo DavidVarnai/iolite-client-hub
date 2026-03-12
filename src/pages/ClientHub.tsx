@@ -99,7 +99,7 @@ export default function ClientHub() {
               activeTab === t ? 'tab-active' : 'tab-inactive'
             }`}
           >
-            {t}
+            {t === 'growth-model' ? 'Growth Model' : t}
           </button>
         ))}
       </div>
