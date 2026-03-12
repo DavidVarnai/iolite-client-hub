@@ -1,8 +1,9 @@
 import { useState, useMemo } from 'react';
 import { Client } from '@/types';
 import { getGrowthModelForClient } from '@/data/growthModelSeed';
-import type { GrowthModel, GrowthModelMode } from '@/types/growthModel';
+import type { GrowthModel, GrowthModelMode, GrowthModelScenario } from '@/types/growthModel';
 import { calcRollups } from '@/lib/growthModelCalculations';
+import { GROWTH_MODEL_TEMPLATES, initializeFromTemplate } from '@/lib/growthModelTemplates';
 import SummaryBar from './growth/SummaryBar';
 import InvestmentPlan from './growth/InvestmentPlan';
 import ChannelAssumptions from './growth/ChannelAssumptions';
@@ -10,6 +11,8 @@ import RevenueModel from './growth/RevenueModel';
 import ForecastVsActual from './growth/ForecastVsActual';
 import ExecutiveSummary from './growth/ExecutiveSummary';
 import SnapshotManager from './growth/SnapshotManager';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { FileText } from 'lucide-react';
 
 type SubTab = 'investment' | 'assumptions' | 'revenue' | 'forecast' | 'summary';
 
@@ -29,15 +32,79 @@ export default function GrowthModelView({ client }: { client: Client }) {
 
   const rollups = useMemo(() => model ? calcRollups(model) : null, [model]);
 
+  const handleCreateFromTemplate = (templateId: string) => {
+    const template = GROWTH_MODEL_TEMPLATES.find(t => t.id === templateId);
+    if (!template) return;
+
+    const now = new Date();
+    const startMonth = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
+    const initialized = initializeFromTemplate(template, client.id, `${client.name} Growth Plan`, startMonth);
+    const scenarioId = `sc-${Date.now()}`;
+
+    const newModel: GrowthModel = {
+      id: `gm-${Date.now()}`,
+      clientId: client.id,
+      name: `${client.name} Growth Plan`,
+      status: 'draft',
+      startMonth,
+      monthCount: initialized.monthCount,
+      funnelType: initialized.funnelType,
+      visibility: 'internal',
+      createdAt: now.toISOString(),
+      updatedAt: now.toISOString(),
+      scenarios: [{
+        id: scenarioId,
+        modelId: `gm-${Date.now()}`,
+        name: 'base',
+        isDefault: true,
+        createdAt: now.toISOString(),
+        budgetLineItems: initialized.budgetLineItems,
+        mediaChannelPlans: initialized.mediaChannelPlans,
+        channelAssumptions: initialized.channelAssumptions,
+        revenueAssumption: initialized.revenueAssumption,
+      }],
+      actuals: [],
+      narratives: [],
+      snapshots: [],
+    };
+
+    setModel(newModel);
+  };
+
   if (!model) {
     return (
       <div className="p-6">
-        <div className="panel p-8 text-center">
+        <div className="panel p-8 text-center mb-6">
           <h3 className="text-lg font-semibold text-foreground mb-2">No Growth Model</h3>
-          <p className="text-sm text-muted-foreground mb-4">Create a growth model to start planning investment, channels, and revenue projections.</p>
-          <button className="px-4 py-2 rounded-md bg-primary text-primary-foreground text-sm font-medium hover:bg-primary/90 transition-colors">
-            Create Growth Model
-          </button>
+          <p className="text-sm text-muted-foreground mb-6">
+            Choose a template to get started quickly, pre-loaded with service lines, media channels, and industry assumptions.
+          </p>
+        </div>
+
+        <div className="grid grid-cols-2 gap-4">
+          {GROWTH_MODEL_TEMPLATES.map(tpl => (
+            <Card
+              key={tpl.id}
+              className="cursor-pointer hover:border-primary/50 hover:shadow-md transition-all group"
+              onClick={() => handleCreateFromTemplate(tpl.id)}
+            >
+              <CardHeader className="pb-2">
+                <CardTitle className="text-sm flex items-center gap-2">
+                  <FileText className="h-4 w-4 text-primary" />
+                  {tpl.name}
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <p className="text-xs text-muted-foreground mb-3">{tpl.description}</p>
+                <div className="flex flex-wrap gap-1.5">
+                  <span className="status-badge bg-primary/10 text-primary text-[10px]">{tpl.funnelType.replace('_', ' ')}</span>
+                  <span className="status-badge bg-muted text-muted-foreground text-[10px]">{tpl.agencyServices.length} services</span>
+                  <span className="status-badge bg-muted text-muted-foreground text-[10px]">{tpl.mediaChannels.length} channels</span>
+                  <span className="status-badge bg-muted text-muted-foreground text-[10px]">{tpl.defaultMonthCount} months</span>
+                </div>
+              </CardContent>
+            </Card>
+          ))}
         </div>
       </div>
     );
