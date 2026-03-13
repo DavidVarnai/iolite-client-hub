@@ -11,7 +11,7 @@ function StrategySectionCard({ section, proposalMode, client }: { section: Strat
   const [aiStatus, setAiStatus] = useState<AiActionStatus>('idle');
   const [aiResult, setAiResult] = useState<StrategyDraftResult | null>(null);
   const s = section.clientSummary;
-  const i = section.internal;
+  const int = section.internal;
 
   const handleGenerateDraft = async () => {
     setAiStatus('loading');
