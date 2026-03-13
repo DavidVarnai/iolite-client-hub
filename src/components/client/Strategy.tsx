@@ -6,9 +6,28 @@ import AiResultPanel from '@/components/ai/AiResultPanel';
 import { runStrategyDraft } from '@/lib/ai/aiActions';
 import type { AiActionStatus, StrategyDraftResult } from '@/types/ai';
 
-function StrategySectionCard({ section, proposalMode }: { section: StrategySection; proposalMode: boolean }) {
+function StrategySectionCard({ section, proposalMode, client }: { section: StrategySection; proposalMode: boolean; client: Client }) {
   const [showInternal, setShowInternal] = useState(false);
+  const [aiStatus, setAiStatus] = useState<AiActionStatus>('idle');
+  const [aiResult, setAiResult] = useState<StrategyDraftResult | null>(null);
   const s = section.clientSummary;
+  const i = section.internal;
+
+  const handleGenerateDraft = async () => {
+    setAiStatus('loading');
+    try {
+      const result = await runStrategyDraft({
+        channel: section.channel,
+        industry: client.industry,
+        businessModel: undefined,
+        growthGoals: undefined,
+      });
+      setAiResult(result);
+      setAiStatus('success');
+    } catch {
+      setAiStatus('error');
+    }
+  };
   const i = section.internal;
 
   return (
