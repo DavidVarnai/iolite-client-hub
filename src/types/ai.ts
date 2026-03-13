@@ -106,6 +106,27 @@ export interface SummaryWriterResult {
   sections: { heading: string; body: string }[];
 }
 
+// ─── AI Artifacts (persisted outputs) ───
+
+export type AiArtifactType =
+  | 'market_research'
+  | 'strategy_draft'
+  | 'benchmark_suggestion'
+  | 'performance_summary'
+  | 'proposal_summary';
+
+export interface AiArtifact {
+  id: string;
+  clientId: string;
+  type: AiArtifactType;
+  sourceModule: string;
+  contextId?: string;
+  content: Record<string, unknown>;
+  status: 'draft' | 'accepted' | 'discarded';
+  createdAt: string;
+  acceptedAt?: string;
+}
+
 // ─── Generic AI Action ───
 
 export interface AiActionState<T> {
