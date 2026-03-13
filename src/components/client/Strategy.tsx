@@ -181,7 +181,7 @@ export default function ClientStrategy({ client, proposalMode }: { client: Clien
       ) : (
         <div className="space-y-4">
           {client.strategySections.map(section => (
-            <StrategySectionCard key={section.id} section={section} proposalMode={proposalMode} />
+            <StrategySectionCard key={section.id} section={section} proposalMode={proposalMode} client={client} />
           ))}
         </div>
       )}
