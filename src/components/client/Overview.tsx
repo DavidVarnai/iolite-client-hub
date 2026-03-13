@@ -30,6 +30,26 @@ export default function ClientOverview({
   const isActive = onboarding.lifecycleStage === 'active_client';
   const isProposalReady = onboarding.lifecycleStage === 'proposal_ready';
 
+  const [researchStatus, setResearchStatus] = useState<AiActionStatus>('idle');
+  const [researchResult, setResearchResult] = useState<MarketResearchResult | null>(null);
+
+  const handleResearch = async () => {
+    setResearchStatus('loading');
+    try {
+      const result = await runMarketResearch({
+        clientWebsite: onboarding.website,
+        industry: client.industry,
+        geography: onboarding.geography,
+        businessModel: onboarding.discovery.businessModel,
+        knownCompetitors: onboarding.discovery.topCompetitors ? onboarding.discovery.topCompetitors.split(',').map(s => s.trim()) : undefined,
+      });
+      setResearchResult(result);
+      setResearchStatus('success');
+    } catch {
+      setResearchStatus('error');
+    }
+  };
+
   return (
     <div className="p-6 max-w-5xl space-y-6">
       {/* Lifecycle Status + Onboarding Progress */}
