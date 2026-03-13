@@ -53,8 +53,8 @@ export const seedProposals: Proposal[] = [
         { id: 'pl-3', label: 'Creative Production — Standard', type: 'package', serviceLineId: 'sl4', packageId: 'pkg-cr-standard', monthlyPrice: 1200, description: 'Full creative package with animation' },
         { id: 'pl-4', label: 'SEO — Starter', type: 'add_on', serviceLineId: 'sl6', packageId: 'pkg-seo-starter', monthlyPrice: 1400, description: 'Technical SEO audit, keyword research, and foundational optimization' },
       ],
-      subtotal: 12400,
-      total: 12400,
+      subtotal: 10100,
+      total: 10100,
     },
     projectionData: {
       projectedMonthlyInvestment: 12400,
