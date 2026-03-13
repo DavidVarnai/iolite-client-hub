@@ -17,10 +17,11 @@ import ClientDocuments from '@/components/client/Documents';
 import ClientSettings from '@/components/client/ClientSettings';
 import Campaigns from '@/components/client/Campaigns';
 import GrowthModelView from '@/components/client/GrowthModel';
+import UnitEconomics from '@/components/client/UnitEconomics';
 
 const TABS = [
   'overview', 'strategy', 'growth-model', 'campaigns', 'performance', 'meetings',
-  'comments', 'tasks', 'communications', 'documents', 'settings',
+  'comments', 'tasks', 'communications', 'documents', 'unit-economics', 'settings',
 ] as const;
 
 type WizardStep = 'setup' | 'discovery' | 'strategy' | 'growth_model' | 'proposal';
@@ -84,6 +85,7 @@ function ClientHubInner() {
       case 'tasks': return <ClientTasks />;
       case 'communications': return <ClientCommunications />;
       case 'documents': return <ClientDocuments />;
+      case 'unit-economics': return <UnitEconomics />;
       case 'settings': return <ClientSettings onDeleteClient={() => navigate('/clients')} />;
       default: return (
         <ClientOverview
@@ -161,7 +163,7 @@ function ClientHubInner() {
               activeTab === t ? 'tab-active' : 'tab-inactive'
             }`}
           >
-            {t === 'growth-model' ? 'Growth Model' : t}
+            {t === 'growth-model' ? 'Growth Model' : t === 'unit-economics' ? 'Unit Economics' : t}
           </button>
         ))}
       </div>

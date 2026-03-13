@@ -1,11 +1,17 @@
 /**
  * Repository interfaces — abstract data access layer.
- * V1: localStorage. Future: Supabase, REST API, etc.
  */
 import type { Client } from '@/types';
 import type { OnboardingData } from '@/types/onboarding';
 import type { GrowthModel } from '@/types/growthModel';
 import type { AiArtifact } from '@/types/ai';
+import type {
+  TeamMember,
+  CompensationComponent,
+  ClientTeamAssignment,
+  ClientEconomics,
+  EconomicsDefaults,
+} from '@/types/economics';
 
 export interface ClientRepository {
   getAll(): Client[];
@@ -33,9 +39,48 @@ export interface AiArtifactRepository {
   update(id: string, patch: Partial<AiArtifact>): void;
 }
 
+/* ── Economics Repositories ── */
+
+export interface TeamMemberRepository {
+  getAll(): TeamMember[];
+  getById(id: string): TeamMember | null;
+  save(member: TeamMember): void;
+  delete(id: string): void;
+}
+
+export interface CompensationRepository {
+  getAll(): CompensationComponent[];
+  getByMember(memberId: string): CompensationComponent[];
+  save(comp: CompensationComponent): void;
+  delete(id: string): void;
+}
+
+export interface ClientAssignmentRepository {
+  getAll(): ClientTeamAssignment[];
+  getByClient(clientId: string): ClientTeamAssignment[];
+  getByMember(memberId: string): ClientTeamAssignment[];
+  save(assignment: ClientTeamAssignment): void;
+  delete(id: string): void;
+}
+
+export interface ClientEconomicsRepository {
+  get(clientId: string): ClientEconomics;
+  save(economics: ClientEconomics): void;
+}
+
+export interface EconomicsDefaultsRepository {
+  get(): EconomicsDefaults;
+  save(defaults: EconomicsDefaults): void;
+}
+
 export interface AppRepository {
   clients: ClientRepository;
   onboarding: OnboardingRepository;
   growthModels: GrowthModelRepository;
   aiArtifacts: AiArtifactRepository;
+  teamMembers: TeamMemberRepository;
+  compensation: CompensationRepository;
+  clientAssignments: ClientAssignmentRepository;
+  clientEconomics: ClientEconomicsRepository;
+  economicsDefaults: EconomicsDefaultsRepository;
 }
