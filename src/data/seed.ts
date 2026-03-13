@@ -23,7 +23,7 @@ function makeComment(id: string, clientId: string, content: string, isInternal: 
   };
 }
 
-export const seedClients: Client[] = [
+const seedClients: Client[] = [
   {
     id: 'c1',
     name: 'Meridian Commerce',
