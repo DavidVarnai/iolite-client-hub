@@ -40,6 +40,7 @@ import {
   seedEconomicsDefaults,
 } from '@/data/economicsSeed';
 import { seedServiceLines } from '@/data/servicesSeed';
+import { seedServicePackages } from '@/data/servicePackagesSeed';
 
 // ─── Helpers ───
 
