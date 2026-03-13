@@ -17,6 +17,7 @@ import {
   createServicePackageRepo,
   createSalesBundleRepo,
 } from './pricingRepo';
+import { createProposalRepo, createProposalDefaultsRepo } from './proposalRepo';
 
 export function createLocalStorageRepository(): AppRepository {
   return {
@@ -32,5 +33,7 @@ export function createLocalStorageRepository(): AppRepository {
     serviceLines: createServiceLineRepo(),
     servicePackages: createServicePackageRepo(),
     salesBundles: createSalesBundleRepo(),
+    proposals: createProposalRepo(),
+    proposalDefaults: createProposalDefaultsRepo(),
   };
 }

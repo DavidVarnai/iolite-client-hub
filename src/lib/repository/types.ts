@@ -98,6 +98,19 @@ export interface SalesBundleRepository {
   delete(id: string): void;
 }
 
+export interface ProposalRepository {
+  getAll(): Proposal[];
+  getById(id: string): Proposal | null;
+  getByClient(clientId: string): Proposal[];
+  save(proposal: Proposal): void;
+  delete(id: string): void;
+}
+
+export interface ProposalDefaultsRepository {
+  get(): ProposalDefaults;
+  save(defaults: ProposalDefaults): void;
+}
+
 export interface AppRepository {
   clients: ClientRepository;
   onboarding: OnboardingRepository;
@@ -111,4 +124,6 @@ export interface AppRepository {
   serviceLines: ServiceLineRepository;
   servicePackages: ServicePackageRepository;
   salesBundles: SalesBundleRepository;
+  proposals: ProposalRepository;
+  proposalDefaults: ProposalDefaultsRepository;
 }
