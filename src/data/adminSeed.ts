@@ -18,14 +18,22 @@ export const defaultIntegrations: IntegrationConfig[] = [
     id: 'slack',
     label: 'Slack',
     description: 'Team messaging, client channel mapping, and notifications.',
-    status: 'disconnected',
+    status: 'connected',
+    accountLabel: 'ioliteventures.slack.com',
+    lastChecked: '2026-03-13T08:00:00Z',
+    clientMappings: 3,
+    configCompleteness: 'partial',
     settings: {},
   },
   {
     id: 'notion',
     label: 'Notion',
     description: 'Project wikis, client workspaces, and documentation sync.',
-    status: 'disconnected',
+    status: 'connected',
+    accountLabel: 'Iolite Ventures Workspace',
+    lastChecked: '2026-03-12T14:00:00Z',
+    clientMappings: 2,
+    configCompleteness: 'complete',
     settings: {},
   },
   {
@@ -33,6 +41,7 @@ export const defaultIntegrations: IntegrationConfig[] = [
     label: 'Agency Analytics',
     description: 'Client reporting dashboards and performance data ingestion.',
     status: 'disconnected',
+    configCompleteness: 'none',
     settings: {},
   },
   {
@@ -40,6 +49,7 @@ export const defaultIntegrations: IntegrationConfig[] = [
     label: 'Gmail / Email',
     description: 'Email sync, communication logging, and outreach tracking.',
     status: 'disconnected',
+    configCompleteness: 'none',
     settings: {},
   },
   {
@@ -47,6 +57,7 @@ export const defaultIntegrations: IntegrationConfig[] = [
     label: 'QuickBooks',
     description: 'Financial tracking, invoicing, and client billing sync.',
     status: 'disconnected',
+    configCompleteness: 'none',
     settings: {},
   },
   {
@@ -54,13 +65,18 @@ export const defaultIntegrations: IntegrationConfig[] = [
     label: 'n8n / Webhooks',
     description: 'Custom automation workflows, webhook endpoints, and triggers.',
     status: 'disconnected',
+    configCompleteness: 'none',
     settings: {},
   },
   {
     id: 'ai_provider',
     label: 'AI Provider',
     description: 'LLM configuration for strategy drafts, benchmarks, and summaries.',
-    status: 'disconnected',
+    status: 'connected',
+    accountLabel: 'OpenAI — gpt-4o',
+    lastChecked: '2026-03-13T09:00:00Z',
+    clientMappings: 0,
+    configCompleteness: 'complete',
     settings: {},
   },
 ];
@@ -68,10 +84,10 @@ export const defaultIntegrations: IntegrationConfig[] = [
 /* ── Users & Roles ── */
 
 export const seedUsers: AdminUser[] = [
-  { id: 'u1', name: 'Sarah Chen', email: 'sarah@ioliteventures.com', role: 'master_admin', lastActive: '2026-03-13T08:00:00Z' },
-  { id: 'u2', name: 'Marcus Webb', email: 'marcus@ioliteventures.com', role: 'project_manager', lastActive: '2026-03-12T17:30:00Z' },
-  { id: 'u3', name: 'Priya Patel', email: 'priya@ioliteventures.com', role: 'team_member', lastActive: '2026-03-13T09:15:00Z' },
-  { id: 'u4', name: 'David Kim', email: 'david@meridiancommerce.com', role: 'client_user', lastActive: '2026-03-11T14:00:00Z' },
+  { id: 'u1', name: 'Sarah Chen', email: 'sarah@ioliteventures.com', role: 'master_admin', lastActive: '2026-03-13T08:00:00Z', assignedClientIds: [] },
+  { id: 'u2', name: 'Marcus Webb', email: 'marcus@ioliteventures.com', role: 'project_manager', lastActive: '2026-03-12T17:30:00Z', assignedClientIds: ['meridian-commerce', 'atlas-legal'] },
+  { id: 'u3', name: 'Priya Patel', email: 'priya@ioliteventures.com', role: 'team_member', lastActive: '2026-03-13T09:15:00Z', assignedClientIds: ['meridian-commerce'] },
+  { id: 'u4', name: 'David Kim', email: 'david@meridiancommerce.com', role: 'client_user', lastActive: '2026-03-11T14:00:00Z', assignedClientIds: ['meridian-commerce'] },
 ];
 
 export const roleDefinitions: RoleDefinition[] = [
@@ -186,11 +202,11 @@ export const seedTaxonomyGroups: TaxonomyGroup[] = [
 /* ── Automation & AI ── */
 
 export const seedAiModules: AiModuleControl[] = [
-  { moduleId: 'discovery_ai', label: 'Discovery AI', description: 'Market research and competitive analysis during onboarding.', enabled: true, requiresApproval: false },
-  { moduleId: 'strategy_ai', label: 'Strategy AI', description: 'Channel strategy draft generation from discovery context.', enabled: true, requiresApproval: true },
-  { moduleId: 'growth_model_ai', label: 'Growth Model AI', description: 'Benchmark suggestions and channel assumption generation.', enabled: true, requiresApproval: true },
-  { moduleId: 'performance_ai', label: 'Performance AI', description: 'Narrative performance summary drafts from actuals data.', enabled: true, requiresApproval: true },
-  { moduleId: 'proposal_ai', label: 'Proposal Summary AI', description: 'Executive summary generation for client proposals.', enabled: true, requiresApproval: true },
+  { moduleId: 'discovery_ai', label: 'Discovery AI', description: 'Market research and competitive analysis during onboarding.', mode: 'auto_apply' },
+  { moduleId: 'strategy_ai', label: 'Strategy AI', description: 'Channel strategy draft generation from discovery context.', mode: 'approval_required' },
+  { moduleId: 'growth_model_ai', label: 'Growth Model AI', description: 'Benchmark suggestions and channel assumption generation.', mode: 'approval_required' },
+  { moduleId: 'performance_ai', label: 'Performance AI', description: 'Narrative performance summary drafts from actuals data.', mode: 'approval_required' },
+  { moduleId: 'proposal_ai', label: 'Proposal Summary AI', description: 'Executive summary generation for client proposals.', mode: 'approval_required' },
 ];
 
 /* ── System Settings ── */

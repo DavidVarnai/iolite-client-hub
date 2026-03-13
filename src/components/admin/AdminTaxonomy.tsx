@@ -7,7 +7,7 @@ export default function AdminTaxonomy() {
   return (
     <div className="max-w-4xl space-y-6">
       <div>
-        <h2 className="text-xl font-semibold tracking-tight">Taxonomy & Defaults</h2>
+        <h2 className="text-xl font-semibold tracking-tight">Data & Defaults</h2>
         <p className="text-sm text-muted-foreground mt-1">
           System-wide controlled vocabularies, stage definitions, and default values.
         </p>

@@ -11,7 +11,7 @@ const sections = [
   { key: 'integrations', label: 'Integrations', icon: Plug },
   { key: 'users', label: 'Users & Roles', icon: Users },
   { key: 'templates', label: 'Templates', icon: LayoutTemplate },
-  { key: 'taxonomy', label: 'Taxonomy & Defaults', icon: Tags },
+  { key: 'taxonomy', label: 'Data & Defaults', icon: Tags },
   { key: 'automation', label: 'Automation & AI', icon: Cpu },
   { key: 'settings', label: 'System Settings', icon: Settings },
 ] as const;

@@ -11,13 +11,19 @@ const roleBadgeClass: Record<string, string> = {
   client_user: 'bg-muted text-muted-foreground',
 };
 
+// Placeholder client name lookup
+const clientNames: Record<string, string> = {
+  'meridian-commerce': 'Meridian Commerce',
+  'atlas-legal': 'Atlas Legal Group',
+};
+
 export default function AdminUsersRoles() {
   return (
     <div className="max-w-4xl space-y-8">
       <div>
         <h2 className="text-xl font-semibold tracking-tight">Users & Roles</h2>
         <p className="text-sm text-muted-foreground mt-1">
-          Agency-wide user management and permission levels.
+          Agency-wide user management, permission levels, and client assignments.
         </p>
       </div>
 
@@ -35,6 +41,7 @@ export default function AdminUsersRoles() {
                 <TableHead>Name</TableHead>
                 <TableHead>Email</TableHead>
                 <TableHead>Role</TableHead>
+                <TableHead>Assigned Clients</TableHead>
                 <TableHead>Last Active</TableHead>
               </TableRow>
             </TableHeader>
@@ -49,6 +56,21 @@ export default function AdminUsersRoles() {
                       <Badge variant="outline" className={roleBadgeClass[user.role] || ''}>
                         {roleDef?.label || user.role}
                       </Badge>
+                    </TableCell>
+                    <TableCell>
+                      {user.role === 'master_admin' ? (
+                        <span className="text-xs text-muted-foreground italic">All clients</span>
+                      ) : user.assignedClientIds && user.assignedClientIds.length > 0 ? (
+                        <div className="flex flex-wrap gap-1">
+                          {user.assignedClientIds.map(cid => (
+                            <Badge key={cid} variant="secondary" className="text-[10px]">
+                              {clientNames[cid] || cid}
+                            </Badge>
+                          ))}
+                        </div>
+                      ) : (
+                        <span className="text-xs text-muted-foreground">—</span>
+                      )}
                     </TableCell>
                     <TableCell className="text-muted-foreground text-sm">
                       {user.lastActive ? new Date(user.lastActive).toLocaleDateString() : '—'}
