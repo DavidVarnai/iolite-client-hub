@@ -13,6 +13,7 @@ import type {
   ClientEconomics,
   EconomicsDefaults,
 } from '@/types/economics';
+import type { ServiceLine } from '@/types/services';
 import type {
   AppRepository,
   ClientRepository,
@@ -24,6 +25,7 @@ import type {
   ClientAssignmentRepository,
   ClientEconomicsRepository,
   EconomicsDefaultsRepository,
+  ServiceLineRepository,
 } from './types';
 import { DEFAULT_ONBOARDING } from '@/types/onboarding';
 import { seedClients } from '@/data/seed';
