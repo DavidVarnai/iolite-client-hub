@@ -150,59 +150,88 @@ function ChannelCard({ ca, avgBudget, output, model, onAssumptionChange }: {
           </div>
         </CardTitle>
       </CardHeader>
-              <CardContent className="space-y-4">
-                {/* Input fields */}
-                <div>
-                  <h4 className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider mb-2">Assumptions (Inputs)</h4>
-                  <div className="grid grid-cols-5 gap-3">
-                    <InputField label="CPM" value={ca.cpm} onChange={(v) => handleAssumptionChange(ca.id, 'cpm', v)} suffix="$" />
-                    <InputField label="CTR" value={ca.ctr} onChange={(v) => handleAssumptionChange(ca.id, 'ctr', v)} suffix="%" />
-                    <InputField label="CPC" value={ca.cpc} onChange={(v) => handleAssumptionChange(ca.id, 'cpc', v)} suffix="$" />
-                    <InputField label="LP Conv Rate" value={ca.lpConvRate} onChange={(v) => handleAssumptionChange(ca.id, 'lpConvRate', v)} suffix="%" />
-                    <InputField label="AOV / Deal" value={ca.aov} onChange={(v) => handleAssumptionChange(ca.id, 'aov', v)} suffix="$" />
-                    {(model.funnelType === 'lead_gen' || model.funnelType === 'hybrid') && (
-                      <>
-                        <InputField label="Lead Conv" value={ca.leadConvRate} onChange={(v) => handleAssumptionChange(ca.id, 'leadConvRate', v)} suffix="%" />
-                        <InputField label="Qual Rate" value={ca.qualRate} onChange={(v) => handleAssumptionChange(ca.id, 'qualRate', v)} suffix="%" />
-                        <InputField label="Close Rate" value={ca.closeRate} onChange={(v) => handleAssumptionChange(ca.id, 'closeRate', v)} suffix="%" />
-                      </>
-                    )}
-                    {(model.funnelType === 'phone_calls' || model.funnelType === 'hybrid') && (
-                      <InputField label="Call Conv" value={ca.callConvRate} onChange={(v) => handleAssumptionChange(ca.id, 'callConvRate', v)} suffix="%" />
-                    )}
-                    <InputField label="Target CPL" value={ca.targetCpl} onChange={(v) => handleAssumptionChange(ca.id, 'targetCpl', v)} suffix="$" />
-                    <InputField label="Target CPA" value={ca.targetCpa} onChange={(v) => handleAssumptionChange(ca.id, 'targetCpa', v)} suffix="$" />
-                  </div>
-                </div>
+      <CardContent className="space-y-4">
+        {/* Input fields */}
+        <div>
+          <h4 className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider mb-2">Assumptions (Inputs)</h4>
+          <div className="grid grid-cols-5 gap-3">
+            <InputField label="CPM" value={ca.cpm} onChange={(v) => onAssumptionChange(ca.id, 'cpm', v)} suffix="$" />
+            <InputField label="CTR" value={ca.ctr} onChange={(v) => onAssumptionChange(ca.id, 'ctr', v)} suffix="%" />
+            <InputField label="CPC" value={ca.cpc} onChange={(v) => onAssumptionChange(ca.id, 'cpc', v)} suffix="$" />
+            <InputField label="LP Conv Rate" value={ca.lpConvRate} onChange={(v) => onAssumptionChange(ca.id, 'lpConvRate', v)} suffix="%" />
+            <InputField label="AOV / Deal" value={ca.aov} onChange={(v) => onAssumptionChange(ca.id, 'aov', v)} suffix="$" />
+            {(model.funnelType === 'lead_gen' || model.funnelType === 'hybrid') && (
+              <>
+                <InputField label="Lead Conv" value={ca.leadConvRate} onChange={(v) => onAssumptionChange(ca.id, 'leadConvRate', v)} suffix="%" />
+                <InputField label="Qual Rate" value={ca.qualRate} onChange={(v) => onAssumptionChange(ca.id, 'qualRate', v)} suffix="%" />
+                <InputField label="Close Rate" value={ca.closeRate} onChange={(v) => onAssumptionChange(ca.id, 'closeRate', v)} suffix="%" />
+              </>
+            )}
+            {(model.funnelType === 'phone_calls' || model.funnelType === 'hybrid') && (
+              <InputField label="Call Conv" value={ca.callConvRate} onChange={(v) => onAssumptionChange(ca.id, 'callConvRate', v)} suffix="%" />
+            )}
+            <InputField label="Target CPL" value={ca.targetCpl} onChange={(v) => onAssumptionChange(ca.id, 'targetCpl', v)} suffix="$" />
+            <InputField label="Target CPA" value={ca.targetCpa} onChange={(v) => onAssumptionChange(ca.id, 'targetCpa', v)} suffix="$" />
+          </div>
+        </div>
 
-                {/* Calculated outputs */}
-                <div className="border-t pt-3">
-                  <h4 className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider mb-2">Projected Monthly Output (Calculated)</h4>
-                  <div className="grid grid-cols-5 gap-3">
-                    {[
-                      { label: 'Impressions', value: fmt(output.impressions) },
-                      { label: 'Clicks', value: fmt(output.clicks) },
-                      ...(model.funnelType !== 'ecommerce' ? [{ label: 'Leads', value: fmt(output.leads) }] : []),
-                      ...(model.funnelType === 'phone_calls' || model.funnelType === 'hybrid' ? [{ label: 'Calls', value: fmt(output.calls) }] : []),
-                      ...(model.funnelType === 'lead_gen' || model.funnelType === 'hybrid' ? [
-                        { label: 'MQLs', value: fmt(output.mqls) },
-                        { label: 'SQLs', value: fmt(output.sqls) },
-                      ] : []),
-                      { label: 'Customers', value: fmt(output.customers) },
-                      { label: 'Revenue', value: `$${fmt(output.revenue)}` },
-                    ].map(item => (
-                      <div key={item.label} className="bg-muted/50 rounded-md px-3 py-2">
-                        <p className="text-[10px] text-muted-foreground">{item.label}</p>
-                        <p className="text-sm font-semibold text-foreground tabular-nums">{item.value}</p>
-                      </div>
-                    ))}
-                  </div>
+        {/* Calculated outputs */}
+        <div className="border-t pt-3">
+          <h4 className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider mb-2">Projected Monthly Output (Calculated)</h4>
+          <div className="grid grid-cols-5 gap-3">
+            {[
+              { label: 'Impressions', value: fmt(output.impressions) },
+              { label: 'Clicks', value: fmt(output.clicks) },
+              ...(model.funnelType !== 'ecommerce' ? [{ label: 'Leads', value: fmt(output.leads) }] : []),
+              ...(model.funnelType === 'phone_calls' || model.funnelType === 'hybrid' ? [{ label: 'Calls', value: fmt(output.calls) }] : []),
+              ...(model.funnelType === 'lead_gen' || model.funnelType === 'hybrid' ? [
+                { label: 'MQLs', value: fmt(output.mqls) },
+                { label: 'SQLs', value: fmt(output.sqls) },
+              ] : []),
+              { label: 'Customers', value: fmt(output.customers) },
+              { label: 'Revenue', value: `$${fmt(output.revenue)}` },
+            ].map(item => (
+              <div key={item.label} className="bg-muted/50 rounded-md px-3 py-2">
+                <p className="text-[10px] text-muted-foreground">{item.label}</p>
+                <p className="text-sm font-semibold text-foreground tabular-nums">{item.value}</p>
+              </div>
+            ))}
+          </div>
+        </div>
+
+        {/* Benchmark suggestions */}
+        {benchmarkStatus === 'loading' && (
+          <div className="border-t pt-3">
+            <div className="flex items-center gap-2 text-xs text-primary">
+              <span className="animate-pulse">Generating benchmarks…</span>
+            </div>
+          </div>
+        )}
+        {benchmarkStatus === 'success' && benchmarks && (
+          <div className="border-t pt-3">
+            <h4 className="text-[10px] font-semibold text-primary uppercase tracking-wider mb-2 flex items-center gap-1">
+              <span>AI Benchmark Suggestions</span>
+              <button onClick={() => { setBenchmarkStatus('idle'); setBenchmarks(null); }} className="text-muted-foreground hover:text-foreground ml-1">✕</button>
+            </h4>
+            <div className="grid grid-cols-6 gap-2">
+              {benchmarks.benchmarks.map(b => (
+                <div key={b.metric} className="bg-primary/5 border border-primary/10 rounded-md px-2.5 py-2">
+                  <p className="text-[10px] text-primary/70 font-medium">{b.metric}</p>
+                  <p className="text-xs font-semibold text-foreground tabular-nums">
+                    {b.unit === '$' ? '$' : ''}{b.low}–{b.high}{b.unit === '%' ? '%' : ''}
+                  </p>
+                  <button
+                    onClick={() => applyBenchmark(b.metric, b.mid)}
+                    className="text-[10px] text-primary hover:underline mt-0.5"
+                  >
+                    Apply mid ({b.unit === '$' ? '$' : ''}{b.mid}{b.unit === '%' ? '%' : ''})
+                  </button>
                 </div>
-              </CardContent>
-            </Card>
-          );
-        })}
-      </div>
-    </div>
+              ))}
+            </div>
+          </div>
+        )}
+      </CardContent>
+    </Card>
   );
 }
