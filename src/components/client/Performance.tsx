@@ -35,10 +35,28 @@ export default function ClientPerformance({ client }: { client: Client }) {
 
   return (
     <div className="p-6 max-w-4xl space-y-6">
-      <div>
+      <div className="flex items-center gap-3">
         <h2 className="text-lg font-semibold">Performance — {report.period}</h2>
-        <p className="text-sm text-muted-foreground mt-0.5">Narrative performance summary with key metrics.</p>
+        <AiActionButton label="Analyze Performance" status={analysisStatus} onClick={handleAnalyze} variant="compact" />
       </div>
+      <p className="text-sm text-muted-foreground mt-0.5">Narrative performance summary with key metrics.</p>
+
+      {/* AI Analysis */}
+      {analysisStatus !== 'idle' && (
+        <AiResultPanel
+          title="AI Performance Analysis"
+          status={analysisStatus}
+          sections={analysisResult ? [
+            { heading: 'Summary', body: analysisResult.summary },
+            { heading: 'Key Drivers', body: analysisResult.keyDrivers },
+            { heading: 'Risks & Issues', body: analysisResult.risks },
+            { heading: 'Recommended Actions', body: analysisResult.recommendedActions },
+          ] : []}
+          onApprove={() => { setAnalysisStatus('idle'); }}
+          onDiscard={() => { setAnalysisStatus('idle'); setAnalysisResult(null); }}
+          approveLabel="Copy to Meeting Notes"
+        />
+      )}
 
       {/* Executive summary */}
       <div className="panel p-5">
