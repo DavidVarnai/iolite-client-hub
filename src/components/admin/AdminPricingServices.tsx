@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Plus, Pencil, Archive, RotateCcw, Trash2, Copy, ChevronDown, ChevronRight, Package } from 'lucide-react';
+import { Plus, Pencil, Archive, RotateCcw, Trash2, Copy, ChevronDown, ChevronRight, Package, Layers } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
