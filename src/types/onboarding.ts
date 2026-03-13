@@ -100,7 +100,7 @@ export interface ProposalChecklistItem {
 
 export interface OnboardingData {
   lifecycleStage: LifecycleStage;
-  stageProgress: ClientLifecycleProgress[];
+  stageProgress?: ClientLifecycleProgress[]; // deprecated — computed dynamically
   onboardingCompletedAt?: string;
   proposalReadyAt?: string;
   activatedAt?: string;

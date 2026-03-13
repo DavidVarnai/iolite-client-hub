@@ -1,6 +1,7 @@
-import { Client, Meeting, SERVICE_CHANNEL_LABELS } from '@/types';
+import { Meeting, SERVICE_CHANNEL_LABELS } from '@/types';
 import { useState } from 'react';
 import { format } from 'date-fns';
+import { useClientContext } from '@/contexts/ClientContext';
 
 function MeetingDetail({ meeting }: { meeting: Meeting }) {
   const [activeChannel, setActiveChannel] = useState(meeting.agenda[0]?.channel);
@@ -24,9 +25,7 @@ function MeetingDetail({ meeting }: { meeting: Meeting }) {
         </span>
       </div>
 
-      {/* Meeting layout: sidebar + main + action panel */}
       <div className="flex min-h-[400px]">
-        {/* Left: agenda nav */}
         <div className="w-52 border-r p-3 space-y-1 flex-shrink-0">
           <p className="text-[11px] font-medium text-muted-foreground uppercase tracking-wider px-2 mb-2">Agenda</p>
           {meeting.agenda.map(item => (
@@ -50,7 +49,6 @@ function MeetingDetail({ meeting }: { meeting: Meeting }) {
           </button>
         </div>
 
-        {/* Center: notes */}
         <div className="flex-1 p-5 space-y-4">
           {activeAgenda ? (
             <>
@@ -73,7 +71,6 @@ function MeetingDetail({ meeting }: { meeting: Meeting }) {
           )}
         </div>
 
-        {/* Right: action items */}
         <div className="w-64 border-l p-4 flex-shrink-0">
           <p className="text-[11px] font-medium text-muted-foreground uppercase tracking-wider mb-3">Action Items</p>
           {activeAgenda?.actionItems && activeAgenda.actionItems.length > 0 ? (
@@ -101,7 +98,9 @@ function MeetingDetail({ meeting }: { meeting: Meeting }) {
   );
 }
 
-export default function MeetingHub({ client }: { client: Client }) {
+export default function MeetingHub() {
+  const { client } = useClientContext();
+
   return (
     <div className="p-6 max-w-5xl space-y-6">
       <div className="flex items-center justify-between">

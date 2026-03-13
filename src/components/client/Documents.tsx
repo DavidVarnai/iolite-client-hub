@@ -1,5 +1,5 @@
-import { Client } from '@/types';
 import { format } from 'date-fns';
+import { useClientContext } from '@/contexts/ClientContext';
 
 const typeLabels: Record<string, string> = {
   proposal: 'Proposal',
@@ -9,7 +9,9 @@ const typeLabels: Record<string, string> = {
   other: 'Other',
 };
 
-export default function ClientDocuments({ client }: { client: Client }) {
+export default function ClientDocuments() {
+  const { client } = useClientContext();
+
   return (
     <div className="p-6 max-w-4xl space-y-6">
       <div className="flex items-center justify-between">

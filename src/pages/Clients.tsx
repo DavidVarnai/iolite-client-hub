@@ -1,18 +1,10 @@
 import { Link, useNavigate } from 'react-router-dom';
-import { getClients, addClient } from '@/data/seed';
-import { getOnboardingForClient } from '@/data/onboardingSeed';
 import { LIFECYCLE_STAGES } from '@/types/onboarding';
 import { useState } from 'react';
-import { X, Plus } from 'lucide-react';
 import { Client } from '@/types';
-
-const stageClass: Record<string, string> = {
-  lead: 'status-lead',
-  proposal: 'status-proposal',
-  active: 'status-active',
-  paused: 'status-paused',
-  completed: 'status-completed',
-};
+import { X, Plus } from 'lucide-react';
+import { repository } from '@/lib/repository';
+import { DEFAULT_ONBOARDING } from '@/types/onboarding';
 
 function NewClientModal({ onClose, onCreate }: { onClose: () => void; onCreate: (client: Partial<Client>) => void }) {
   const [name, setName] = useState('');
@@ -57,7 +49,6 @@ function NewClientModal({ onClose, onCreate }: { onClose: () => void; onCreate: 
                 className="w-full rounded-md border bg-background px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-ring" />
             </div>
           </div>
-
           <div className="grid grid-cols-2 gap-4">
             <div>
               <label className="text-xs font-medium text-muted-foreground uppercase tracking-wider mb-1.5 block">Website</label>
@@ -70,7 +61,6 @@ function NewClientModal({ onClose, onCreate }: { onClose: () => void; onCreate: 
                 className="w-full rounded-md border bg-background px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-ring" />
             </div>
           </div>
-
           <div className="grid grid-cols-2 gap-4">
             <div>
               <label className="text-xs font-medium text-muted-foreground uppercase tracking-wider mb-1.5 block">Primary Contact Name</label>
@@ -83,7 +73,6 @@ function NewClientModal({ onClose, onCreate }: { onClose: () => void; onCreate: 
                 className="w-full rounded-md border bg-background px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-ring" />
             </div>
           </div>
-
           <div className="grid grid-cols-2 gap-4">
             <div>
               <label className="text-xs font-medium text-muted-foreground uppercase tracking-wider mb-1.5 block">Business Model</label>
@@ -113,8 +102,7 @@ function NewClientModal({ onClose, onCreate }: { onClose: () => void; onCreate: 
             className="px-4 py-2 text-sm font-medium rounded-md bg-muted text-muted-foreground hover:text-foreground transition-colors">
             Cancel
           </button>
-          <button onClick={handleSubmit}
-            disabled={!name.trim() || !company.trim()}
+          <button onClick={handleSubmit} disabled={!name.trim() || !company.trim()}
             className="px-4 py-2 text-sm font-medium rounded-md bg-primary text-primary-foreground hover:opacity-90 transition-opacity disabled:opacity-40 disabled:cursor-not-allowed">
             Create Client
           </button>
@@ -126,7 +114,7 @@ function NewClientModal({ onClose, onCreate }: { onClose: () => void; onCreate: 
 
 export default function Clients() {
   const navigate = useNavigate();
-  const [clients, setClients] = useState(() => getClients());
+  const [clients, setClients] = useState(() => repository.clients.getAll());
   const [showNewClient, setShowNewClient] = useState(false);
 
   const handleCreate = (data: Partial<Client>) => {
@@ -152,8 +140,9 @@ export default function Clients() {
       meetings: [],
       performance: [],
     };
-    addClient(newClient);
-    setClients([...getClients()]);
+    repository.clients.save(newClient);
+    repository.onboarding.save(newId, { ...DEFAULT_ONBOARDING });
+    setClients(repository.clients.getAll());
     setShowNewClient(false);
     navigate(`/clients/${newId}`);
   };
@@ -165,26 +154,20 @@ export default function Clients() {
           <h1 className="text-2xl font-semibold tracking-tight">Clients</h1>
           <p className="text-sm text-muted-foreground mt-1">All client engagements managed by your agency.</p>
         </div>
-        <button
-          onClick={() => setShowNewClient(true)}
-          className="flex items-center gap-2 px-4 py-2 bg-primary text-primary-foreground text-sm font-medium rounded-md hover:opacity-90 transition-opacity"
-        >
-          <Plus className="h-4 w-4" />
-          New Client
+        <button onClick={() => setShowNewClient(true)}
+          className="flex items-center gap-2 px-4 py-2 bg-primary text-primary-foreground text-sm font-medium rounded-md hover:opacity-90 transition-opacity">
+          <Plus className="h-4 w-4" /> New Client
         </button>
       </div>
 
       <div className="panel divide-y divide-border">
         {clients.map(client => {
-          const onboarding = getOnboardingForClient(client.id);
-          const lifecycleLabel = LIFECYCLE_STAGES.find(s => s.key === onboarding.lifecycleStage)?.label || client.stage;
+          const onboarding = repository.onboarding.get(client.id);
+          const lifecycleLabel = LIFECYCLE_STAGES.find(s => s.key === onboarding.lifecycleStage)?.label || 'Lead';
 
           return (
-            <Link
-              key={client.id}
-              to={`/clients/${client.id}`}
-              className="flex items-center justify-between p-4 hover:bg-muted/30 transition-colors first:rounded-t-lg last:rounded-b-lg"
-            >
+            <Link key={client.id} to={`/clients/${client.id}`}
+              className="flex items-center justify-between p-4 hover:bg-muted/30 transition-colors first:rounded-t-lg last:rounded-b-lg">
               <div className="flex items-center gap-4">
                 <div className="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center text-sm font-semibold text-primary">
                   {client.logoInitials}
@@ -200,7 +183,6 @@ export default function Clients() {
                   <p className="text-xs text-muted-foreground">{client.comments.filter(c => c.status === 'open').length} unresolved</p>
                 </div>
                 <span className="text-xs font-medium text-primary bg-primary/10 px-2.5 py-1 rounded-full">{lifecycleLabel}</span>
-                <span className={stageClass[client.stage]}>{client.stage}</span>
               </div>
             </Link>
           );

@@ -119,7 +119,7 @@ function ChannelCard({ ca, avgBudget, output, model, onAssumptionChange }: {
   const handleSuggestBenchmarks = async () => {
     setBenchmarkStatus('loading');
     try {
-      const result = await runBenchmarks({ industry: 'General', channel: ca.channel });
+      const result = await runBenchmarks({ industry: model.clientId ? 'General' : 'General', channel: ca.channel });
       setBenchmarks(result);
       setBenchmarkStatus('success');
     } catch {
