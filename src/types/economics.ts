@@ -83,6 +83,8 @@ export interface CompensationComponent {
   appliesToCategory?: RevenueCategory;
   /** Optional cap on share payout */
   capAmount?: number;
+  /** For threshold_share: the base fee threshold above which the share applies */
+  thresholdAmount?: number;
   /** Whether this is the default (vs client-specific override) */
   isDefault: boolean;
 }
