@@ -12,7 +12,7 @@ import type {
   ClientEconomics,
   EconomicsDefaults,
 } from '@/types/economics';
-import type { ServiceLine } from '@/types/services';
+import type { ServiceLine, ServicePackage } from '@/types/services';
 
 export interface ClientRepository {
   getAll(): Client[];
@@ -81,6 +81,14 @@ export interface ServiceLineRepository {
   delete(id: string): void;
 }
 
+export interface ServicePackageRepository {
+  getAll(): ServicePackage[];
+  getByServiceLine(serviceLineId: string): ServicePackage[];
+  getById(id: string): ServicePackage | null;
+  save(pkg: ServicePackage): void;
+  delete(id: string): void;
+}
+
 export interface AppRepository {
   clients: ClientRepository;
   onboarding: OnboardingRepository;
@@ -92,4 +100,5 @@ export interface AppRepository {
   clientEconomics: ClientEconomicsRepository;
   economicsDefaults: EconomicsDefaultsRepository;
   serviceLines: ServiceLineRepository;
+  servicePackages: ServicePackageRepository;
 }

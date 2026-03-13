@@ -13,7 +13,7 @@ import type {
   ClientEconomics,
   EconomicsDefaults,
 } from '@/types/economics';
-import type { ServiceLine } from '@/types/services';
+import type { ServiceLine, ServicePackage } from '@/types/services';
 import type {
   AppRepository,
   ClientRepository,
@@ -26,6 +26,7 @@ import type {
   ClientEconomicsRepository,
   EconomicsDefaultsRepository,
   ServiceLineRepository,
+  ServicePackageRepository,
 } from './types';
 import { DEFAULT_ONBOARDING } from '@/types/onboarding';
 import { seedClients } from '@/data/seed';
@@ -39,6 +40,7 @@ import {
   seedEconomicsDefaults,
 } from '@/data/economicsSeed';
 import { seedServiceLines } from '@/data/servicesSeed';
+import { seedServicePackages } from '@/data/servicePackagesSeed';
 
 // ─── Helpers ───
 
@@ -53,6 +55,7 @@ const KEYS = {
   clientEconomics: 'agencyos_client_economics',
   economicsDefaults: 'agencyos_economics_defaults',
   serviceLines: 'agencyos_service_lines',
+  servicePackages: 'agencyos_service_packages',
 } as const;
 
 function load<T>(key: string): T | null {
@@ -231,6 +234,24 @@ function createServiceLineRepo(): ServiceLineRepository {
   };
 }
 
+// ─── Service Package Repository ───
+
+function createServicePackageRepo(): ServicePackageRepository {
+  if (!localStorage.getItem(KEYS.servicePackages)) save(KEYS.servicePackages, seedServicePackages);
+  return {
+    getAll: () => load<ServicePackage[]>(KEYS.servicePackages) || [],
+    getByServiceLine(serviceLineId) { return this.getAll().filter(p => p.serviceLineId === serviceLineId); },
+    getById(id) { return this.getAll().find(p => p.id === id) || null; },
+    save(pkg) {
+      const all = this.getAll();
+      const idx = all.findIndex(p => p.id === pkg.id);
+      idx >= 0 ? (all[idx] = pkg) : all.push(pkg);
+      save(KEYS.servicePackages, all);
+    },
+    delete(id) { save(KEYS.servicePackages, this.getAll().filter(p => p.id !== id)); },
+  };
+}
+
 // ─── Compose ───
 
 export function createLocalStorageRepository(): AppRepository {
@@ -245,5 +266,6 @@ export function createLocalStorageRepository(): AppRepository {
     clientEconomics: createClientEconomicsRepo(),
     economicsDefaults: createEconomicsDefaultsRepo(),
     serviceLines: createServiceLineRepo(),
+    servicePackages: createServicePackageRepo(),
   };
 }
