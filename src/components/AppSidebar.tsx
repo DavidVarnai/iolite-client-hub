@@ -11,7 +11,7 @@ import {
   SidebarMenuItem,
   useSidebar,
 } from '@/components/ui/sidebar';
-import { seedClients } from '@/data/seed';
+import { getClients } from '@/data/seed';
 
 const navItems = [
   { title: 'Dashboard', url: '/' },
@@ -25,7 +25,8 @@ export function AppSidebar() {
   const collapsed = state === 'collapsed';
   const location = useLocation();
 
-  const activeClient = seedClients.find(c =>
+  const clients = getClients();
+  const activeClient = clients.find(c =>
     location.pathname.startsWith(`/clients/${c.id}`)
   );
 
@@ -102,7 +103,7 @@ export function AppSidebar() {
             </SidebarGroupLabel>
             <SidebarGroupContent>
               <SidebarMenu>
-                {seedClients.map(client => (
+                {clients.map(client => (
                   <SidebarMenuItem key={client.id}>
                     <SidebarMenuButton asChild>
                       <NavLink

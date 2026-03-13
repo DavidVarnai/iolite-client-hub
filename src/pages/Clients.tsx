@@ -1,5 +1,5 @@
 import { Link, useNavigate } from 'react-router-dom';
-import { seedClients } from '@/data/seed';
+import { getClients, addClient } from '@/data/seed';
 import { getOnboardingForClient } from '@/data/onboardingSeed';
 import { LIFECYCLE_STAGES } from '@/types/onboarding';
 import { useState } from 'react';
@@ -126,14 +126,36 @@ function NewClientModal({ onClose, onCreate }: { onClose: () => void; onCreate: 
 
 export default function Clients() {
   const navigate = useNavigate();
+  const [clients, setClients] = useState(() => getClients());
   const [showNewClient, setShowNewClient] = useState(false);
 
   const handleCreate = (data: Partial<Client>) => {
     const newId = `c-${Date.now()}`;
-    // In a real app this would persist; for now navigate to the new client
+    const initials = (data.name || 'NC').split(' ').map(w => w[0]).join('').toUpperCase().slice(0, 2);
+    const newClient: Client = {
+      id: newId,
+      name: data.name || 'New Client',
+      company: data.company || data.name || 'New Client',
+      logoInitials: initials,
+      industry: data.industry || 'General',
+      stage: 'lead',
+      internalOwner: 'Sarah Chen',
+      contacts: data.contacts || [],
+      activeChannels: [],
+      tasks: [],
+      comments: [],
+      strategySections: [],
+      documents: [],
+      contractStart: '',
+      contractEnd: '',
+      notes: '',
+      meetings: [],
+      performance: [],
+    };
+    addClient(newClient);
+    setClients([...getClients()]);
     setShowNewClient(false);
-    // Navigate to first client as demo
-    navigate(`/clients/c1`);
+    navigate(`/clients/${newId}`);
   };
 
   return (
@@ -153,7 +175,7 @@ export default function Clients() {
       </div>
 
       <div className="panel divide-y divide-border">
-        {seedClients.map(client => {
+        {clients.map(client => {
           const onboarding = getOnboardingForClient(client.id);
           const lifecycleLabel = LIFECYCLE_STAGES.find(s => s.key === onboarding.lifecycleStage)?.label || client.stage;
 
