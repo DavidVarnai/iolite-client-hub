@@ -28,6 +28,7 @@ export default function AdminHub() {
   const renderSection = () => {
     switch (activeSection) {
       case 'integrations': return <AdminIntegrations />;
+      case 'pricing': return <AdminPricingServices />;
       case 'team_economics': return <AdminTeamEconomics />;
       case 'users': return <AdminUsersRoles />;
       case 'templates': return <AdminTemplates />;
