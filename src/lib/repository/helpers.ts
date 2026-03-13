@@ -28,4 +28,6 @@ export const STORAGE_KEYS = {
   serviceLines: 'agencyos_service_lines',
   servicePackages: 'agencyos_service_packages',
   salesBundles: 'agencyos_sales_bundles',
+  proposals: 'agencyos_proposals',
+  proposalDefaults: 'agencyos_proposal_defaults',
 } as const;

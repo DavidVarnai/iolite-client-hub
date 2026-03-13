@@ -13,6 +13,8 @@ import type {
   EconomicsDefaults,
 } from '@/types/economics';
 import type { ServiceLine, ServicePackage, SalesBundle } from '@/types/services';
+import type { Proposal } from '@/types/proposal';
+import type { ProposalDefaults } from '@/types/proposal';
 
 export interface ClientRepository {
   getAll(): Client[];
@@ -96,6 +98,19 @@ export interface SalesBundleRepository {
   delete(id: string): void;
 }
 
+export interface ProposalRepository {
+  getAll(): Proposal[];
+  getById(id: string): Proposal | null;
+  getByClient(clientId: string): Proposal[];
+  save(proposal: Proposal): void;
+  delete(id: string): void;
+}
+
+export interface ProposalDefaultsRepository {
+  get(): ProposalDefaults;
+  save(defaults: ProposalDefaults): void;
+}
+
 export interface AppRepository {
   clients: ClientRepository;
   onboarding: OnboardingRepository;
@@ -109,4 +124,6 @@ export interface AppRepository {
   serviceLines: ServiceLineRepository;
   servicePackages: ServicePackageRepository;
   salesBundles: SalesBundleRepository;
+  proposals: ProposalRepository;
+  proposalDefaults: ProposalDefaultsRepository;
 }
