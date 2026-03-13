@@ -15,6 +15,7 @@ import { repository } from '@/lib/repository';
 import type {
   ServiceLine, PricingType, ServiceUnit, ServiceLineStatus,
   ServicePackage, PackagePricingModel, PackageDeliverable, SpendTier,
+  SalesBundle, BundleServiceRef,
 } from '@/types/services';
 import {
   PRICING_TYPE_LABELS, SERVICE_UNIT_LABELS, PACKAGE_PRICING_MODEL_LABELS,
