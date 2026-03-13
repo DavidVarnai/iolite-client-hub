@@ -13,6 +13,8 @@ import {
   useSidebar,
 } from '@/components/ui/sidebar';
 import { getClients } from '@/data/seed';
+import { isAdminUser } from '@/types/admin';
+import { currentUser } from '@/data/seed';
 
 const navItems = [
   { title: 'Dashboard', url: '/' },
