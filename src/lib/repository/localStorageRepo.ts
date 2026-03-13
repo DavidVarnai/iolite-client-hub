@@ -42,6 +42,7 @@ import {
 } from '@/data/economicsSeed';
 import { seedServiceLines } from '@/data/servicesSeed';
 import { seedServicePackages } from '@/data/servicePackagesSeed';
+import { seedSalesBundles } from '@/data/salesBundlesSeed';
 
 // ─── Helpers ───
 
