@@ -12,6 +12,7 @@ import type {
   ClientEconomics,
   EconomicsDefaults,
 } from '@/types/economics';
+import type { ServiceLine } from '@/types/services';
 
 export interface ClientRepository {
   getAll(): Client[];
@@ -73,6 +74,13 @@ export interface EconomicsDefaultsRepository {
   save(defaults: EconomicsDefaults): void;
 }
 
+export interface ServiceLineRepository {
+  getAll(): ServiceLine[];
+  getById(id: string): ServiceLine | null;
+  save(line: ServiceLine): void;
+  delete(id: string): void;
+}
+
 export interface AppRepository {
   clients: ClientRepository;
   onboarding: OnboardingRepository;
@@ -83,4 +91,5 @@ export interface AppRepository {
   clientAssignments: ClientAssignmentRepository;
   clientEconomics: ClientEconomicsRepository;
   economicsDefaults: EconomicsDefaultsRepository;
+  serviceLines: ServiceLineRepository;
 }

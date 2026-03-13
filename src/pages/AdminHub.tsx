@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Settings, Users, LayoutTemplate, Tags, Cpu, Plug, Calculator } from 'lucide-react';
+import { Settings, Users, LayoutTemplate, Tags, Cpu, Plug, Calculator, DollarSign } from 'lucide-react';
 import AdminIntegrations from '@/components/admin/AdminIntegrations';
 import AdminUsersRoles from '@/components/admin/AdminUsersRoles';
 import AdminTemplates from '@/components/admin/AdminTemplates';
@@ -7,9 +7,11 @@ import AdminTaxonomy from '@/components/admin/AdminTaxonomy';
 import AdminAutomation from '@/components/admin/AdminAutomation';
 import AdminSystemSettings from '@/components/admin/AdminSystemSettings';
 import AdminTeamEconomics from '@/components/admin/AdminTeamEconomics';
+import AdminPricingServices from '@/components/admin/AdminPricingServices';
 
 const sections = [
   { key: 'integrations', label: 'Integrations', icon: Plug },
+  { key: 'pricing', label: 'Pricing & Services', icon: DollarSign },
   { key: 'team_economics', label: 'Team & Economics', icon: Calculator },
   { key: 'users', label: 'Users & Roles', icon: Users },
   { key: 'templates', label: 'Templates', icon: LayoutTemplate },
@@ -26,6 +28,7 @@ export default function AdminHub() {
   const renderSection = () => {
     switch (activeSection) {
       case 'integrations': return <AdminIntegrations />;
+      case 'pricing': return <AdminPricingServices />;
       case 'team_economics': return <AdminTeamEconomics />;
       case 'users': return <AdminUsersRoles />;
       case 'templates': return <AdminTemplates />;

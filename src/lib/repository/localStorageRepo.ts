@@ -13,6 +13,7 @@ import type {
   ClientEconomics,
   EconomicsDefaults,
 } from '@/types/economics';
+import type { ServiceLine } from '@/types/services';
 import type {
   AppRepository,
   ClientRepository,
@@ -24,6 +25,7 @@ import type {
   ClientAssignmentRepository,
   ClientEconomicsRepository,
   EconomicsDefaultsRepository,
+  ServiceLineRepository,
 } from './types';
 import { DEFAULT_ONBOARDING } from '@/types/onboarding';
 import { seedClients } from '@/data/seed';
@@ -36,6 +38,7 @@ import {
   seedClientEconomics,
   seedEconomicsDefaults,
 } from '@/data/economicsSeed';
+import { seedServiceLines } from '@/data/servicesSeed';
 
 // ─── Helpers ───
 
@@ -49,6 +52,7 @@ const KEYS = {
   clientAssignments: 'agencyos_client_assignments',
   clientEconomics: 'agencyos_client_economics',
   economicsDefaults: 'agencyos_economics_defaults',
+  serviceLines: 'agencyos_service_lines',
 } as const;
 
 function load<T>(key: string): T | null {
@@ -210,6 +214,23 @@ function createEconomicsDefaultsRepo(): EconomicsDefaultsRepository {
   };
 }
 
+// ─── Service Line Repository ───
+
+function createServiceLineRepo(): ServiceLineRepository {
+  if (!localStorage.getItem(KEYS.serviceLines)) save(KEYS.serviceLines, seedServiceLines);
+  return {
+    getAll: () => load<ServiceLine[]>(KEYS.serviceLines) || [],
+    getById(id) { return this.getAll().find(s => s.id === id) || null; },
+    save(line) {
+      const all = this.getAll();
+      const idx = all.findIndex(s => s.id === line.id);
+      idx >= 0 ? (all[idx] = line) : all.push(line);
+      save(KEYS.serviceLines, all);
+    },
+    delete(id) { save(KEYS.serviceLines, this.getAll().filter(s => s.id !== id)); },
+  };
+}
+
 // ─── Compose ───
 
 export function createLocalStorageRepository(): AppRepository {
@@ -223,5 +244,6 @@ export function createLocalStorageRepository(): AppRepository {
     clientAssignments: createClientAssignmentRepo(),
     clientEconomics: createClientEconomicsRepo(),
     economicsDefaults: createEconomicsDefaultsRepo(),
+    serviceLines: createServiceLineRepo(),
   };
 }
