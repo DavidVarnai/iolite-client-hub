@@ -122,12 +122,21 @@ export default function ExecutiveSummary({ model, mode }: Props) {
               </button>
             </>
           ) : (
-            <button
-              onClick={() => setPresenting(true)}
-              className="flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-medium text-muted-foreground hover:text-foreground hover:bg-muted transition-colors ml-auto"
-            >
-              <Presentation className="h-3.5 w-3.5" />
-              Present to Client
+            <div className="flex items-center gap-2 ml-auto">
+              <AiActionButton
+                label="Generate Summary"
+                status={summaryStatus}
+                onClick={() => handleGenerateSummary(mode === 'operating' ? 'monthly_performance' : 'proposal')}
+                variant="compact"
+              />
+              <button
+                onClick={() => setPresenting(true)}
+                className="flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-medium text-muted-foreground hover:text-foreground hover:bg-muted transition-colors"
+              >
+                <Presentation className="h-3.5 w-3.5" />
+                Present to Client
+              </button>
+            </div>
             </button>
           )}
         </div>
