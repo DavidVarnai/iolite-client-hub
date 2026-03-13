@@ -51,7 +51,7 @@ export const seedAssignments: ClientTeamAssignment[] = [
   { id: 'ca3', teamMemberId: 'tm3', clientId: 'c1', roleOnClient: 'Paid Media Specialist', allocationPercent: 50, isActive: true, notes: '' },
   { id: 'ca4', teamMemberId: 'tm4', clientId: 'c1', roleOnClient: 'Designer', allocationPercent: 40, isActive: true, notes: '' },
   { id: 'ca5', teamMemberId: 'tm5', clientId: 'c1', roleOnClient: 'Email Specialist', flatFeeOverride: 2500, isActive: true, notes: '' },
-  { id: 'ca6', teamMemberId: 'tm6', clientId: 'c1', roleOnClient: 'Campaign Manager', allocationPercent: 50, isActive: true, notes: '' },
+  { id: 'ca6', teamMemberId: 'tm6', clientId: 'c1', roleOnClient: 'Campaign Manager', flatFeeOverride: 2000, isActive: true, notes: '' },
   { id: 'ca7', teamMemberId: 'tm7', clientId: 'c1', roleOnClient: 'Retention Lead', allocationPercent: 40, isActive: true, notes: '' },
 
   // Atlas Legal (c2)
