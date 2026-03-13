@@ -13,6 +13,8 @@ import type {
   EconomicsDefaults,
 } from '@/types/economics';
 import type { ServiceLine, ServicePackage, SalesBundle } from '@/types/services';
+import type { Proposal } from '@/types/proposal';
+import type { ProposalDefaults } from '@/types/proposal';
 
 export interface ClientRepository {
   getAll(): Client[];
