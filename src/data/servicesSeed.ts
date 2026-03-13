@@ -1,0 +1,67 @@
+/**
+ * Seed data for Pricing & Services — Service Lines.
+ */
+import type { ServiceLine } from '@/types/services';
+
+export const seedServiceLines: ServiceLine[] = [
+  {
+    id: 'sl1',
+    name: 'Fractional CMO',
+    description: 'Senior marketing leadership on a fractional basis.',
+    pricingType: 'hourly',
+    defaultUnit: 'hour',
+    status: 'active',
+    defaultRateMin: 250,
+    defaultRateMax: 250,
+  },
+  {
+    id: 'sl2',
+    name: 'Social Media Management',
+    description: 'Full-service social media strategy, content, and community management.',
+    pricingType: 'scope_package',
+    defaultUnit: 'month',
+    status: 'active',
+  },
+  {
+    id: 'sl3',
+    name: 'Paid Media Management',
+    description: 'Paid advertising campaign management across digital channels.',
+    pricingType: 'spend_percentage',
+    defaultUnit: 'spend_percentage',
+    status: 'active',
+  },
+  {
+    id: 'sl4',
+    name: 'Creative Production',
+    description: 'Design and production of marketing assets and creative deliverables.',
+    pricingType: 'add_on_package',
+    defaultUnit: 'creative_package',
+    status: 'active',
+  },
+  {
+    id: 'sl5',
+    name: 'Web Development',
+    description: 'Website design, development, and maintenance.',
+    pricingType: 'hourly',
+    defaultUnit: 'hour',
+    status: 'active',
+    defaultRateMin: 100,
+    defaultRateMax: 150,
+  },
+  {
+    id: 'sl6',
+    name: 'SEO',
+    description: 'Search engine optimization strategy and execution.',
+    pricingType: 'tier_package',
+    defaultUnit: 'month',
+    status: 'active',
+  },
+  {
+    id: 'sl7',
+    name: 'Email Marketing',
+    description: 'Email campaign strategy, automation, and execution.',
+    pricingType: 'retainer_plus_volume',
+    defaultUnit: 'month',
+    status: 'active',
+  },
+];
