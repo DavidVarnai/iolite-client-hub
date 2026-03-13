@@ -8,6 +8,7 @@ import Clients from "@/pages/Clients";
 import ClientHub from "@/pages/ClientHub";
 import Templates from "@/pages/Templates";
 import InternalLibrary from "@/pages/InternalLibrary";
+import AdminHub from "@/pages/AdminHub";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
