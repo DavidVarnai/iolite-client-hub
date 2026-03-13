@@ -18,9 +18,10 @@ import ClientSettings from '@/components/client/ClientSettings';
 import Campaigns from '@/components/client/Campaigns';
 import GrowthModelView from '@/components/client/GrowthModel';
 import UnitEconomics from '@/components/client/UnitEconomics';
+import ProposalView from '@/components/client/ProposalView';
 
 const TABS = [
-  'overview', 'strategy', 'growth-model', 'campaigns', 'performance', 'meetings',
+  'overview', 'strategy', 'growth-model', 'proposal', 'campaigns', 'performance', 'meetings',
   'comments', 'tasks', 'communications', 'documents', 'unit-economics', 'settings',
 ] as const;
 
@@ -78,6 +79,7 @@ function ClientHubInner() {
       );
       case 'strategy': return <ClientStrategy proposalMode={proposalMode} />;
       case 'growth-model': return <GrowthModelView />;
+      case 'proposal': return <ProposalView proposalMode={proposalMode} />;
       case 'campaigns': return <Campaigns client={client} />;
       case 'performance': return <ClientPerformance />;
       case 'meetings': return <MeetingHub />;
@@ -163,7 +165,7 @@ function ClientHubInner() {
               activeTab === t ? 'tab-active' : 'tab-inactive'
             }`}
           >
-            {t === 'growth-model' ? 'Growth Model' : t === 'unit-economics' ? 'Unit Economics' : t}
+            {t === 'growth-model' ? 'Growth Model' : t === 'unit-economics' ? 'Unit Economics' : t === 'proposal' ? 'Proposal' : t}
           </button>
         ))}
       </div>
