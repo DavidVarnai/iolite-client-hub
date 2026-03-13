@@ -57,7 +57,7 @@ export const seedProposals: Proposal[] = [
       total: 10100,
     },
     projectionData: {
-      projectedMonthlyInvestment: 12400,
+      projectedMonthlyInvestment: 10100,
       projectedOutcomes: [
         '15% CAC reduction within 6 months',
         '25% revenue growth from paid channels',
