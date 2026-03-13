@@ -14,7 +14,7 @@ export const seedProposalDefaults: ProposalDefaults = {
     first90: 'Growth Acceleration',
   },
   defaultCtaText:
-    'We're excited to get started. To move forward, simply approve this proposal and we'll schedule your kickoff session within 48 hours.',
+    "We're excited to get started. To move forward, simply approve this proposal and we'll schedule your kickoff session within 48 hours.",
   defaultAssumptionsNote:
     'This proposal assumes standard engagement terms, monthly reporting cadence, and a minimum 6-month commitment. All pricing is based on current scope and may be adjusted if scope changes significantly.',
   showPricingBreakdown: true,
