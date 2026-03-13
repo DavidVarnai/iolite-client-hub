@@ -55,6 +55,7 @@ const KEYS = {
   clientEconomics: 'agencyos_client_economics',
   economicsDefaults: 'agencyos_economics_defaults',
   serviceLines: 'agencyos_service_lines',
+  servicePackages: 'agencyos_service_packages',
 } as const;
 
 function load<T>(key: string): T | null {
