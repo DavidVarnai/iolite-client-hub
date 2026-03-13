@@ -1,6 +1,4 @@
 import { useState, useMemo } from 'react';
-import { Client } from '@/types';
-import { getGrowthModelForClient } from '@/data/growthModelSeed';
 import type { GrowthModel, GrowthModelMode, GrowthModelScenario } from '@/types/growthModel';
 import { calcRollups } from '@/lib/growthModelCalculations';
 import { GROWTH_MODEL_TEMPLATES, initializeFromTemplate } from '@/lib/growthModelTemplates';
@@ -13,6 +11,7 @@ import ExecutiveSummary from './growth/ExecutiveSummary';
 import SnapshotManager from './growth/SnapshotManager';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { FileText } from 'lucide-react';
+import { useClientContext } from '@/contexts/ClientContext';
 
 type SubTab = 'investment' | 'assumptions' | 'revenue' | 'forecast' | 'summary';
 
@@ -24,9 +23,8 @@ const SUB_TABS: { key: SubTab; label: string }[] = [
   { key: 'summary', label: 'Executive Summary' },
 ];
 
-export default function GrowthModelView({ client }: { client: Client }) {
-  const seedModel = getGrowthModelForClient(client.id);
-  const [model, setModel] = useState<GrowthModel | null>(seedModel || null);
+export default function GrowthModelView() {
+  const { client, growthModel: model, updateGrowthModel } = useClientContext();
   const [mode, setMode] = useState<GrowthModelMode>('planning');
   const [activeTab, setActiveTab] = useState<SubTab>('investment');
 
@@ -40,9 +38,10 @@ export default function GrowthModelView({ client }: { client: Client }) {
     const startMonth = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
     const initialized = initializeFromTemplate(template, client.id, `${client.name} Growth Plan`, startMonth);
     const scenarioId = `sc-${Date.now()}`;
+    const modelId = `gm-${Date.now()}`;
 
     const newModel: GrowthModel = {
-      id: `gm-${Date.now()}`,
+      id: modelId,
       clientId: client.id,
       name: `${client.name} Growth Plan`,
       status: 'draft',
@@ -54,7 +53,7 @@ export default function GrowthModelView({ client }: { client: Client }) {
       updatedAt: now.toISOString(),
       scenarios: [{
         id: scenarioId,
-        modelId: `gm-${Date.now()}`,
+        modelId,
         name: 'base',
         isDefault: true,
         createdAt: now.toISOString(),
@@ -68,7 +67,11 @@ export default function GrowthModelView({ client }: { client: Client }) {
       snapshots: [],
     };
 
-    setModel(newModel);
+    updateGrowthModel(newModel);
+  };
+
+  const handleModelUpdate = (updated: GrowthModel) => {
+    updateGrowthModel(updated);
   };
 
   if (!model) {
@@ -114,70 +117,43 @@ export default function GrowthModelView({ client }: { client: Client }) {
 
   return (
     <div className="flex flex-col h-full">
-      {/* Mode toggle + snapshot manager */}
       <div className="border-b px-6 py-3 flex items-center justify-between bg-background">
         <div className="flex items-center gap-3">
           <h2 className="text-sm font-semibold text-foreground">{model.name}</h2>
           <span className="status-badge bg-primary/10 text-primary text-xs">{model.status}</span>
         </div>
         <div className="flex items-center gap-3">
-          <SnapshotManager model={model} onSave={(snap) => setModel({ ...model, snapshots: [...model.snapshots, snap] })} />
+          <SnapshotManager model={model} onSave={(snap) => handleModelUpdate({ ...model, snapshots: [...model.snapshots, snap] })} />
           <div className="flex rounded-md border overflow-hidden">
-            <button
-              onClick={() => setMode('planning')}
+            <button onClick={() => setMode('planning')}
               className={`px-3 py-1.5 text-xs font-medium transition-colors ${
                 mode === 'planning' ? 'bg-primary text-primary-foreground' : 'bg-background text-muted-foreground hover:text-foreground'
-              }`}
-            >
-              Planning
-            </button>
-            <button
-              onClick={() => setMode('operating')}
+              }`}>Planning</button>
+            <button onClick={() => setMode('operating')}
               className={`px-3 py-1.5 text-xs font-medium transition-colors ${
                 mode === 'operating' ? 'bg-primary text-primary-foreground' : 'bg-background text-muted-foreground hover:text-foreground'
-              }`}
-            >
-              Operating
-            </button>
+              }`}>Operating</button>
           </div>
         </div>
       </div>
 
-      {/* Summary bar */}
       {rollups && <SummaryBar rollups={rollups} />}
 
-      {/* Sub-tabs */}
       <div className="border-b px-6 flex items-center gap-0 overflow-x-auto bg-background">
         {SUB_TABS.map(t => (
-          <button
-            key={t.key}
-            onClick={() => setActiveTab(t.key)}
+          <button key={t.key} onClick={() => setActiveTab(t.key)}
             className={`px-3 py-2.5 text-xs font-medium whitespace-nowrap transition-colors ${
               activeTab === t.key ? 'text-foreground border-b-2 border-primary' : 'text-muted-foreground hover:text-foreground'
-            }`}
-          >
-            {t.label}
-          </button>
+            }`}>{t.label}</button>
         ))}
       </div>
 
-      {/* Content */}
       <div className="flex-1 overflow-auto">
-        {activeTab === 'investment' && scenario && (
-          <InvestmentPlan model={model} scenario={scenario} onUpdate={setModel} />
-        )}
-        {activeTab === 'assumptions' && scenario && (
-          <ChannelAssumptions model={model} scenario={scenario} onUpdate={setModel} />
-        )}
-        {activeTab === 'revenue' && scenario && (
-          <RevenueModel model={model} scenario={scenario} />
-        )}
-        {activeTab === 'forecast' && scenario && (
-          <ForecastVsActual model={model} scenario={scenario} onUpdate={setModel} />
-        )}
-        {activeTab === 'summary' && (
-          <ExecutiveSummary model={model} mode={mode} />
-        )}
+        {activeTab === 'investment' && scenario && <InvestmentPlan model={model} scenario={scenario} onUpdate={handleModelUpdate} />}
+        {activeTab === 'assumptions' && scenario && <ChannelAssumptions model={model} scenario={scenario} onUpdate={handleModelUpdate} />}
+        {activeTab === 'revenue' && scenario && <RevenueModel model={model} scenario={scenario} />}
+        {activeTab === 'forecast' && scenario && <ForecastVsActual model={model} scenario={scenario} onUpdate={handleModelUpdate} />}
+        {activeTab === 'summary' && <ExecutiveSummary model={model} mode={mode} />}
       </div>
     </div>
   );

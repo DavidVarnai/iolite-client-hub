@@ -1,6 +1,6 @@
 import { useState } from 'react';
-import { Client, SERVICE_CHANNEL_LABELS } from '@/types';
-import { OnboardingData, ClientLifecycleProgress, getProposalChecklist, LIFECYCLE_STAGES } from '@/types/onboarding';
+import { SERVICE_CHANNEL_LABELS } from '@/types';
+import { LIFECYCLE_STAGES, getProposalChecklist } from '@/types/onboarding';
 import { format } from 'date-fns';
 import { Check, Circle, Rocket, Settings, ArrowRight, ChevronRight } from 'lucide-react';
 import ProposalReadinessChecklist from './ProposalReadinessChecklist';
@@ -8,23 +8,17 @@ import AiActionButton from '@/components/ai/AiActionButton';
 import AiResultPanel from '@/components/ai/AiResultPanel';
 import { runMarketResearch } from '@/lib/ai/aiActions';
 import type { AiActionStatus, MarketResearchResult } from '@/types/ai';
+import { useClientContext } from '@/contexts/ClientContext';
 
 interface Props {
-  client: Client;
-  onboarding: OnboardingData;
-  stageProgress: ClientLifecycleProgress[];
-  nextStep: { message: string; action: string; targetTab?: string } | null;
-  hasGrowthModel: boolean;
   onNavigateTab: (tab: string) => void;
   onOpenWizard: () => void;
   onActivateClient: () => void;
   onSetProposalMode: () => void;
 }
 
-export default function ClientOverview({
-  client, onboarding, stageProgress, nextStep, hasGrowthModel,
-  onNavigateTab, onOpenWizard, onActivateClient, onSetProposalMode,
-}: Props) {
+export default function ClientOverview({ onNavigateTab, onOpenWizard, onActivateClient, onSetProposalMode }: Props) {
+  const { client, onboarding, stageProgress, hasGrowthModel, saveAiArtifact } = useClientContext();
   const primaryContact = client.contacts.find(c => c.isPrimary);
   const proposalChecklist = getProposalChecklist(onboarding, client, hasGrowthModel);
   const isActive = onboarding.lifecycleStage === 'active_client';
@@ -48,6 +42,22 @@ export default function ClientOverview({
     } catch {
       setResearchStatus('error');
     }
+  };
+
+  const handleApproveResearch = () => {
+    if (!researchResult) return;
+    saveAiArtifact({
+      id: `art-${Date.now()}`,
+      clientId: client.id,
+      type: 'market_research',
+      sourceModule: 'overview',
+      content: researchResult as unknown as Record<string, unknown>,
+      status: 'accepted',
+      createdAt: new Date().toISOString(),
+      acceptedAt: new Date().toISOString(),
+    });
+    setResearchStatus('idle');
+    setResearchResult(null);
   };
 
   return (
@@ -146,7 +156,7 @@ export default function ClientOverview({
               { heading: 'Positioning Themes', body: researchResult.positioningThemes },
               { heading: 'Benchmark Notes', body: researchResult.benchmarkNotes.map(b => `${b.metric}: ${b.range} — ${b.notes}`) },
             ] : []}
-            onApprove={() => {}}
+            onApprove={handleApproveResearch}
             onDiscard={() => { setResearchStatus('idle'); setResearchResult(null); }}
             approveLabel="Save to Discovery"
           />
@@ -217,7 +227,7 @@ export default function ClientOverview({
         </div>
       )}
 
-      {/* Proposal Readiness (only show when relevant) */}
+      {/* Proposal Readiness */}
       {!isActive && (
         <ProposalReadinessChecklist
           items={proposalChecklist}
@@ -228,22 +238,12 @@ export default function ClientOverview({
       )}
 
       <div className="grid grid-cols-2 gap-6">
-        {/* Client info */}
         <div className="panel p-5 space-y-4">
           <h2 className="text-sm font-semibold">Client Information</h2>
           <div className="space-y-3 text-sm">
-            <div>
-              <p className="text-xs text-muted-foreground">Company</p>
-              <p className="font-medium">{client.company}</p>
-            </div>
-            <div>
-              <p className="text-xs text-muted-foreground">Industry</p>
-              <p>{client.industry}</p>
-            </div>
-            <div>
-              <p className="text-xs text-muted-foreground">Internal Owner</p>
-              <p>{client.internalOwner}</p>
-            </div>
+            <div><p className="text-xs text-muted-foreground">Company</p><p className="font-medium">{client.company}</p></div>
+            <div><p className="text-xs text-muted-foreground">Industry</p><p>{client.industry}</p></div>
+            <div><p className="text-xs text-muted-foreground">Internal Owner</p><p>{client.internalOwner}</p></div>
             <div>
               <p className="text-xs text-muted-foreground">Contract Period</p>
               <p>{client.contractStart ? format(new Date(client.contractStart), 'MMM d, yyyy') : '—'} — {client.contractEnd ? format(new Date(client.contractEnd), 'MMM d, yyyy') : '—'}</p>
@@ -251,23 +251,13 @@ export default function ClientOverview({
           </div>
         </div>
 
-        {/* Primary contact */}
         <div className="panel p-5 space-y-4">
           <h2 className="text-sm font-semibold">Primary Contact</h2>
           {primaryContact && (
             <div className="space-y-3 text-sm">
-              <div>
-                <p className="text-xs text-muted-foreground">Name</p>
-                <p className="font-medium">{primaryContact.name}</p>
-              </div>
-              <div>
-                <p className="text-xs text-muted-foreground">Title</p>
-                <p>{primaryContact.title}</p>
-              </div>
-              <div>
-                <p className="text-xs text-muted-foreground">Email</p>
-                <p className="text-primary">{primaryContact.email}</p>
-              </div>
+              <div><p className="text-xs text-muted-foreground">Name</p><p className="font-medium">{primaryContact.name}</p></div>
+              <div><p className="text-xs text-muted-foreground">Title</p><p>{primaryContact.title}</p></div>
+              <div><p className="text-xs text-muted-foreground">Email</p><p className="text-primary">{primaryContact.email}</p></div>
             </div>
           )}
           {client.contacts.length > 1 && (
@@ -276,7 +266,6 @@ export default function ClientOverview({
         </div>
       </div>
 
-      {/* Active channels */}
       <div className="panel p-5 space-y-3">
         <h2 className="text-sm font-semibold">Active Channels</h2>
         <div className="flex flex-wrap gap-2">
@@ -288,7 +277,6 @@ export default function ClientOverview({
         </div>
       </div>
 
-      {/* Notes */}
       {client.notes && (
         <div className="panel p-5 space-y-3">
           <h2 className="text-sm font-semibold">Notes</h2>
@@ -296,22 +284,12 @@ export default function ClientOverview({
         </div>
       )}
 
-      {/* Integrations */}
       <div className="panel p-5 space-y-3">
         <h2 className="text-sm font-semibold">Integrations</h2>
         <div className="grid grid-cols-3 gap-4 text-sm">
-          <div>
-            <p className="text-xs text-muted-foreground">Slack</p>
-            <p>{client.slackChannel || 'Not connected'}</p>
-          </div>
-          <div>
-            <p className="text-xs text-muted-foreground">Notion</p>
-            <p>{client.notionProjectId ? 'Connected' : 'Not connected'}</p>
-          </div>
-          <div>
-            <p className="text-xs text-muted-foreground">Agency Analytics</p>
-            <p>{client.agencyAnalyticsId ? 'Connected' : 'Not connected'}</p>
-          </div>
+          <div><p className="text-xs text-muted-foreground">Slack</p><p>{client.slackChannel || 'Not connected'}</p></div>
+          <div><p className="text-xs text-muted-foreground">Notion</p><p>{client.notionProjectId ? 'Connected' : 'Not connected'}</p></div>
+          <div><p className="text-xs text-muted-foreground">Agency Analytics</p><p>{client.agencyAnalyticsId ? 'Connected' : 'Not connected'}</p></div>
         </div>
       </div>
     </div>

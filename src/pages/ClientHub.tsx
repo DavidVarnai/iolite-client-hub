@@ -1,10 +1,8 @@
 import { useParams, useNavigate } from 'react-router-dom';
-import { getClients } from '@/data/seed';
-import { useState, useMemo } from 'react';
+import { useState } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
-import { getOnboardingForClient } from '@/data/onboardingSeed';
-import { getGrowthModelForClient } from '@/data/growthModelSeed';
-import { computeStageReadiness, getNextStepPrompt, OnboardingData } from '@/types/onboarding';
+import { ClientProvider, useClientContext } from '@/contexts/ClientContext';
+import { LIFECYCLE_STAGES } from '@/types/onboarding';
 import ClientLifecycleBar from '@/components/client/ClientLifecycleBar';
 import NextStepCard from '@/components/client/NextStepCard';
 import ClientOnboardingWizard from '@/components/client/ClientOnboardingWizard';
@@ -19,93 +17,54 @@ import ClientDocuments from '@/components/client/Documents';
 import ClientSettings from '@/components/client/ClientSettings';
 import Campaigns from '@/components/client/Campaigns';
 import GrowthModelView from '@/components/client/GrowthModel';
-import { Client } from '@/types';
 
 const TABS = [
   'overview', 'strategy', 'growth-model', 'campaigns', 'performance', 'meetings',
   'comments', 'tasks', 'communications', 'documents', 'settings',
 ] as const;
 
-const stageClass: Record<string, string> = {
-  lead: 'status-lead',
-  proposal: 'status-proposal',
-  active: 'status-active',
-  paused: 'status-paused',
-  completed: 'status-completed',
-};
-
-export default function ClientHub() {
+function ClientHubInner() {
   const { clientId, tab } = useParams();
   const navigate = useNavigate();
-  const seedClient = getClients().find(c => c.id === clientId);
-  const [client, setClient] = useState<Client | null>(seedClient || null);
+  const { client, onboarding, stageProgress, nextStep, updateOnboarding } = useClientContext();
   const [proposalMode, setProposalMode] = useState(false);
   const [showWizard, setShowWizard] = useState(false);
-  const [onboarding, setOnboarding] = useState<OnboardingData>(() => getOnboardingForClient(clientId || ''));
   const activeTab = (tab && TABS.includes(tab as any)) ? tab : 'overview';
-
-  const hasGrowthModel = !!getGrowthModelForClient(clientId || '');
-
-  const stageProgress = useMemo(() =>
-    client ? computeStageReadiness(onboarding, client, hasGrowthModel) : [],
-    [onboarding, client, hasGrowthModel]
-  );
-
-  const nextStep = useMemo(() =>
-    getNextStepPrompt(onboarding, stageProgress),
-    [onboarding, stageProgress]
-  );
-
-  if (!client) {
-    return (
-      <div className="p-6">
-        <p className="text-muted-foreground">Client not found.</p>
-      </div>
-    );
-  }
 
   const setTab = (t: string) => navigate(`/clients/${clientId}/${t}`);
 
   const handleActivateClient = () => {
-    setOnboarding(prev => ({
+    updateOnboarding(prev => ({
       ...prev,
       lifecycleStage: 'active_client',
       activatedAt: new Date().toISOString(),
     }));
   };
 
+  const lifecycleLabel = LIFECYCLE_STAGES.find(s => s.key === onboarding.lifecycleStage)?.label || 'Lead';
+
   const renderTab = () => {
     switch (activeTab) {
       case 'overview': return (
         <ClientOverview
-          client={client}
-          onboarding={onboarding}
-          stageProgress={stageProgress}
-          nextStep={nextStep}
-          hasGrowthModel={hasGrowthModel}
           onNavigateTab={setTab}
           onOpenWizard={() => setShowWizard(true)}
           onActivateClient={handleActivateClient}
           onSetProposalMode={() => setProposalMode(true)}
         />
       );
-      case 'strategy': return <ClientStrategy client={client} proposalMode={proposalMode} />;
-      case 'growth-model': return <GrowthModelView client={client} />;
+      case 'strategy': return <ClientStrategy proposalMode={proposalMode} />;
+      case 'growth-model': return <GrowthModelView />;
       case 'campaigns': return <Campaigns client={client} />;
-      case 'performance': return <ClientPerformance client={client} />;
-      case 'meetings': return <MeetingHub client={client} />;
-      case 'comments': return <ClientComments client={client} />;
-      case 'tasks': return <ClientTasks client={client} />;
+      case 'performance': return <ClientPerformance />;
+      case 'meetings': return <MeetingHub />;
+      case 'comments': return <ClientComments />;
+      case 'tasks': return <ClientTasks />;
       case 'communications': return <ClientCommunications />;
-      case 'documents': return <ClientDocuments client={client} />;
-      case 'settings': return <ClientSettings client={client} />;
+      case 'documents': return <ClientDocuments />;
+      case 'settings': return <ClientSettings onDeleteClient={() => navigate('/clients')} />;
       default: return (
         <ClientOverview
-          client={client}
-          onboarding={onboarding}
-          stageProgress={stageProgress}
-          nextStep={nextStep}
-          hasGrowthModel={hasGrowthModel}
           onNavigateTab={setTab}
           onOpenWizard={() => setShowWizard(true)}
           onActivateClient={handleActivateClient}
@@ -127,7 +86,7 @@ export default function ClientHub() {
             <h1 className="text-lg font-semibold tracking-tight">{client.name}</h1>
             <p className="text-xs text-muted-foreground">{client.company} · {client.industry}</p>
           </div>
-          <span className={stageClass[client.stage]}>{client.stage}</span>
+          <span className="text-xs font-medium text-primary bg-primary/10 px-2.5 py-1 rounded-full">{lifecycleLabel}</span>
         </div>
 
         <div className="flex items-center gap-2">
@@ -201,14 +160,24 @@ export default function ClientHub() {
       {/* Onboarding wizard */}
       {showWizard && (
         <ClientOnboardingWizard
-          client={client}
-          onboarding={onboarding}
-          onUpdateOnboarding={setOnboarding}
-          onUpdateClient={setClient}
           onClose={() => setShowWizard(false)}
           onNavigateTab={setTab}
         />
       )}
     </div>
+  );
+}
+
+export default function ClientHub() {
+  const { clientId } = useParams();
+
+  if (!clientId) {
+    return <div className="p-6"><p className="text-muted-foreground">Client not found.</p></div>;
+  }
+
+  return (
+    <ClientProvider clientId={clientId}>
+      <ClientHubInner />
+    </ClientProvider>
   );
 }

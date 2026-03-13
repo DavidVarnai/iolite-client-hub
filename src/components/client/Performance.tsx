@@ -1,24 +1,84 @@
 import { useState } from 'react';
-import { Client, SERVICE_CHANNEL_LABELS } from '@/types';
+import { SERVICE_CHANNEL_LABELS } from '@/types';
 import AiActionButton from '@/components/ai/AiActionButton';
 import AiResultPanel from '@/components/ai/AiResultPanel';
 import { runPerformanceAnalysis } from '@/lib/ai/aiActions';
 import type { AiActionStatus, PerformanceAnalysisResult } from '@/types/ai';
+import { useClientContext } from '@/contexts/ClientContext';
 
-export default function ClientPerformance({ client }: { client: Client }) {
+export default function ClientPerformance() {
+  const { client, growthModel, saveAiArtifact } = useClientContext();
   const [analysisStatus, setAnalysisStatus] = useState<AiActionStatus>('idle');
   const [analysisResult, setAnalysisResult] = useState<PerformanceAnalysisResult | null>(null);
+
+  // Build real performance data from growth model actuals
+  const buildAnalysisRequest = () => {
+    if (!growthModel || growthModel.actuals.length === 0) return { months: [] };
+
+    const monthMap = new Map<string, {
+      month: string; forecastSpend: number; actualSpend: number;
+      forecastResults: number; actualResults: number;
+      forecastRevenue: number; actualRevenue: number;
+    }>();
+
+    // Aggregate actuals by month
+    for (const actual of growthModel.actuals) {
+      const existing = monthMap.get(actual.month) || {
+        month: actual.month, forecastSpend: 0, actualSpend: 0,
+        forecastResults: 0, actualResults: 0, forecastRevenue: 0, actualRevenue: 0,
+      };
+      existing.actualSpend += actual.actualSpend;
+      existing.actualResults += actual.actualLeads + actual.actualOrders;
+      existing.actualRevenue += actual.actualRevenue;
+      monthMap.set(actual.month, existing);
+    }
+
+    // Add forecast data from media plans
+    const scenario = growthModel.scenarios.find(s => s.isDefault) || growthModel.scenarios[0];
+    if (scenario) {
+      for (const plan of scenario.mediaChannelPlans) {
+        for (const record of plan.monthlyRecords) {
+          const existing = monthMap.get(record.month);
+          if (existing) {
+            existing.forecastSpend += record.plannedBudget;
+          }
+        }
+      }
+    }
+
+    return {
+      months: Array.from(monthMap.values()).sort((a, b) => a.month.localeCompare(b.month)),
+      channels: growthModel.actuals.map(a => a.channel).filter((v, i, arr) => arr.indexOf(v) === i),
+    };
+  };
 
   const handleAnalyze = async () => {
     setAnalysisStatus('loading');
     try {
-      const result = await runPerformanceAnalysis({ months: [] });
+      const result = await runPerformanceAnalysis(buildAnalysisRequest());
       setAnalysisResult(result);
       setAnalysisStatus('success');
     } catch {
       setAnalysisStatus('error');
     }
   };
+
+  const handleApproveAnalysis = () => {
+    if (!analysisResult) return;
+    saveAiArtifact({
+      id: `art-${Date.now()}`,
+      clientId: client.id,
+      type: 'performance_summary',
+      sourceModule: 'performance',
+      content: analysisResult as unknown as Record<string, unknown>,
+      status: 'accepted',
+      createdAt: new Date().toISOString(),
+      acceptedAt: new Date().toISOString(),
+    });
+    setAnalysisStatus('idle');
+    setAnalysisResult(null);
+  };
+
   if (client.performance.length === 0) {
     return (
       <div className="p-6 max-w-4xl">
@@ -52,19 +112,17 @@ export default function ClientPerformance({ client }: { client: Client }) {
             { heading: 'Risks & Issues', body: analysisResult.risks },
             { heading: 'Recommended Actions', body: analysisResult.recommendedActions },
           ] : []}
-          onApprove={() => { setAnalysisStatus('idle'); }}
+          onApprove={handleApproveAnalysis}
           onDiscard={() => { setAnalysisStatus('idle'); setAnalysisResult(null); }}
-          approveLabel="Copy to Meeting Notes"
+          approveLabel="Save Performance Summary"
         />
       )}
 
-      {/* Executive summary */}
       <div className="panel p-5">
         <h3 className="text-sm font-semibold mb-2">Executive Summary</h3>
         <p className="prose-body text-sm">{report.executiveSummary}</p>
       </div>
 
-      {/* Channel highlights */}
       {report.channelHighlights.map((ch, idx) => (
         <div key={idx} className="panel p-5 space-y-4">
           <h3 className="text-sm font-semibold">{SERVICE_CHANNEL_LABELS[ch.channel]}</h3>
@@ -80,15 +138,13 @@ export default function ClientPerformance({ client }: { client: Client }) {
         </div>
       ))}
 
-      {/* Wins, Risks, Next Steps */}
       <div className="grid grid-cols-3 gap-4">
         <div className="panel p-5">
           <h3 className="text-sm font-semibold mb-3">Wins</h3>
           <ul className="space-y-2">
             {report.wins.map((w, i) => (
               <li key={i} className="text-sm flex items-start gap-2">
-                <span className="mt-1.5 w-1.5 h-1.5 rounded-full bg-emerald-500 flex-shrink-0" />
-                {w}
+                <span className="mt-1.5 w-1.5 h-1.5 rounded-full bg-emerald-500 flex-shrink-0" />{w}
               </li>
             ))}
           </ul>
@@ -98,8 +154,7 @@ export default function ClientPerformance({ client }: { client: Client }) {
           <ul className="space-y-2">
             {report.risks.map((r, i) => (
               <li key={i} className="text-sm flex items-start gap-2">
-                <span className="mt-1.5 w-1.5 h-1.5 rounded-full bg-amber flex-shrink-0" />
-                {r}
+                <span className="mt-1.5 w-1.5 h-1.5 rounded-full bg-amber flex-shrink-0" />{r}
               </li>
             ))}
           </ul>
@@ -109,8 +164,7 @@ export default function ClientPerformance({ client }: { client: Client }) {
           <ul className="space-y-2">
             {report.nextSteps.map((n, i) => (
               <li key={i} className="text-sm flex items-start gap-2">
-                <span className="mt-1.5 w-1.5 h-1.5 rounded-full bg-primary flex-shrink-0" />
-                {n}
+                <span className="mt-1.5 w-1.5 h-1.5 rounded-full bg-primary flex-shrink-0" />{n}
               </li>
             ))}
           </ul>
