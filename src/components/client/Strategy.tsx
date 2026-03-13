@@ -104,12 +104,12 @@ function StrategySectionCard({ section, proposalMode, client }: { section: Strat
             <div className="internal-indicator mb-2">Internal Only</div>
 
             {[
-              { label: 'Diagnosis', value: i.diagnosis },
-              { label: 'Strategic Approach', value: i.approach },
-              { label: 'Target Audience', value: i.targetAudience },
-              { label: 'Timeline', value: i.timeline },
-              { label: 'Internal Notes', value: i.internalNotes },
-              { label: 'Resourcing', value: i.resourcing },
+              { label: 'Diagnosis', value: int.diagnosis },
+              { label: 'Strategic Approach', value: int.approach },
+              { label: 'Target Audience', value: int.targetAudience },
+              { label: 'Timeline', value: int.timeline },
+              { label: 'Internal Notes', value: int.internalNotes },
+              { label: 'Resourcing', value: int.resourcing },
             ].map(field => (
               <div key={field.label}>
                 <p className="text-xs font-medium text-muted-foreground uppercase tracking-wider mb-1">{field.label}</p>
@@ -120,7 +120,7 @@ function StrategySectionCard({ section, proposalMode, client }: { section: Strat
             <div>
               <p className="text-xs font-medium text-muted-foreground uppercase tracking-wider mb-1">Deliverables</p>
               <ul className="space-y-1">
-                {i.deliverables.map((d, idx) => (
+                {int.deliverables.map((d, idx) => (
                   <li key={idx} className="text-sm flex items-start gap-2">
                     <span className="mt-1.5 w-1 h-1 rounded-full bg-foreground flex-shrink-0" />
                     {d}
@@ -132,7 +132,7 @@ function StrategySectionCard({ section, proposalMode, client }: { section: Strat
             <div>
               <p className="text-xs font-medium text-muted-foreground uppercase tracking-wider mb-1">Dependencies</p>
               <ul className="space-y-1">
-                {i.dependencies.map((d, idx) => (
+                {int.dependencies.map((d, idx) => (
                   <li key={idx} className="text-sm flex items-start gap-2">
                     <span className="mt-1.5 w-1 h-1 rounded-full bg-amber flex-shrink-0" />
                     {d}
@@ -144,7 +144,7 @@ function StrategySectionCard({ section, proposalMode, client }: { section: Strat
             <div>
               <p className="text-xs font-medium text-muted-foreground uppercase tracking-wider mb-1">Success Metrics</p>
               <ul className="space-y-1">
-                {i.successMetrics.map((m, idx) => (
+                {int.successMetrics.map((m, idx) => (
                   <li key={idx} className="text-sm flex items-start gap-2">
                     <span className="mt-1.5 w-1 h-1 rounded-full bg-primary flex-shrink-0" />
                     {m}
