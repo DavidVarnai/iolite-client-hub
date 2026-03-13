@@ -1,4 +1,5 @@
 import { NavLink } from '@/components/NavLink';
+import ioliteLogo from '@/assets/iolite-logo.webp';
 import { useLocation } from 'react-router-dom';
 import {
   Sidebar,
