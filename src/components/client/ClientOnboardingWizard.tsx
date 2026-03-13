@@ -67,14 +67,6 @@ function ClientSetupStep() {
           }} />
       </div>
 
-      <SelectField label="Primary Growth Goal" value={onboarding.primaryGrowthGoal || 'revenue_growth'}
-        options={[
-          { value: 'revenue_growth', label: 'Revenue Growth' },
-          { value: 'lead_volume', label: 'Lead Volume' },
-          { value: 'market_expansion', label: 'Market Expansion' },
-          { value: 'brand_awareness', label: 'Brand Awareness' },
-        ]}
-        onChange={(v) => updateOnboarding({ ...onboarding, primaryGrowthGoal: v as GrowthGoal })} />
 
       <div>
         <label className="text-xs font-medium text-muted-foreground uppercase tracking-wider mb-1.5 block">Notes</label>
