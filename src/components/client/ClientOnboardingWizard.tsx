@@ -44,14 +44,8 @@ function ClientSetupStep() {
       </div>
 
       <div className="grid grid-cols-2 gap-4">
-        <SelectField label="Business Model" value={onboarding.businessModelType || 'other'}
-          options={[
-            { value: 'ecommerce', label: 'Ecommerce' },
-            { value: 'lead_generation', label: 'Lead Generation' },
-            { value: 'hybrid', label: 'Hybrid' },
-            { value: 'other', label: 'Other' },
-          ]}
-          onChange={(v) => updateOnboarding({ ...onboarding, businessModelType: v as BusinessModel })} />
+        <Field label="Website" value={onboarding.website || ''}
+          onChange={(v) => updateOnboarding({ ...onboarding, website: v })} />
         <Field label="Geography" value={onboarding.geography || ''}
           onChange={(v) => updateOnboarding({ ...onboarding, geography: v })} />
       </div>
