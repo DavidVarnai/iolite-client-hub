@@ -92,7 +92,7 @@ export const seedProposals: Proposal[] = [
     generatedAt: '2026-03-12T16:00:00Z',
     selectedServiceLineIds: ['sl1', 'sl6'],
     selectedPackageIds: [],
-    selectedAddOnIds: ['sl4'],
+    selectedAddOnIds: ['pkg-seo-growth'],
     summaryData: {
       executiveSummary:
         'Thank you for the opportunity to partner with Atlas Legal Group. This proposal outlines a phased digital growth engagement focused on establishing your firm as a thought leader in the corporate legal space, modernizing your digital presence, and building a sustainable lead generation engine.',
