@@ -2,13 +2,14 @@
  * Admin Team & Economics — manages team members, compensation, assignments, defaults.
  */
 import { useState, useMemo } from 'react';
-import { Users, DollarSign, Link2, Settings, Plus, Pencil, Trash2, X, ChevronDown, ChevronRight } from 'lucide-react';
+import { Users, Link2, Settings, Plus, Pencil, Trash2, X, ChevronDown, ChevronRight, CircleDot, Info } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Textarea } from '@/components/ui/textarea';
 import { Badge } from '@/components/ui/badge';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { toast } from 'sonner';
 import { repository } from '@/lib/repository';
 import type {
@@ -85,7 +86,6 @@ function TeamMembersSection() {
 
   const handleDelete = (id: string) => {
     repository.teamMembers.delete(id);
-    // Delete associated compensation
     compensation.filter(c => c.teamMemberId === id).forEach(c => repository.compensation.delete(c.id));
     refreshMembers();
     toast.success('Team member removed');
@@ -93,17 +93,16 @@ function TeamMembersSection() {
 
   const getCompSummary = (memberId: string) => {
     const comps = compensation.filter(c => c.teamMemberId === memberId);
-    if (comps.length === 0) return 'No compensation defined';
-    return comps.map(c => {
-      switch (c.componentType) {
-        case 'salary_allocation': return `$${c.amount.toLocaleString()}/mo salary`;
-        case 'flat_client_fee': return `$${c.amount.toLocaleString()} flat fee`;
-        case 'hourly': return `$${c.amount}/hr`;
-        case 'revenue_share': return `${((c.sharePercent || 0) * 100).toFixed(0)}% rev share`;
-        case 'profit_share': return `${((c.sharePercent || 0) * 100).toFixed(0)}% profit share`;
-        default: return '';
-      }
-    }).join(' + ');
+    if (comps.length === 0) return <span className="italic text-muted-foreground">No compensation defined</span>;
+    return (
+      <div className="flex flex-wrap gap-1.5">
+        {comps.map(c => (
+          <Badge key={c.id} variant="outline" className="text-xs font-normal">
+            {COMP_TYPE_LABELS[c.componentType]}
+          </Badge>
+        ))}
+      </div>
+    );
   };
 
   return (
@@ -127,7 +126,7 @@ function TeamMembersSection() {
         <table className="w-full text-sm">
           <thead>
             <tr className="bg-muted/50 border-b">
-              <th className="text-left px-4 py-3 font-medium text-muted-foreground"></th>
+              <th className="text-left px-4 py-3 font-medium text-muted-foreground w-8"></th>
               <th className="text-left px-4 py-3 font-medium text-muted-foreground">Name</th>
               <th className="text-left px-4 py-3 font-medium text-muted-foreground">Role</th>
               <th className="text-left px-4 py-3 font-medium text-muted-foreground">Type</th>
@@ -153,7 +152,7 @@ function TeamMembersSection() {
                       {m.status === 'active' ? 'Active' : 'Inactive'}
                     </Badge>
                   </td>
-                  <td className="px-4 py-3 text-xs text-muted-foreground max-w-[260px] truncate">{getCompSummary(m.id)}</td>
+                  <td className="px-4 py-3">{getCompSummary(m.id)}</td>
                   <td className="px-4 py-3 text-right">
                     <div className="flex items-center justify-end gap-1">
                       <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => { setEditingId(m.id); setShowForm(true); }}>
@@ -275,24 +274,68 @@ function CompensationPanel({ memberId, compensation, onChanged }: { memberId: st
 
       <div className="space-y-2">
         {compensation.map(c => (
-          <div key={c.id} className="flex items-center justify-between bg-background rounded-md border px-4 py-2.5 text-sm">
-            <div>
-              <span className="font-medium">{COMP_TYPE_LABELS[c.componentType]}</span>
-              <span className="text-muted-foreground ml-2">
-                {c.componentType === 'salary_allocation' && `$${c.amount.toLocaleString()}/mo`}
-                {c.componentType === 'flat_client_fee' && `$${c.amount.toLocaleString()} default`}
-                {c.componentType === 'hourly' && `$${c.amount}/hr`}
-                {c.componentType === 'revenue_share' && `${((c.sharePercent || 0) * 100).toFixed(0)}% of ${c.appliesToCategory ? REVENUE_CATEGORY_LABELS[c.appliesToCategory] : 'N/A'}${c.capAmount ? ` (cap $${c.capAmount.toLocaleString()})` : ''}`}
-                {c.componentType === 'profit_share' && `${((c.sharePercent || 0) * 100).toFixed(0)}% of ${c.appliesToCategory ? REVENUE_CATEGORY_LABELS[c.appliesToCategory] : 'N/A'}${c.capAmount ? ` (cap $${c.capAmount.toLocaleString()})` : ''}`}
-              </span>
-            </div>
-            <Button variant="ghost" size="icon" className="h-7 w-7 text-destructive" onClick={() => handleDelete(c.id)}>
-              <Trash2 className="h-3.5 w-3.5" />
-            </Button>
-          </div>
+          <CompensationCard key={c.id} comp={c} onDelete={() => handleDelete(c.id)} />
         ))}
       </div>
     </div>
+  );
+}
+
+/* ── Compensation Card (structured detail view) ── */
+
+function CompensationCard({ comp, onDelete }: { comp: CompensationComponent; onDelete: () => void }) {
+  const isShare = comp.componentType === 'revenue_share' || comp.componentType === 'profit_share';
+
+  return (
+    <div className="bg-background rounded-md border px-4 py-3 text-sm">
+      <div className="flex items-start justify-between">
+        <div className="space-y-1.5 flex-1">
+          <div className="flex items-center gap-2">
+            <CircleDot className="h-3.5 w-3.5 text-primary" />
+            <span className="font-medium">{COMP_TYPE_LABELS[comp.componentType]}</span>
+            <Badge variant="outline" className="text-[10px] px-1.5 py-0">
+              {comp.isDefault ? 'Default' : 'Override'}
+            </Badge>
+          </div>
+
+          <div className="grid grid-cols-2 gap-x-6 gap-y-1 ml-5.5 text-xs">
+            {comp.componentType === 'salary_allocation' && (
+              <DetailRow label="Monthly Cost" value={`$${comp.amount.toLocaleString()}`} />
+            )}
+            {comp.componentType === 'flat_client_fee' && (
+              <DetailRow label="Default Fee" value={`$${comp.amount.toLocaleString()}/mo`} />
+            )}
+            {comp.componentType === 'hourly' && (
+              <DetailRow label="Hourly Rate" value={`$${comp.amount}/hr`} />
+            )}
+            {isShare && (
+              <>
+                <DetailRow label="Share %" value={`${((comp.sharePercent || 0) * 100).toFixed(0)}%`} />
+                <DetailRow
+                  label={comp.componentType === 'revenue_share' ? 'Revenue Category' : 'Profit Category'}
+                  value={comp.appliesToCategory ? REVENUE_CATEGORY_LABELS[comp.appliesToCategory] : 'Not set'}
+                />
+                {comp.capAmount != null && (
+                  <DetailRow label="Cap" value={`$${comp.capAmount.toLocaleString()}`} />
+                )}
+              </>
+            )}
+          </div>
+        </div>
+        <Button variant="ghost" size="icon" className="h-7 w-7 text-destructive shrink-0" onClick={onDelete}>
+          <Trash2 className="h-3.5 w-3.5" />
+        </Button>
+      </div>
+    </div>
+  );
+}
+
+function DetailRow({ label, value }: { label: string; value: string }) {
+  return (
+    <>
+      <span className="text-muted-foreground">{label}</span>
+      <span className="font-medium">{value}</span>
+    </>
   );
 }
 
@@ -327,7 +370,7 @@ function CompensationForm({ memberId, onClose, onSaved }: { memberId: string; on
     <div className="bg-background border rounded-md p-4 mb-3 space-y-3">
       <div className="grid grid-cols-2 gap-3">
         <div>
-          <Label className="text-xs">Type</Label>
+          <Label className="text-xs">Component Type</Label>
           <Select value={compType} onValueChange={v => setCompType(v as CompensationComponentType)}>
             <SelectTrigger className="h-9"><SelectValue /></SelectTrigger>
             <SelectContent>
@@ -337,7 +380,9 @@ function CompensationForm({ memberId, onClose, onSaved }: { memberId: string; on
         </div>
         {!isShareType && (
           <div>
-            <Label className="text-xs">{compType === 'hourly' ? 'Hourly Rate ($)' : 'Monthly Amount ($)'}</Label>
+            <Label className="text-xs">
+              {compType === 'hourly' ? 'Hourly Rate ($)' : compType === 'flat_client_fee' ? 'Default Monthly Fee ($)' : 'Monthly Salary ($)'}
+            </Label>
             <Input type="number" value={amount} onChange={e => setAmount(Number(e.target.value))} className="h-9" />
           </div>
         )}
@@ -348,7 +393,7 @@ function CompensationForm({ memberId, onClose, onSaved }: { memberId: string; on
               <Input type="number" value={sharePercent} onChange={e => setSharePercent(Number(e.target.value))} className="h-9" />
             </div>
             <div>
-              <Label className="text-xs">Applies To</Label>
+              <Label className="text-xs">{compType === 'revenue_share' ? 'Revenue Category' : 'Profit Category'}</Label>
               <Select value={category} onValueChange={v => setCategory(v as RevenueCategory)}>
                 <SelectTrigger className="h-9"><SelectValue /></SelectTrigger>
                 <SelectContent>
@@ -365,7 +410,7 @@ function CompensationForm({ memberId, onClose, onSaved }: { memberId: string; on
       </div>
       <div className="flex justify-end gap-2">
         <Button variant="outline" size="sm" onClick={onClose}>Cancel</Button>
-        <Button size="sm" onClick={handleSave}>Add</Button>
+        <Button size="sm" onClick={handleSave}>Add Component</Button>
       </div>
     </div>
   );
@@ -379,6 +424,7 @@ function AssignmentsSection() {
   const [assignments, setAssignments] = useState<ClientTeamAssignment[]>(() => repository.clientAssignments.getAll());
   const members = useMemo(() => repository.teamMembers.getAll(), []);
   const clients = useMemo(() => repository.clients.getAll(), []);
+  const compensation = useMemo(() => repository.compensation.getAll(), []);
   const [showForm, setShowForm] = useState(false);
 
   const refresh = () => setAssignments(repository.clientAssignments.getAll());
@@ -390,6 +436,7 @@ function AssignmentsSection() {
   };
 
   const getMemberName = (id: string) => members.find(m => m.id === id)?.name || id;
+  const getMemberRole = (id: string) => members.find(m => m.id === id)?.role || '';
   const getClientName = (id: string) => clients.find(c => c.id === id)?.name || id;
 
   // Group by member
@@ -402,44 +449,111 @@ function AssignmentsSection() {
     return map;
   }, [assignments]);
 
+  /** Describe what the assignment overrides vs default comp */
+  const getAssignmentDetail = (a: ClientTeamAssignment) => {
+    const memberComps = compensation.filter(c => c.teamMemberId === a.teamMemberId);
+    const badges: { label: string; tooltip: string }[] = [];
+
+    if (a.allocationPercent != null) {
+      const salaryComp = memberComps.find(c => c.componentType === 'salary_allocation');
+      badges.push({
+        label: `${a.allocationPercent}% allocation`,
+        tooltip: salaryComp ? `${a.allocationPercent}% of $${salaryComp.amount.toLocaleString()}/mo salary` : `${a.allocationPercent}% allocation`,
+      });
+    }
+    if (a.flatFeeOverride != null) {
+      badges.push({
+        label: `$${a.flatFeeOverride.toLocaleString()}/mo flat`,
+        tooltip: `Client-specific flat fee override`,
+      });
+    }
+    if (a.hourlyRateOverride != null) {
+      badges.push({
+        label: `$${a.hourlyRateOverride}/hr`,
+        tooltip: `Client-specific hourly rate override`,
+      });
+    }
+    if (a.revenueShareOverride != null) {
+      badges.push({
+        label: `${(a.revenueShareOverride * 100).toFixed(0)}% rev share`,
+        tooltip: `Client-specific revenue share override`,
+      });
+    }
+    if (a.profitShareOverride != null) {
+      badges.push({
+        label: `${(a.profitShareOverride * 100).toFixed(0)}% profit share`,
+        tooltip: `Client-specific profit share override`,
+      });
+    }
+
+    // If no overrides, show default comp types
+    if (badges.length === 0) {
+      memberComps.forEach(c => {
+        badges.push({ label: COMP_TYPE_LABELS[c.componentType], tooltip: 'Using default compensation' });
+      });
+    }
+
+    return badges;
+  };
+
   return (
-    <div>
-      <div className="flex items-center justify-between mb-4">
-        <h3 className="text-base font-medium">Client Assignments</h3>
-        <Button size="sm" onClick={() => setShowForm(true)}>
-          <Plus className="h-4 w-4 mr-1" /> Add Assignment
-        </Button>
-      </div>
-
-      {showForm && (
-        <AssignmentForm members={members} clients={clients} onClose={() => setShowForm(false)} onSaved={() => { refresh(); setShowForm(false); }} />
-      )}
-
-      <div className="space-y-4">
-        {Array.from(grouped.entries()).map(([memberId, memberAssignments]) => (
-          <div key={memberId} className="panel p-4">
-            <h4 className="text-sm font-medium mb-3">{getMemberName(memberId)}</h4>
-            <div className="space-y-2">
-              {memberAssignments.map(a => (
-                <div key={a.id} className="flex items-center justify-between bg-muted/30 rounded-md px-4 py-2.5 text-sm">
-                  <div className="flex items-center gap-3">
-                    <span className="font-medium">{getClientName(a.clientId)}</span>
-                    <span className="text-muted-foreground">→ {a.roleOnClient}</span>
-                    {a.allocationPercent != null && <Badge variant="outline">{a.allocationPercent}%</Badge>}
-                    {a.flatFeeOverride != null && <Badge variant="outline">${a.flatFeeOverride.toLocaleString()}/mo</Badge>}
-                    {a.hourlyRateOverride != null && <Badge variant="outline">${a.hourlyRateOverride}/hr</Badge>}
-                    {!a.isActive && <Badge variant="secondary">Inactive</Badge>}
-                  </div>
-                  <Button variant="ghost" size="icon" className="h-7 w-7 text-destructive" onClick={() => handleDelete(a.id)}>
-                    <Trash2 className="h-3.5 w-3.5" />
-                  </Button>
-                </div>
-              ))}
-            </div>
+    <TooltipProvider>
+      <div>
+        <div className="flex items-center justify-between mb-4">
+          <div>
+            <h3 className="text-base font-medium">Client Assignments</h3>
+            <p className="text-xs text-muted-foreground mt-0.5">Assign team members to clients with optional compensation overrides.</p>
           </div>
-        ))}
+          <Button size="sm" onClick={() => setShowForm(true)}>
+            <Plus className="h-4 w-4 mr-1" /> Add Assignment
+          </Button>
+        </div>
+
+        {showForm && (
+          <AssignmentForm members={members} clients={clients} onClose={() => setShowForm(false)} onSaved={() => { refresh(); setShowForm(false); }} />
+        )}
+
+        <div className="space-y-4">
+          {Array.from(grouped.entries()).map(([memberId, memberAssignments]) => (
+            <div key={memberId} className="panel p-4">
+              <div className="flex items-baseline gap-2 mb-3">
+                <h4 className="text-sm font-medium">{getMemberName(memberId)}</h4>
+                <span className="text-xs text-muted-foreground">{getMemberRole(memberId)}</span>
+              </div>
+              <div className="space-y-2">
+                {memberAssignments.map(a => {
+                  const details = getAssignmentDetail(a);
+                  return (
+                    <div key={a.id} className="flex items-center justify-between bg-muted/30 rounded-md px-4 py-2.5 text-sm">
+                      <div className="flex items-center gap-3 flex-wrap">
+                        <span className="font-medium">{getClientName(a.clientId)}</span>
+                        <span className="text-muted-foreground">→ {a.roleOnClient}</span>
+                        <div className="flex gap-1.5 flex-wrap">
+                          {details.map((d, i) => (
+                            <Tooltip key={i}>
+                              <TooltipTrigger asChild>
+                                <span>
+                                  <Badge variant="outline" className="text-xs cursor-default">{d.label}</Badge>
+                                </span>
+                              </TooltipTrigger>
+                              <TooltipContent><p className="text-xs">{d.tooltip}</p></TooltipContent>
+                            </Tooltip>
+                          ))}
+                        </div>
+                        {!a.isActive && <Badge variant="secondary">Inactive</Badge>}
+                      </div>
+                      <Button variant="ghost" size="icon" className="h-7 w-7 text-destructive" onClick={() => handleDelete(a.id)}>
+                        <Trash2 className="h-3.5 w-3.5" />
+                      </Button>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          ))}
+        </div>
       </div>
-    </div>
+    </TooltipProvider>
   );
 }
 
@@ -451,6 +565,9 @@ function AssignmentForm({ members, clients, onClose, onSaved }: { members: TeamM
   const [roleOnClient, setRoleOnClient] = useState('');
   const [allocationPercent, setAllocationPercent] = useState<string>('');
   const [flatFeeOverride, setFlatFeeOverride] = useState<string>('');
+  const [hourlyRateOverride, setHourlyRateOverride] = useState<string>('');
+  const [revenueShareOverride, setRevenueShareOverride] = useState<string>('');
+  const [profitShareOverride, setProfitShareOverride] = useState<string>('');
   const [notes, setNotes] = useState('');
 
   const handleSave = () => {
@@ -462,6 +579,9 @@ function AssignmentForm({ members, clients, onClose, onSaved }: { members: TeamM
       roleOnClient: roleOnClient.trim(),
       allocationPercent: allocationPercent ? Number(allocationPercent) : undefined,
       flatFeeOverride: flatFeeOverride ? Number(flatFeeOverride) : undefined,
+      hourlyRateOverride: hourlyRateOverride ? Number(hourlyRateOverride) : undefined,
+      revenueShareOverride: revenueShareOverride ? Number(revenueShareOverride) / 100 : undefined,
+      profitShareOverride: profitShareOverride ? Number(profitShareOverride) / 100 : undefined,
       isActive: true,
       notes,
     };
@@ -492,10 +612,22 @@ function AssignmentForm({ members, clients, onClose, onSaved }: { members: TeamM
           </Select>
         </div>
         <div><Label>Role on Client</Label><Input value={roleOnClient} onChange={e => setRoleOnClient(e.target.value)} placeholder="e.g. Strategy Lead" /></div>
-        <div><Label>Allocation % (optional)</Label><Input type="number" value={allocationPercent} onChange={e => setAllocationPercent(e.target.value)} placeholder="e.g. 40" /></div>
-        <div><Label>Flat Fee Override (optional)</Label><Input type="number" value={flatFeeOverride} onChange={e => setFlatFeeOverride(e.target.value)} placeholder="e.g. 2500" /></div>
-        <div><Label>Notes</Label><Input value={notes} onChange={e => setNotes(e.target.value)} /></div>
+        <div><Label>Allocation % <span className="text-muted-foreground font-normal">(optional)</span></Label><Input type="number" value={allocationPercent} onChange={e => setAllocationPercent(e.target.value)} placeholder="e.g. 40" /></div>
       </div>
+
+      <div>
+        <p className="text-xs font-medium text-muted-foreground mb-2 flex items-center gap-1">
+          <Info className="h-3 w-3" /> Client-Specific Overrides <span className="font-normal">— leave blank to use defaults</span>
+        </p>
+        <div className="grid grid-cols-2 gap-4">
+          <div><Label className="text-xs">Flat Fee Override ($/mo)</Label><Input type="number" value={flatFeeOverride} onChange={e => setFlatFeeOverride(e.target.value)} placeholder="Leave blank for default" /></div>
+          <div><Label className="text-xs">Hourly Rate Override ($)</Label><Input type="number" value={hourlyRateOverride} onChange={e => setHourlyRateOverride(e.target.value)} placeholder="Leave blank for default" /></div>
+          <div><Label className="text-xs">Revenue Share Override (%)</Label><Input type="number" value={revenueShareOverride} onChange={e => setRevenueShareOverride(e.target.value)} placeholder="e.g. 12 for 12%" /></div>
+          <div><Label className="text-xs">Profit Share Override (%)</Label><Input type="number" value={profitShareOverride} onChange={e => setProfitShareOverride(e.target.value)} placeholder="e.g. 25 for 25%" /></div>
+        </div>
+      </div>
+
+      <div><Label>Notes</Label><Input value={notes} onChange={e => setNotes(e.target.value)} /></div>
       <div className="flex justify-end gap-2">
         <Button variant="outline" onClick={onClose}>Cancel</Button>
         <Button onClick={handleSave}>Save</Button>
@@ -517,20 +649,51 @@ function DefaultsSection() {
   };
 
   return (
-    <div className="max-w-lg">
-      <h3 className="text-base font-medium mb-4">Economics Defaults</h3>
-      <div className="space-y-4">
-        <div>
-          <Label>Default Currency</Label>
-          <Input value={defaults.currency} onChange={e => setDefaults(d => ({ ...d, currency: e.target.value }))} />
-        </div>
-        <div>
-          <Label>Margin Target (%)</Label>
-          <Input type="number" value={defaults.marginTarget} onChange={e => setDefaults(d => ({ ...d, marginTarget: Number(e.target.value) }))} />
-        </div>
-        <p className="text-xs text-muted-foreground">Revenue categories and compensation types are managed in the Data & Defaults taxonomy section.</p>
-        <Button onClick={handleSave}>Save Defaults</Button>
+    <div className="max-w-2xl space-y-6">
+      <div>
+        <h3 className="text-base font-medium mb-4">Economics Defaults</h3>
+        <p className="text-xs text-muted-foreground mb-4">Global settings for margin targets and economic modeling.</p>
       </div>
+
+      <div className="panel p-5 space-y-4">
+        <h4 className="text-sm font-medium">General</h4>
+        <div className="grid grid-cols-2 gap-4">
+          <div>
+            <Label>Default Currency</Label>
+            <Input value={defaults.currency} onChange={e => setDefaults(d => ({ ...d, currency: e.target.value }))} />
+          </div>
+          <div>
+            <Label>Margin Target (%)</Label>
+            <Input type="number" value={defaults.marginTarget} onChange={e => setDefaults(d => ({ ...d, marginTarget: Number(e.target.value) }))} />
+          </div>
+        </div>
+      </div>
+
+      <div className="panel p-5 space-y-3">
+        <h4 className="text-sm font-medium">Active Revenue Categories</h4>
+        <p className="text-xs text-muted-foreground">Service categories used for revenue tracking and share-based compensation.</p>
+        <div className="flex flex-wrap gap-2">
+          {defaults.defaultRevenueCategories.map(cat => (
+            <Badge key={cat} variant="outline" className="text-xs">
+              {REVENUE_CATEGORY_LABELS[cat]}
+            </Badge>
+          ))}
+        </div>
+      </div>
+
+      <div className="panel p-5 space-y-3">
+        <h4 className="text-sm font-medium">Compensation Types</h4>
+        <p className="text-xs text-muted-foreground">Supported compensation component types for team cost modeling.</p>
+        <div className="flex flex-wrap gap-2">
+          {defaults.defaultCompensationCategories.map(comp => (
+            <Badge key={comp} variant="outline" className="text-xs">
+              {COMP_TYPE_LABELS[comp]}
+            </Badge>
+          ))}
+        </div>
+      </div>
+
+      <Button onClick={handleSave}>Save Defaults</Button>
     </div>
   );
 }
