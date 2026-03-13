@@ -1,8 +1,13 @@
+import { useState } from 'react';
 import { Client, SERVICE_CHANNEL_LABELS } from '@/types';
 import { OnboardingData, ClientLifecycleProgress, getProposalChecklist, LIFECYCLE_STAGES } from '@/types/onboarding';
 import { format } from 'date-fns';
 import { Check, Circle, Rocket, Settings, ArrowRight, ChevronRight } from 'lucide-react';
 import ProposalReadinessChecklist from './ProposalReadinessChecklist';
+import AiActionButton from '@/components/ai/AiActionButton';
+import AiResultPanel from '@/components/ai/AiResultPanel';
+import { runMarketResearch } from '@/lib/ai/aiActions';
+import type { AiActionStatus, MarketResearchResult } from '@/types/ai';
 
 interface Props {
   client: Client;
@@ -24,6 +29,26 @@ export default function ClientOverview({
   const proposalChecklist = getProposalChecklist(onboarding, client, hasGrowthModel);
   const isActive = onboarding.lifecycleStage === 'active_client';
   const isProposalReady = onboarding.lifecycleStage === 'proposal_ready';
+
+  const [researchStatus, setResearchStatus] = useState<AiActionStatus>('idle');
+  const [researchResult, setResearchResult] = useState<MarketResearchResult | null>(null);
+
+  const handleResearch = async () => {
+    setResearchStatus('loading');
+    try {
+      const result = await runMarketResearch({
+        clientWebsite: onboarding.website,
+        industry: client.industry,
+        geography: onboarding.geography,
+        businessModel: onboarding.discovery.businessModel,
+        knownCompetitors: onboarding.discovery.topCompetitors ? onboarding.discovery.topCompetitors.split(',').map(s => s.trim()) : undefined,
+      });
+      setResearchResult(result);
+      setResearchStatus('success');
+    } catch {
+      setResearchStatus('error');
+    }
+  };
 
   return (
     <div className="p-6 max-w-5xl space-y-6">
@@ -102,6 +127,30 @@ export default function ClientOverview({
             </button>
           </div>
         </div>
+      </div>
+
+      {/* AI Market Research */}
+      <div className="panel p-5 space-y-3">
+        <div className="flex items-center justify-between">
+          <h2 className="text-sm font-semibold">Market Research</h2>
+          <AiActionButton label="Research Market" status={researchStatus} onClick={handleResearch} variant="compact" />
+        </div>
+        {researchStatus !== 'idle' && (
+          <AiResultPanel
+            title="Competitive & Market Research"
+            status={researchStatus}
+            sections={researchResult ? [
+              { heading: 'Market Overview', body: researchResult.marketOverview },
+              { heading: 'Top Competitors', body: researchResult.topCompetitors.map(c => `${c.name} — ${c.notes}`) },
+              { heading: 'Common Acquisition Channels', body: researchResult.acquisitionChannels },
+              { heading: 'Positioning Themes', body: researchResult.positioningThemes },
+              { heading: 'Benchmark Notes', body: researchResult.benchmarkNotes.map(b => `${b.metric}: ${b.range} — ${b.notes}`) },
+            ] : []}
+            onApprove={() => {}}
+            onDiscard={() => { setResearchStatus('idle'); setResearchResult(null); }}
+            approveLabel="Save to Discovery"
+          />
+        )}
       </div>
 
       {/* Discovery Summary */}

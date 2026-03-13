@@ -6,6 +6,10 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { ChartContainer, ChartTooltip, ChartTooltipContent } from '@/components/ui/chart';
 import { BarChart, Bar, LineChart, Line, PieChart, Pie, Cell, XAxis, YAxis, CartesianGrid } from 'recharts';
 import { Presentation, X } from 'lucide-react';
+import AiActionButton from '@/components/ai/AiActionButton';
+import AiResultPanel from '@/components/ai/AiResultPanel';
+import { runSummaryWriter } from '@/lib/ai/aiActions';
+import type { AiActionStatus, SummaryWriterResult, SummaryType } from '@/types/ai';
 
 interface Props {
   model: GrowthModel;
@@ -25,6 +29,28 @@ const COLORS = [
 
 export default function ExecutiveSummary({ model, mode }: Props) {
   const [presenting, setPresenting] = useState(false);
+
+  const [summaryStatus, setSummaryStatus] = useState<AiActionStatus>('idle');
+  const [summaryResult, setSummaryResult] = useState<SummaryWriterResult | null>(null);
+  const [summaryType, setSummaryType] = useState<SummaryType>('proposal');
+
+  const handleGenerateSummary = async (type: SummaryType) => {
+    setSummaryType(type);
+    setSummaryStatus('loading');
+    try {
+      const result = await runSummaryWriter({
+        summaryType: type,
+        clientName: model.name,
+        investmentTotal: rollups.totalInvestment,
+        mediaTotal: rollups.totalMediaBudget,
+        projectedRevenue: rollups.forecastRevenue,
+      });
+      setSummaryResult(result);
+      setSummaryStatus('success');
+    } catch {
+      setSummaryStatus('error');
+    }
+  };
 
   // In presentation mode, always filter to client-visible data
   const displayModel = useMemo(() => {
@@ -96,13 +122,21 @@ export default function ExecutiveSummary({ model, mode }: Props) {
               </button>
             </>
           ) : (
-            <button
-              onClick={() => setPresenting(true)}
-              className="flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-medium text-muted-foreground hover:text-foreground hover:bg-muted transition-colors ml-auto"
-            >
-              <Presentation className="h-3.5 w-3.5" />
-              Present to Client
-            </button>
+            <div className="flex items-center gap-2 ml-auto">
+              <AiActionButton
+                label="Generate Summary"
+                status={summaryStatus}
+                onClick={() => handleGenerateSummary(mode === 'operating' ? 'monthly_performance' : 'proposal')}
+                variant="compact"
+              />
+              <button
+                onClick={() => setPresenting(true)}
+                className="flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-medium text-muted-foreground hover:text-foreground hover:bg-muted transition-colors"
+              >
+                <Presentation className="h-3.5 w-3.5" />
+                Present to Client
+              </button>
+            </div>
           )}
         </div>
 
@@ -119,6 +153,18 @@ export default function ExecutiveSummary({ model, mode }: Props) {
             </div>
           ))}
         </div>
+
+        {/* AI Summary Result */}
+        {summaryStatus !== 'idle' && !presenting && (
+          <AiResultPanel
+            title={summaryResult?.title || 'Generated Summary'}
+            status={summaryStatus}
+            sections={summaryResult ? summaryResult.sections.map(s => ({ heading: s.heading, body: s.body })) : []}
+            onApprove={() => { setSummaryStatus('idle'); }}
+            onDiscard={() => { setSummaryStatus('idle'); setSummaryResult(null); }}
+            approveLabel="Save to Narratives"
+          />
+        )}
 
         {/* Charts */}
         <div className="grid grid-cols-2 gap-4">

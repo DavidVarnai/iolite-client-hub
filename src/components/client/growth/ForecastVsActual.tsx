@@ -3,6 +3,10 @@ import type { GrowthModel, GrowthModelScenario, MonthlyActual } from '@/types/gr
 import { generateMonths, formatMonth, toForecastVsActualRows } from '@/lib/growthModelTransformers';
 import { calcVariance } from '@/lib/growthModelCalculations';
 import { Input } from '@/components/ui/input';
+import AiActionButton from '@/components/ai/AiActionButton';
+import AiResultPanel from '@/components/ai/AiResultPanel';
+import { runPerformanceAnalysis } from '@/lib/ai/aiActions';
+import type { AiActionStatus, PerformanceAnalysisResult } from '@/types/ai';
 
 interface Props {
   model: GrowthModel;
@@ -285,11 +289,41 @@ function DetailedView({ model, scenario, months, onUpdate }: Props & { months: s
 export default function ForecastVsActual({ model, scenario, onUpdate }: Props) {
   const [viewMode, setViewMode] = useState<ViewMode>('summary');
   const months = useMemo(() => generateMonths(model.startMonth, model.monthCount), [model]);
+  const [analysisStatus, setAnalysisStatus] = useState<AiActionStatus>('idle');
+  const [analysisResult, setAnalysisResult] = useState<PerformanceAnalysisResult | null>(null);
+
+  const rows = useMemo(() => toForecastVsActualRows(scenario, model.actuals, months, model.funnelType), [scenario, model.actuals, months, model.funnelType]);
+
+  const handleAnalyze = async () => {
+    setAnalysisStatus('loading');
+    try {
+      const monthData = months.map(month => {
+        const monthRows = rows.filter(r => r.month === month);
+        return {
+          month,
+          forecastSpend: monthRows.reduce((s, r) => s + r.forecastSpend, 0),
+          actualSpend: monthRows.reduce((s, r) => s + r.actualSpend, 0),
+          forecastResults: monthRows.reduce((s, r) => s + r.forecastResults, 0),
+          actualResults: monthRows.reduce((s, r) => s + r.actualResults, 0),
+          forecastRevenue: monthRows.reduce((s, r) => s + r.forecastRevenue, 0),
+          actualRevenue: monthRows.reduce((s, r) => s + r.actualRevenue, 0),
+        };
+      });
+      const result = await runPerformanceAnalysis({ months: monthData });
+      setAnalysisResult(result);
+      setAnalysisStatus('success');
+    } catch {
+      setAnalysisStatus('error');
+    }
+  };
 
   return (
     <div className="p-6 space-y-4">
       <div className="flex items-center justify-between mb-2">
-        <h3 className="text-sm font-semibold text-foreground">Forecast vs Actual Performance</h3>
+        <div className="flex items-center gap-3">
+          <h3 className="text-sm font-semibold text-foreground">Forecast vs Actual Performance</h3>
+          <AiActionButton label="Analyze Performance" status={analysisStatus} onClick={handleAnalyze} variant="compact" />
+        </div>
         <div className="flex items-center gap-4">
           <div className="flex items-center gap-3 text-[10px]">
             <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-emerald-500"></span> Favorable</span>
@@ -316,6 +350,23 @@ export default function ForecastVsActual({ model, scenario, onUpdate }: Props) {
           </div>
         </div>
       </div>
+
+      {/* AI Analysis Result */}
+      {analysisStatus !== 'idle' && (
+        <AiResultPanel
+          title="Performance Analysis"
+          status={analysisStatus}
+          sections={analysisResult ? [
+            { heading: 'Summary', body: analysisResult.summary },
+            { heading: 'Key Drivers', body: analysisResult.keyDrivers },
+            { heading: 'Risks & Issues', body: analysisResult.risks },
+            { heading: 'Recommended Actions', body: analysisResult.recommendedActions },
+          ] : []}
+          onApprove={() => { setAnalysisStatus('idle'); }}
+          onDiscard={() => { setAnalysisStatus('idle'); setAnalysisResult(null); }}
+          approveLabel="Copy to Notes"
+        />
+      )}
 
       {viewMode === 'summary' ? (
         <SummaryView model={model} scenario={scenario} months={months} onUpdate={onUpdate} />
