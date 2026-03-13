@@ -33,8 +33,8 @@ export const seedProposals: Proposal[] = [
     updatedAt: '2025-08-28T14:30:00Z',
     generatedAt: '2025-08-28T14:30:00Z',
     selectedBundleId: 'bundle-ecom',
-    selectedServiceLineIds: ['sl3', 'sl7', 'sl5'],
-    selectedPackageIds: ['pkg-pm-growth', 'pkg-email-growth', 'pkg-creative-standard'],
+    selectedServiceLineIds: ['sl3', 'sl7', 'sl4'],
+    selectedPackageIds: ['pkg-pm-growth', 'pkg-em-growth', 'pkg-cr-standard'],
     selectedAddOnIds: ['pkg-seo-starter'],
     summaryData: {
       executiveSummary:
@@ -49,15 +49,15 @@ export const seedProposals: Proposal[] = [
     pricingData: {
       lines: [
         { id: 'pl-1', label: 'Paid Media Management — Growth', type: 'package', serviceLineId: 'sl3', packageId: 'pkg-pm-growth', monthlyPrice: 4500, description: 'Full-service paid media across Meta, Google, and TikTok' },
-        { id: 'pl-2', label: 'Email Marketing — Growth', type: 'package', serviceLineId: 'sl5', packageId: 'pkg-email-growth', monthlyPrice: 3000, description: '8 campaigns/month, advanced segmentation, 2 new flows/quarter' },
-        { id: 'pl-3', label: 'Creative Production — Standard', type: 'package', serviceLineId: 'sl7', packageId: 'pkg-creative-standard', monthlyPrice: 3500, description: 'Monthly creative packages including static, video, and ad variants' },
-        { id: 'pl-4', label: 'SEO — Starter', type: 'add_on', serviceLineId: 'sl4', packageId: 'pkg-seo-starter', monthlyPrice: 1400, description: 'Technical SEO audit, keyword research, and foundational optimization' },
+        { id: 'pl-2', label: 'Email Marketing — Growth', type: 'package', serviceLineId: 'sl7', packageId: 'pkg-em-growth', monthlyPrice: 3000, description: '8 campaigns/month, advanced segmentation, 2 new flows/quarter' },
+        { id: 'pl-3', label: 'Creative Production — Standard', type: 'package', serviceLineId: 'sl4', packageId: 'pkg-cr-standard', monthlyPrice: 1200, description: 'Full creative package with animation' },
+        { id: 'pl-4', label: 'SEO — Starter', type: 'add_on', serviceLineId: 'sl6', packageId: 'pkg-seo-starter', monthlyPrice: 1400, description: 'Technical SEO audit, keyword research, and foundational optimization' },
       ],
-      subtotal: 12400,
-      total: 12400,
+      subtotal: 10100,
+      total: 10100,
     },
     projectionData: {
-      projectedMonthlyInvestment: 12400,
+      projectedMonthlyInvestment: 10100,
       projectedOutcomes: [
         '15% CAC reduction within 6 months',
         '25% revenue growth from paid channels',
@@ -92,7 +92,7 @@ export const seedProposals: Proposal[] = [
     generatedAt: '2026-03-12T16:00:00Z',
     selectedServiceLineIds: ['sl1', 'sl6'],
     selectedPackageIds: [],
-    selectedAddOnIds: ['sl4'],
+    selectedAddOnIds: ['pkg-seo-growth'],
     summaryData: {
       executiveSummary:
         'Thank you for the opportunity to partner with Atlas Legal Group. This proposal outlines a phased digital growth engagement focused on establishing your firm as a thought leader in the corporate legal space, modernizing your digital presence, and building a sustainable lead generation engine.',
@@ -107,7 +107,7 @@ export const seedProposals: Proposal[] = [
       lines: [
         { id: 'pl-5', label: 'Strategic Consulting — Discovery & Roadmap', type: 'service', serviceLineId: 'sl1', monthlyPrice: 8000, description: '3-month strategic engagement: audit, strategy development, implementation roadmap', setupFee: 2500 },
         { id: 'pl-6', label: 'Website Redesign & Development', type: 'service', serviceLineId: 'sl6', monthlyPrice: 0, description: 'Full website redesign with CMS, optimized for lead generation', setupFee: 35000, notes: 'One-time project fee, 8-10 week timeline' },
-        { id: 'pl-7', label: 'SEO Growth (optional)', type: 'add_on', serviceLineId: 'sl4', monthlyPrice: 4000, description: 'Ongoing SEO program starting after website launch' },
+        { id: 'pl-7', label: 'SEO Growth (optional)', type: 'add_on', serviceLineId: 'sl6', packageId: 'pkg-seo-growth', monthlyPrice: 4000, description: 'Ongoing SEO program starting after website launch' },
       ],
       subtotal: 12000,
       discountLabel: 'Bundled engagement discount',
