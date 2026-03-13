@@ -234,6 +234,24 @@ function createServiceLineRepo(): ServiceLineRepository {
   };
 }
 
+// ─── Service Package Repository ───
+
+function createServicePackageRepo(): ServicePackageRepository {
+  if (!localStorage.getItem(KEYS.servicePackages)) save(KEYS.servicePackages, seedServicePackages);
+  return {
+    getAll: () => load<ServicePackage[]>(KEYS.servicePackages) || [],
+    getByServiceLine(serviceLineId) { return this.getAll().filter(p => p.serviceLineId === serviceLineId); },
+    getById(id) { return this.getAll().find(p => p.id === id) || null; },
+    save(pkg) {
+      const all = this.getAll();
+      const idx = all.findIndex(p => p.id === pkg.id);
+      idx >= 0 ? (all[idx] = pkg) : all.push(pkg);
+      save(KEYS.servicePackages, all);
+    },
+    delete(id) { save(KEYS.servicePackages, this.getAll().filter(p => p.id !== id)); },
+  };
+}
+
 // ─── Compose ───
 
 export function createLocalStorageRepository(): AppRepository {
@@ -248,5 +266,6 @@ export function createLocalStorageRepository(): AppRepository {
     clientEconomics: createClientEconomicsRepo(),
     economicsDefaults: createEconomicsDefaultsRepo(),
     serviceLines: createServiceLineRepo(),
+    servicePackages: createServicePackageRepo(),
   };
 }
