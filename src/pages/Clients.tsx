@@ -1,5 +1,5 @@
 import { Link, useNavigate } from 'react-router-dom';
-import { seedClients } from '@/data/seed';
+import { getClients, addClient } from '@/data/seed';
 import { getOnboardingForClient } from '@/data/onboardingSeed';
 import { LIFECYCLE_STAGES } from '@/types/onboarding';
 import { useState } from 'react';
