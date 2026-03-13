@@ -126,14 +126,31 @@ function NewClientModal({ onClose, onCreate }: { onClose: () => void; onCreate: 
 
 export default function Clients() {
   const navigate = useNavigate();
+  const [clients, setClients] = useState(() => getClients());
   const [showNewClient, setShowNewClient] = useState(false);
 
   const handleCreate = (data: Partial<Client>) => {
     const newId = `c-${Date.now()}`;
-    // In a real app this would persist; for now navigate to the new client
+    const initials = (data.name || 'NC').split(' ').map(w => w[0]).join('').toUpperCase().slice(0, 2);
+    const newClient: Client = {
+      id: newId,
+      name: data.name || 'New Client',
+      company: data.company || data.name || 'New Client',
+      logoInitials: initials,
+      industry: data.industry || 'General',
+      stage: 'lead',
+      internalOwner: 'Sarah Chen',
+      contacts: data.contacts || [],
+      activeChannels: [],
+      tasks: [],
+      comments: [],
+      strategySections: [],
+      documents: [],
+    };
+    addClient(newClient);
+    setClients([...getClients()]);
     setShowNewClient(false);
-    // Navigate to first client as demo
-    navigate(`/clients/c1`);
+    navigate(`/clients/${newId}`);
   };
 
   return (
