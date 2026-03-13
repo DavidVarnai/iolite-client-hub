@@ -18,9 +18,10 @@ import ClientSettings from '@/components/client/ClientSettings';
 import Campaigns from '@/components/client/Campaigns';
 import GrowthModelView from '@/components/client/GrowthModel';
 import UnitEconomics from '@/components/client/UnitEconomics';
+import ProposalView from '@/components/client/ProposalView';
 
 const TABS = [
-  'overview', 'strategy', 'growth-model', 'campaigns', 'performance', 'meetings',
+  'overview', 'strategy', 'growth-model', 'proposal', 'campaigns', 'performance', 'meetings',
   'comments', 'tasks', 'communications', 'documents', 'unit-economics', 'settings',
 ] as const;
 
