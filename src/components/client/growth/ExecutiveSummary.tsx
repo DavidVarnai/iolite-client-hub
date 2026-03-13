@@ -6,6 +6,10 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { ChartContainer, ChartTooltip, ChartTooltipContent } from '@/components/ui/chart';
 import { BarChart, Bar, LineChart, Line, PieChart, Pie, Cell, XAxis, YAxis, CartesianGrid } from 'recharts';
 import { Presentation, X } from 'lucide-react';
+import AiActionButton from '@/components/ai/AiActionButton';
+import AiResultPanel from '@/components/ai/AiResultPanel';
+import { runSummaryWriter } from '@/lib/ai/aiActions';
+import type { AiActionStatus, SummaryWriterResult, SummaryType } from '@/types/ai';
 
 interface Props {
   model: GrowthModel;
