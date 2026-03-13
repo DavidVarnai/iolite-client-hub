@@ -32,6 +32,7 @@ export default function AdminHub() {
       case 'integrations': return <AdminIntegrations />;
       case 'pricing': return <AdminPricingServices />;
       case 'team_economics': return <AdminTeamEconomics />;
+      case 'proposals': return <AdminProposalDefaults />;
       case 'users': return <AdminUsersRoles />;
       case 'templates': return <AdminTemplates />;
       case 'taxonomy': return <AdminTaxonomy />;
