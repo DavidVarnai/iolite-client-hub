@@ -13,7 +13,7 @@ import type {
   ClientEconomics,
   EconomicsDefaults,
 } from '@/types/economics';
-import type { ServiceLine, ServicePackage } from '@/types/services';
+import type { ServiceLine, ServicePackage, SalesBundle } from '@/types/services';
 import type {
   AppRepository,
   ClientRepository,
@@ -27,6 +27,7 @@ import type {
   EconomicsDefaultsRepository,
   ServiceLineRepository,
   ServicePackageRepository,
+  SalesBundleRepository,
 } from './types';
 import { DEFAULT_ONBOARDING } from '@/types/onboarding';
 import { seedClients } from '@/data/seed';
@@ -41,6 +42,7 @@ import {
 } from '@/data/economicsSeed';
 import { seedServiceLines } from '@/data/servicesSeed';
 import { seedServicePackages } from '@/data/servicePackagesSeed';
+import { seedSalesBundles } from '@/data/salesBundlesSeed';
 
 // ─── Helpers ───
 
@@ -56,6 +58,7 @@ const KEYS = {
   economicsDefaults: 'agencyos_economics_defaults',
   serviceLines: 'agencyos_service_lines',
   servicePackages: 'agencyos_service_packages',
+  salesBundles: 'agencyos_sales_bundles',
 } as const;
 
 function load<T>(key: string): T | null {
@@ -252,6 +255,23 @@ function createServicePackageRepo(): ServicePackageRepository {
   };
 }
 
+// ─── Sales Bundle Repository ───
+
+function createSalesBundleRepo(): SalesBundleRepository {
+  if (!localStorage.getItem(KEYS.salesBundles)) save(KEYS.salesBundles, seedSalesBundles);
+  return {
+    getAll: () => load<SalesBundle[]>(KEYS.salesBundles) || [],
+    getById(id) { return this.getAll().find(b => b.id === id) || null; },
+    save(bundle) {
+      const all = this.getAll();
+      const idx = all.findIndex(b => b.id === bundle.id);
+      idx >= 0 ? (all[idx] = bundle) : all.push(bundle);
+      save(KEYS.salesBundles, all);
+    },
+    delete(id) { save(KEYS.salesBundles, this.getAll().filter(b => b.id !== id)); },
+  };
+}
+
 // ─── Compose ───
 
 export function createLocalStorageRepository(): AppRepository {
@@ -267,5 +287,6 @@ export function createLocalStorageRepository(): AppRepository {
     economicsDefaults: createEconomicsDefaultsRepo(),
     serviceLines: createServiceLineRepo(),
     servicePackages: createServicePackageRepo(),
+    salesBundles: createSalesBundleRepo(),
   };
 }
