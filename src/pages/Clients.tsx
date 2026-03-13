@@ -170,7 +170,7 @@ export default function Clients() {
       </div>
 
       <div className="panel divide-y divide-border">
-        {seedClients.map(client => {
+        {clients.map(client => {
           const onboarding = getOnboardingForClient(client.id);
           const lifecycleLabel = LIFECYCLE_STAGES.find(s => s.key === onboarding.lifecycleStage)?.label || client.stage;
 

@@ -37,7 +37,7 @@ const stageClass: Record<string, string> = {
 export default function ClientHub() {
   const { clientId, tab } = useParams();
   const navigate = useNavigate();
-  const seedClient = seedClients.find(c => c.id === clientId);
+  const seedClient = getClients().find(c => c.id === clientId);
   const [client, setClient] = useState<Client | null>(seedClient || null);
   const [proposalMode, setProposalMode] = useState(false);
   const [showWizard, setShowWizard] = useState(false);

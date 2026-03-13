@@ -103,7 +103,7 @@ export function AppSidebar() {
             </SidebarGroupLabel>
             <SidebarGroupContent>
               <SidebarMenu>
-                {seedClients.map(client => (
+                {clients.map(client => (
                   <SidebarMenuItem key={client.id}>
                     <SidebarMenuButton asChild>
                       <NavLink

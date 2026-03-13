@@ -302,3 +302,17 @@ const seedClients: Client[] = [
     ],
   },
 ];
+
+// Mutable client store
+const clientsStore: Client[] = [...seedClients];
+
+export { seedClients };
+
+export function getClients(): Client[] {
+  return clientsStore;
+}
+
+export function addClient(client: Client): Client {
+  clientsStore.push(client);
+  return client;
+}
