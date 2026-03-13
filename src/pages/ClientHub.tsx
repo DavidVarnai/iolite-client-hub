@@ -17,6 +17,7 @@ import ClientDocuments from '@/components/client/Documents';
 import ClientSettings from '@/components/client/ClientSettings';
 import Campaigns from '@/components/client/Campaigns';
 import GrowthModelView from '@/components/client/GrowthModel';
+import UnitEconomics from '@/components/client/UnitEconomics';
 
 const TABS = [
   'overview', 'strategy', 'growth-model', 'campaigns', 'performance', 'meetings',
