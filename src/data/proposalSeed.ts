@@ -49,9 +49,9 @@ export const seedProposals: Proposal[] = [
     pricingData: {
       lines: [
         { id: 'pl-1', label: 'Paid Media Management — Growth', type: 'package', serviceLineId: 'sl3', packageId: 'pkg-pm-growth', monthlyPrice: 4500, description: 'Full-service paid media across Meta, Google, and TikTok' },
-        { id: 'pl-2', label: 'Email Marketing — Growth', type: 'package', serviceLineId: 'sl5', packageId: 'pkg-email-growth', monthlyPrice: 3000, description: '8 campaigns/month, advanced segmentation, 2 new flows/quarter' },
-        { id: 'pl-3', label: 'Creative Production — Standard', type: 'package', serviceLineId: 'sl7', packageId: 'pkg-creative-standard', monthlyPrice: 3500, description: 'Monthly creative packages including static, video, and ad variants' },
-        { id: 'pl-4', label: 'SEO — Starter', type: 'add_on', serviceLineId: 'sl4', packageId: 'pkg-seo-starter', monthlyPrice: 1400, description: 'Technical SEO audit, keyword research, and foundational optimization' },
+        { id: 'pl-2', label: 'Email Marketing — Growth', type: 'package', serviceLineId: 'sl7', packageId: 'pkg-em-growth', monthlyPrice: 3000, description: '8 campaigns/month, advanced segmentation, 2 new flows/quarter' },
+        { id: 'pl-3', label: 'Creative Production — Standard', type: 'package', serviceLineId: 'sl4', packageId: 'pkg-cr-standard', monthlyPrice: 1200, description: 'Full creative package with animation' },
+        { id: 'pl-4', label: 'SEO — Starter', type: 'add_on', serviceLineId: 'sl6', packageId: 'pkg-seo-starter', monthlyPrice: 1400, description: 'Technical SEO audit, keyword research, and foundational optimization' },
       ],
       subtotal: 12400,
       total: 12400,
