@@ -34,9 +34,9 @@ export const seedCompensation: CompensationComponent[] = [
   { id: 'cc4', teamMemberId: 'tm4', componentType: 'salary_allocation', amount: 6000, isDefault: true },
   // Mike — flat client fee
   { id: 'cc5', teamMemberId: 'tm5', componentType: 'flat_client_fee', amount: 2500, isDefault: true },
-  // Seif — base salary + profit share
-  { id: 'cc6', teamMemberId: 'tm6', componentType: 'salary_allocation', amount: 5000, isDefault: true },
-  { id: 'cc7', teamMemberId: 'tm6', componentType: 'profit_share', amount: 0, sharePercent: 0.20, appliesToCategory: 'paid_media_management', isDefault: true },
+  // Seif — flat client fee (base per account) + threshold share above base on paid media mgmt fees
+  { id: 'cc6', teamMemberId: 'tm6', componentType: 'flat_client_fee', amount: 2000, isDefault: true },
+  { id: 'cc7', teamMemberId: 'tm6', componentType: 'threshold_share', amount: 0, sharePercent: 0.50, appliesToCategory: 'paid_media_management', thresholdAmount: 3000, isDefault: true },
   // Michael — base salary + revenue share
   { id: 'cc8', teamMemberId: 'tm7', componentType: 'salary_allocation', amount: 5000, isDefault: true },
   { id: 'cc9', teamMemberId: 'tm7', componentType: 'revenue_share', amount: 0, sharePercent: 0.10, appliesToCategory: 'retention_marketing', isDefault: true },
