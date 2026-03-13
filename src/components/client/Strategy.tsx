@@ -155,6 +155,26 @@ function StrategySectionCard({ section, proposalMode, client }: { section: Strat
           </motion.div>
         )}
       </AnimatePresence>
+
+      {/* AI Strategy Draft Result */}
+      {aiStatus !== 'idle' && (
+        <div className="px-5 pb-5">
+          <AiResultPanel
+            title={`${SERVICE_CHANNEL_LABELS[section.channel]} — Strategy Draft`}
+            status={aiStatus}
+            sections={aiResult ? [
+              { heading: 'Objectives', body: aiResult.objectives },
+              { heading: 'Key Initiatives', body: aiResult.keyInitiatives },
+              { heading: 'Timeline', body: aiResult.timelineIdeas },
+              { heading: 'Dependencies', body: aiResult.dependencies },
+              { heading: 'Success Metrics', body: aiResult.successMetrics },
+            ] : []}
+            onApprove={() => { setAiStatus('idle'); }}
+            onDiscard={() => { setAiStatus('idle'); setAiResult(null); }}
+            approveLabel="Insert into Strategy"
+          />
+        </div>
+      )}
     </div>
   );
 }
