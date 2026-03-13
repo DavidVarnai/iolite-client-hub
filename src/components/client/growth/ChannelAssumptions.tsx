@@ -4,6 +4,9 @@ import { calcFunnelOutputs } from '@/lib/growthModelCalculations';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import AiActionButton from '@/components/ai/AiActionButton';
+import { runBenchmarks } from '@/lib/ai/aiActions';
+import type { AiActionStatus, BenchmarkResult } from '@/types/ai';
 
 interface Props {
   model: GrowthModel;
