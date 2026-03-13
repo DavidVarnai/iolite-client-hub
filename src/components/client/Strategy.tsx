@@ -35,14 +35,19 @@ function StrategySectionCard({ section, proposalMode, client }: { section: Strat
       <div className="p-5 border-b">
         <div className="flex items-center justify-between">
           <h3 className="text-sm font-semibold">{SERVICE_CHANNEL_LABELS[section.channel]}</h3>
-          {!proposalMode && (
-            <button
-              onClick={() => setShowInternal(!showInternal)}
-              className="text-xs text-primary font-medium hover:underline"
-            >
-              {showInternal ? 'Show Summary' : 'Show Internal Details'}
-            </button>
-          )}
+          <div className="flex items-center gap-2">
+            {!proposalMode && (
+              <AiActionButton label="Generate Draft" status={aiStatus} onClick={handleGenerateDraft} variant="compact" />
+            )}
+            {!proposalMode && (
+              <button
+                onClick={() => setShowInternal(!showInternal)}
+                className="text-xs text-primary font-medium hover:underline"
+              >
+                {showInternal ? 'Show Summary' : 'Show Internal Details'}
+              </button>
+            )}
+          </div>
         </div>
       </div>
 
