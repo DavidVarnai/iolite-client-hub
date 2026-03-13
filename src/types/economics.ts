@@ -59,7 +59,8 @@ export type CompensationComponentType =
   | 'flat_client_fee'
   | 'hourly'
   | 'revenue_share'
-  | 'profit_share';
+  | 'profit_share'
+  | 'threshold_share';
 
 export const COMP_TYPE_LABELS: Record<CompensationComponentType, string> = {
   salary_allocation: 'Salary Allocation',
@@ -67,6 +68,7 @@ export const COMP_TYPE_LABELS: Record<CompensationComponentType, string> = {
   hourly: 'Hourly',
   revenue_share: 'Revenue Share',
   profit_share: 'Profit Share',
+  threshold_share: 'Threshold Share',
 };
 
 export interface CompensationComponent {
@@ -81,6 +83,8 @@ export interface CompensationComponent {
   appliesToCategory?: RevenueCategory;
   /** Optional cap on share payout */
   capAmount?: number;
+  /** For threshold_share: the base fee threshold above which the share applies */
+  thresholdAmount?: number;
   /** Whether this is the default (vs client-specific override) */
   isDefault: boolean;
 }

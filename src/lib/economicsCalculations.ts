@@ -59,6 +59,18 @@ export function calcProfitShare(
   return cap ? Math.min(raw, cap) : raw;
 }
 
+/** Threshold share: share applies only to revenue above a base threshold. */
+export function calcThresholdShare(
+  sharePercent: number,
+  relevantRevenue: number,
+  thresholdAmount: number,
+  cap?: number
+): number {
+  const incremental = Math.max(0, relevantRevenue - thresholdAmount);
+  const raw = sharePercent * incremental;
+  return cap ? Math.min(raw, cap) : raw;
+}
+
 export function calcMarginSummary(
   totalRevenue: number,
   totalTeamCost: number,
@@ -162,6 +174,21 @@ export function computeClientTeamCosts(
           formulaLines.push({
             label: isOverride ? `Profit Share (override)` : `Profit Share`,
             formula: `${(pct * 100).toFixed(0)}% of ${categoryLabel} est. profit ($${estProfit.toLocaleString()})${comp.capAmount ? ` · cap $${comp.capAmount.toLocaleString()}` : ''}`,
+            amount: cost,
+          });
+          break;
+        }
+        case 'threshold_share': {
+          const pct = comp.sharePercent ?? 0;
+          const threshold = comp.thresholdAmount ?? 0;
+          const categoryLabel = comp.appliesToCategory ? REVENUE_CATEGORY_LABELS[comp.appliesToCategory] : 'N/A';
+          const rev = comp.appliesToCategory ? (revenueMap.get(comp.appliesToCategory) ?? 0) : 0;
+          const cost = calcThresholdShare(pct, rev, threshold, comp.capAmount);
+          const incremental = Math.max(0, rev - threshold);
+          totalCost += cost;
+          formulaLines.push({
+            label: 'Threshold Share',
+            formula: `${(pct * 100).toFixed(0)}% of ${categoryLabel} above $${threshold.toLocaleString()} threshold · incremental $${incremental.toLocaleString()}${comp.capAmount ? ` · cap $${comp.capAmount.toLocaleString()}` : ''}`,
             amount: cost,
           });
           break;

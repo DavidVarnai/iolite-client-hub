@@ -17,7 +17,7 @@ export const seedTeamMembers: TeamMember[] = [
   { id: 'tm3', name: 'Priya Patel', role: 'Marketing Specialist', workerType: 'full_time', status: 'active', notes: 'Handles paid media execution and email marketing.' },
   { id: 'tm4', name: 'Kelly Nguyen', role: 'Designer', workerType: 'contractor', status: 'active', notes: 'Freelance designer allocated across clients.' },
   { id: 'tm5', name: 'Mike Reeves', role: 'Email Specialist', workerType: 'contractor', status: 'active', notes: 'Flat-fee email marketing contractor.' },
-  { id: 'tm6', name: 'Seif Almadi', role: 'Campaign Manager', workerType: 'full_time', status: 'active', notes: 'Paid media campaign management with profit share structure.' },
+  { id: 'tm6', name: 'Seif Almadi', role: 'Campaign Manager', workerType: 'full_time', status: 'active', notes: 'Paid media account manager with base fee per client + threshold share on fees above base.' },
   { id: 'tm7', name: 'Michael Torres', role: 'Retention Lead', workerType: 'full_time', status: 'active', notes: 'Leads retention marketing with revenue share on fees.' },
 ];
 
@@ -34,9 +34,9 @@ export const seedCompensation: CompensationComponent[] = [
   { id: 'cc4', teamMemberId: 'tm4', componentType: 'salary_allocation', amount: 6000, isDefault: true },
   // Mike — flat client fee
   { id: 'cc5', teamMemberId: 'tm5', componentType: 'flat_client_fee', amount: 2500, isDefault: true },
-  // Seif — base salary + profit share
-  { id: 'cc6', teamMemberId: 'tm6', componentType: 'salary_allocation', amount: 5000, isDefault: true },
-  { id: 'cc7', teamMemberId: 'tm6', componentType: 'profit_share', amount: 0, sharePercent: 0.20, appliesToCategory: 'paid_media_management', isDefault: true },
+  // Seif — flat client fee (base per account) + threshold share above base on paid media mgmt fees
+  { id: 'cc6', teamMemberId: 'tm6', componentType: 'flat_client_fee', amount: 2000, isDefault: true },
+  { id: 'cc7', teamMemberId: 'tm6', componentType: 'threshold_share', amount: 0, sharePercent: 0.50, appliesToCategory: 'paid_media_management', thresholdAmount: 3000, isDefault: true },
   // Michael — base salary + revenue share
   { id: 'cc8', teamMemberId: 'tm7', componentType: 'salary_allocation', amount: 5000, isDefault: true },
   { id: 'cc9', teamMemberId: 'tm7', componentType: 'revenue_share', amount: 0, sharePercent: 0.10, appliesToCategory: 'retention_marketing', isDefault: true },
@@ -51,7 +51,7 @@ export const seedAssignments: ClientTeamAssignment[] = [
   { id: 'ca3', teamMemberId: 'tm3', clientId: 'c1', roleOnClient: 'Paid Media Specialist', allocationPercent: 50, isActive: true, notes: '' },
   { id: 'ca4', teamMemberId: 'tm4', clientId: 'c1', roleOnClient: 'Designer', allocationPercent: 40, isActive: true, notes: '' },
   { id: 'ca5', teamMemberId: 'tm5', clientId: 'c1', roleOnClient: 'Email Specialist', flatFeeOverride: 2500, isActive: true, notes: '' },
-  { id: 'ca6', teamMemberId: 'tm6', clientId: 'c1', roleOnClient: 'Campaign Manager', allocationPercent: 50, isActive: true, notes: '' },
+  { id: 'ca6', teamMemberId: 'tm6', clientId: 'c1', roleOnClient: 'Campaign Manager', flatFeeOverride: 2000, isActive: true, notes: '' },
   { id: 'ca7', teamMemberId: 'tm7', clientId: 'c1', roleOnClient: 'Retention Lead', allocationPercent: 40, isActive: true, notes: '' },
 
   // Atlas Legal (c2)
@@ -64,7 +64,7 @@ export const seedAssignments: ClientTeamAssignment[] = [
   { id: 'ca12', teamMemberId: 'tm2', clientId: 'c3', roleOnClient: 'Project Manager', allocationPercent: 30, isActive: true, notes: '' },
   { id: 'ca13', teamMemberId: 'tm3', clientId: 'c3', roleOnClient: 'Social Media Specialist', allocationPercent: 50, isActive: true, notes: '' },
   { id: 'ca14', teamMemberId: 'tm4', clientId: 'c3', roleOnClient: 'Designer', allocationPercent: 30, isActive: true, notes: '' },
-  { id: 'ca15', teamMemberId: 'tm6', clientId: 'c3', roleOnClient: 'Campaign Manager', allocationPercent: 50, isActive: true, notes: '' },
+  { id: 'ca15', teamMemberId: 'tm6', clientId: 'c3', roleOnClient: 'Campaign Manager', flatFeeOverride: 2000, isActive: true, notes: '' },
 ];
 
 /* ── Client Economics (Revenue + Other Costs) ── */
@@ -116,6 +116,6 @@ export const seedEconomicsDefaults: EconomicsDefaults = {
     'retention_marketing', 'web_design', 'creative', 'development', 'seo', 'copywriting', 'analytics',
   ],
   defaultCompensationCategories: [
-    'salary_allocation', 'flat_client_fee', 'hourly', 'revenue_share', 'profit_share',
+    'salary_allocation', 'flat_client_fee', 'hourly', 'revenue_share', 'profit_share', 'threshold_share',
   ],
 };
