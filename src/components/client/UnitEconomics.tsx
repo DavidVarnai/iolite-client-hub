@@ -2,11 +2,13 @@
  * Client Unit Economics tab — revenue, team cost allocation, other costs, margin summary.
  */
 import { useState, useMemo } from 'react';
-import { DollarSign, Users, TrendingUp, TrendingDown, Pencil, Plus, Trash2 } from 'lucide-react';
+import { DollarSign, Users, TrendingUp, TrendingDown, Pencil, Plus, Trash2, Info } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Badge } from '@/components/ui/badge';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { toast } from 'sonner';
 import { repository } from '@/lib/repository';
 import { useClientContext } from '@/contexts/ClientContext';
@@ -23,6 +25,7 @@ export default function UnitEconomics() {
   const members = useMemo(() => repository.teamMembers.getAll(), []);
   const compensation = useMemo(() => repository.compensation.getAll(), []);
   const assignments = useMemo(() => repository.clientAssignments.getAll(), []);
+  const defaults = useMemo(() => repository.economicsDefaults.get(), []);
 
   const teamCostLines = useMemo(() =>
     computeClientTeamCosts(client.id, assignments, members, compensation, economics.revenueEntries),
@@ -39,115 +42,152 @@ export default function UnitEconomics() {
     repository.clientEconomics.save(updated);
   };
 
-  const marginColorClass = margin.estimatedMarginPercent >= 50
+  const marginTarget = defaults.marginTarget;
+  const marginColorClass = margin.estimatedMarginPercent >= marginTarget
     ? 'text-primary'
-    : margin.estimatedMarginPercent >= 30
-      ? 'text-muted-foreground'
+    : margin.estimatedMarginPercent >= marginTarget * 0.6
+      ? 'text-amber-500'
       : 'text-destructive';
 
   return (
-    <div className="p-6 space-y-6">
-      {/* Margin Summary Card */}
-      <div className="panel p-5">
-        <h3 className="text-base font-semibold mb-4 flex items-center gap-2">
-          <DollarSign className="h-4 w-4 text-primary" /> Margin Summary
-        </h3>
-        <div className="grid grid-cols-3 md:grid-cols-6 gap-4">
-          <SummaryCard label="Total Revenue" value={`$${totalRevenue.toLocaleString()}`} sub="/month" />
-          <SummaryCard label="Team Cost" value={`$${totalTeamCost.toLocaleString()}`} sub="/month" />
-          <SummaryCard label="Other Costs" value={`$${totalOtherCosts.toLocaleString()}`} sub="/month" />
-          <SummaryCard label="Total Cost" value={`$${margin.totalEstimatedCost.toLocaleString()}`} sub="/month" />
-          <SummaryCard
-            label="Gross Profit"
-            value={`$${margin.estimatedGrossProfit.toLocaleString()}`}
-            sub="/month"
-            icon={margin.estimatedGrossProfit >= 0
-              ? <TrendingUp className="h-4 w-4 text-primary" />
-              : <TrendingDown className="h-4 w-4 text-destructive" />}
-          />
-          <div className="text-center">
-            <p className="text-xs text-muted-foreground mb-1">Est. Margin</p>
-            <p className={`text-2xl font-bold ${marginColorClass}`}>
-              {margin.estimatedMarginPercent.toFixed(1)}%
-            </p>
+    <TooltipProvider>
+      <div className="p-6 space-y-6">
+        {/* Margin Summary Card */}
+        <div className="panel p-5">
+          <div className="flex items-center justify-between mb-4">
+            <h3 className="text-base font-semibold flex items-center gap-2">
+              <DollarSign className="h-4 w-4 text-primary" /> Margin Summary
+            </h3>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Badge variant="outline" className={`text-xs ${marginColorClass}`}>
+                  Target: {marginTarget}%
+                </Badge>
+              </TooltipTrigger>
+              <TooltipContent><p className="text-xs">Agency margin target from Economics Defaults</p></TooltipContent>
+            </Tooltip>
           </div>
-        </div>
-      </div>
-
-      {/* Revenue */}
-      <div className="panel p-5">
-        <div className="flex items-center justify-between mb-4">
-          <h3 className="text-base font-semibold">Revenue by Category</h3>
-          <Button size="sm" variant="outline" onClick={() => setEditingRevenue(!editingRevenue)}>
-            {editingRevenue ? 'Done' : <><Pencil className="h-3.5 w-3.5 mr-1" /> Edit</>}
-          </Button>
-        </div>
-
-        {editingRevenue ? (
-          <RevenueEditor economics={economics} onSave={persistEconomics} />
-        ) : (
-          <div className="space-y-2">
-            {economics.revenueEntries.length === 0 && (
-              <p className="text-sm text-muted-foreground italic">No revenue entries. Click Edit to add.</p>
-            )}
-            {economics.revenueEntries.map((r, i) => (
-              <div key={i} className="flex items-center justify-between bg-muted/30 rounded-md px-4 py-2.5 text-sm">
-                <span>{REVENUE_CATEGORY_LABELS[r.category] || r.category}</span>
-                <span className="font-medium">${r.monthlyAmount.toLocaleString()}/mo</span>
-              </div>
-            ))}
-          </div>
-        )}
-      </div>
-
-      {/* Team Cost Allocation */}
-      <div className="panel p-5">
-        <h3 className="text-base font-semibold mb-4 flex items-center gap-2">
-          <Users className="h-4 w-4 text-primary" /> Team Cost Allocation
-        </h3>
-        {teamCostLines.length === 0 && (
-          <p className="text-sm text-muted-foreground italic">No team members assigned to this client.</p>
-        )}
-        <div className="space-y-2">
-          {teamCostLines.map(line => (
-            <div key={line.teamMemberId} className="flex items-center justify-between bg-muted/30 rounded-md px-4 py-3 text-sm">
-              <div>
-                <span className="font-medium">{line.name}</span>
-                <span className="text-muted-foreground ml-2">— {line.role}</span>
-                <p className="text-xs text-muted-foreground mt-0.5">{line.compensationBasis} · {line.formula}</p>
-              </div>
-              <span className="font-semibold">${line.estimatedMonthlyCost.toLocaleString()}/mo</span>
+          <div className="grid grid-cols-3 md:grid-cols-6 gap-4">
+            <SummaryCard label="Total Revenue" value={`$${totalRevenue.toLocaleString()}`} sub="/month" />
+            <SummaryCard label="Team Cost" value={`$${totalTeamCost.toLocaleString()}`} sub="/month" />
+            <SummaryCard label="Other Costs" value={`$${totalOtherCosts.toLocaleString()}`} sub="/month" />
+            <SummaryCard label="Total Cost" value={`$${margin.totalEstimatedCost.toLocaleString()}`} sub="/month" />
+            <SummaryCard
+              label="Gross Profit"
+              value={`$${margin.estimatedGrossProfit.toLocaleString()}`}
+              sub="/month"
+              icon={margin.estimatedGrossProfit >= 0
+                ? <TrendingUp className="h-4 w-4 text-primary" />
+                : <TrendingDown className="h-4 w-4 text-destructive" />}
+            />
+            <div className="text-center">
+              <p className="text-xs text-muted-foreground mb-1">Est. Margin</p>
+              <p className={`text-2xl font-bold ${marginColorClass}`}>
+                {margin.estimatedMarginPercent.toFixed(1)}%
+              </p>
             </div>
-          ))}
-        </div>
-      </div>
-
-      {/* Other Costs */}
-      <div className="panel p-5">
-        <div className="flex items-center justify-between mb-4">
-          <h3 className="text-base font-semibold">Other Costs</h3>
-          <Button size="sm" variant="outline" onClick={() => setEditingCosts(!editingCosts)}>
-            {editingCosts ? 'Done' : <><Pencil className="h-3.5 w-3.5 mr-1" /> Edit</>}
-          </Button>
+          </div>
         </div>
 
-        {editingCosts ? (
-          <OtherCostsEditor economics={economics} onSave={persistEconomics} />
-        ) : (
+        {/* Revenue */}
+        <div className="panel p-5">
+          <div className="flex items-center justify-between mb-4">
+            <h3 className="text-base font-semibold">Revenue by Category</h3>
+            <Button size="sm" variant="outline" onClick={() => setEditingRevenue(!editingRevenue)}>
+              {editingRevenue ? 'Done' : <><Pencil className="h-3.5 w-3.5 mr-1" /> Edit</>}
+            </Button>
+          </div>
+
+          {editingRevenue ? (
+            <RevenueEditor economics={economics} onSave={persistEconomics} />
+          ) : (
+            <div className="space-y-2">
+              {economics.revenueEntries.length === 0 && (
+                <p className="text-sm text-muted-foreground italic">No revenue entries. Click Edit to add.</p>
+              )}
+              {economics.revenueEntries.map((r, i) => (
+                <div key={i} className="flex items-center justify-between bg-muted/30 rounded-md px-4 py-2.5 text-sm">
+                  <span>{REVENUE_CATEGORY_LABELS[r.category] || r.category}</span>
+                  <span className="font-medium">${r.monthlyAmount.toLocaleString()}/mo</span>
+                </div>
+              ))}
+              {economics.revenueEntries.length > 0 && (
+                <div className="flex items-center justify-between px-4 py-2 text-sm border-t mt-2 pt-3">
+                  <span className="font-medium">Total Revenue</span>
+                  <span className="font-bold">${totalRevenue.toLocaleString()}/mo</span>
+                </div>
+              )}
+            </div>
+          )}
+        </div>
+
+        {/* Team Cost Allocation */}
+        <div className="panel p-5">
+          <h3 className="text-base font-semibold mb-4 flex items-center gap-2">
+            <Users className="h-4 w-4 text-primary" /> Team Cost Allocation
+          </h3>
+          {teamCostLines.length === 0 && (
+            <p className="text-sm text-muted-foreground italic">No team members assigned to this client.</p>
+          )}
           <div className="space-y-2">
-            {economics.otherCosts.length === 0 && (
-              <p className="text-sm text-muted-foreground italic">No other costs. Click Edit to add software, tools, or vendor costs.</p>
-            )}
-            {economics.otherCosts.map(c => (
-              <div key={c.id} className="flex items-center justify-between bg-muted/30 rounded-md px-4 py-2.5 text-sm">
-                <span>{c.label}</span>
-                <span className="font-medium">${c.monthlyAmount.toLocaleString()}/mo</span>
+            {teamCostLines.map(line => (
+              <div key={line.teamMemberId} className="bg-muted/30 rounded-md px-4 py-3 text-sm">
+                <div className="flex items-center justify-between mb-1">
+                  <div className="flex items-center gap-2">
+                    <span className="font-medium">{line.name}</span>
+                    <span className="text-muted-foreground">— {line.role}</span>
+                    <Badge variant="outline" className="text-[10px] px-1.5 py-0">{line.compensationBasis}</Badge>
+                  </div>
+                  <span className="font-semibold">${line.estimatedMonthlyCost.toLocaleString()}/mo</span>
+                </div>
+                {/* Detailed formula breakdown */}
+                <div className="space-y-0.5 mt-1.5">
+                  {line.formulaLines.map((fl, i) => (
+                    <div key={i} className="flex items-center gap-2 text-xs">
+                      <span className="text-muted-foreground w-32 shrink-0">{fl.label}</span>
+                      <span className="font-mono text-muted-foreground">{fl.formula}</span>
+                      <span className="font-medium ml-auto">${fl.amount.toLocaleString()}</span>
+                    </div>
+                  ))}
+                </div>
               </div>
             ))}
+            {teamCostLines.length > 0 && (
+              <div className="flex items-center justify-between px-4 py-2 text-sm border-t mt-2 pt-3">
+                <span className="font-medium">Total Team Cost</span>
+                <span className="font-bold">${totalTeamCost.toLocaleString()}/mo</span>
+              </div>
+            )}
           </div>
-        )}
+        </div>
+
+        {/* Other Costs */}
+        <div className="panel p-5">
+          <div className="flex items-center justify-between mb-4">
+            <h3 className="text-base font-semibold">Other Costs</h3>
+            <Button size="sm" variant="outline" onClick={() => setEditingCosts(!editingCosts)}>
+              {editingCosts ? 'Done' : <><Pencil className="h-3.5 w-3.5 mr-1" /> Edit</>}
+            </Button>
+          </div>
+
+          {editingCosts ? (
+            <OtherCostsEditor economics={economics} onSave={persistEconomics} />
+          ) : (
+            <div className="space-y-2">
+              {economics.otherCosts.length === 0 && (
+                <p className="text-sm text-muted-foreground italic">No other costs. Click Edit to add software, tools, or vendor costs.</p>
+              )}
+              {economics.otherCosts.map(c => (
+                <div key={c.id} className="flex items-center justify-between bg-muted/30 rounded-md px-4 py-2.5 text-sm">
+                  <span>{c.label}</span>
+                  <span className="font-medium">${c.monthlyAmount.toLocaleString()}/mo</span>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
       </div>
-    </div>
+    </TooltipProvider>
   );
 }
 
