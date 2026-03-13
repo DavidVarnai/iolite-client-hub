@@ -26,6 +26,7 @@ import type {
   ClientEconomicsRepository,
   EconomicsDefaultsRepository,
   ServiceLineRepository,
+  ServicePackageRepository,
 } from './types';
 import { DEFAULT_ONBOARDING } from '@/types/onboarding';
 import { seedClients } from '@/data/seed';
