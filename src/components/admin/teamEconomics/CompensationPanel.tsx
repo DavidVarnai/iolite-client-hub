@@ -6,7 +6,7 @@ import { Plus } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { toast } from 'sonner';
 import { repository } from '@/lib/repository';
-import type { CompensationComponent } from '@/types/economics';
+import type { CompensationComponent } from '@/domains/economics';
 import CompensationCard from './CompensationCard';
 import CompensationForm from './CompensationForm';
 
