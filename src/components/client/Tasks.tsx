@@ -35,8 +35,9 @@ export default function ClientTasks() {
     const statusOrder: ('todo' | 'in_progress' | 'done')[] = ['todo', 'in_progress', 'done'];
     const updated = client.tasks.map(t => {
       if (t.id !== taskId) return t;
+      if (t.status === 'done') return t; // Don't wrap from done back to todo
       const idx = statusOrder.indexOf(t.status);
-      return { ...t, status: statusOrder[(idx + 1) % statusOrder.length] };
+      return { ...t, status: statusOrder[idx + 1] };
     });
     updateClient({ ...client, tasks: updated });
   };

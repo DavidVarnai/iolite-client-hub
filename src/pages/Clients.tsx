@@ -13,8 +13,6 @@ function NewClientModal({ onClose, onCreate }: { onClose: () => void; onCreate: 
   const [contactName, setContactName] = useState('');
   const [contactEmail, setContactEmail] = useState('');
   const [industry, setIndustry] = useState('');
-  const [businessModel, setBusinessModel] = useState('other');
-  const [growthGoal, setGrowthGoal] = useState('revenue_growth');
 
   const handleSubmit = () => {
     if (!name.trim() || !company.trim()) return;

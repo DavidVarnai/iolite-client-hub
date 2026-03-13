@@ -1,5 +1,5 @@
 import { useParams, useNavigate } from 'react-router-dom';
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
 import { ClientProvider, useClientContext } from '@/contexts/ClientContext';
 import { LIFECYCLE_STAGES } from '@/types/onboarding';
@@ -23,6 +23,10 @@ const TABS = [
   'comments', 'tasks', 'communications', 'documents', 'settings',
 ] as const;
 
+type WizardStep = 'setup' | 'discovery' | 'strategy' | 'growth_model' | 'proposal';
+
+const WIZARD_STEP_ORDER: WizardStep[] = ['setup', 'discovery', 'strategy', 'growth_model', 'proposal'];
+
 function ClientHubInner() {
   const { clientId, tab } = useParams();
   const navigate = useNavigate();
@@ -32,6 +36,24 @@ function ClientHubInner() {
   const activeTab = (tab && TABS.includes(tab as any)) ? tab : 'overview';
 
   const setTab = (t: string) => navigate(`/clients/${clientId}/${t}`);
+
+  // Compute the first incomplete wizard step from stageProgress
+  const resumeStep = useMemo((): WizardStep => {
+    const stageToStep: Record<string, WizardStep> = {
+      lead: 'setup',
+      discovery: 'discovery',
+      strategy: 'strategy',
+      growth_model: 'growth_model',
+      proposal_ready: 'proposal',
+    };
+
+    for (const sp of stageProgress) {
+      if (sp.status !== 'complete' && stageToStep[sp.stage]) {
+        return stageToStep[sp.stage];
+      }
+    }
+    return 'proposal'; // all complete, show final step
+  }, [stageProgress]);
 
   const handleActivateClient = () => {
     updateOnboarding(prev => ({
@@ -157,11 +179,12 @@ function ClientHubInner() {
         </motion.div>
       </AnimatePresence>
 
-      {/* Onboarding wizard */}
+      {/* Onboarding wizard — opens at first incomplete step */}
       {showWizard && (
         <ClientOnboardingWizard
           onClose={() => setShowWizard(false)}
           onNavigateTab={setTab}
+          initialStep={resumeStep}
         />
       )}
     </div>
