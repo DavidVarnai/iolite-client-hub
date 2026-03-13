@@ -1,0 +1,151 @@
+import { OnboardingData, ClientDiscovery, EMPTY_DISCOVERY, DEFAULT_ONBOARDING, LifecycleStage } from '@/types/onboarding';
+
+/* Seed onboarding data for each client */
+
+// c1 — Meridian Commerce — Active Client (fully onboarded)
+export const c1Onboarding: OnboardingData = {
+  lifecycleStage: 'active_client',
+  onboardingCompletedAt: '2025-08-20T10:00:00Z',
+  proposalReadyAt: '2025-08-15T10:00:00Z',
+  activatedAt: '2025-09-01T10:00:00Z',
+  website: 'https://meridiancommerce.com',
+  geography: 'United States',
+  businessModelType: 'ecommerce',
+  primaryGrowthGoal: 'revenue_growth',
+  stageProgress: [
+    { stage: 'lead', status: 'complete', percentComplete: 100 },
+    { stage: 'discovery', status: 'complete', percentComplete: 100 },
+    { stage: 'strategy', status: 'complete', percentComplete: 100 },
+    { stage: 'growth_model', status: 'complete', percentComplete: 100 },
+    { stage: 'proposal_ready', status: 'complete', percentComplete: 100, completedAt: '2025-08-15T10:00:00Z' },
+    { stage: 'active_client', status: 'complete', percentComplete: 100, completedAt: '2025-09-01T10:00:00Z' },
+  ],
+  discovery: {
+    businessModel: 'ecommerce',
+    primaryProducts: 'Premium home goods, kitchenware, sustainable living products',
+    revenueStreams: 'DTC ecommerce (85%), wholesale (15%)',
+    avgOrderValue: '$78',
+    coreCustomerSegments: 'Women 25-45, HHI $75k+, urban/suburban, sustainability-conscious',
+    revenueTargets: '$12M annual revenue (up from $9.2M)',
+    customerLeadTargets: '35,000 new customers, 55% repeat rate',
+    timeHorizon: '12 months',
+    majorGrowthPriorities: 'Scale paid acquisition, reduce CAC, grow email revenue to 30%',
+    funnelType: 'ecommerce',
+    leadQualSaleStructure: 'Ad click → PDP → Add to Cart → Purchase',
+    closeRate: '2.8% site-wide conversion',
+    salesCycleLength: 'Same session or within 7 days',
+    paidMediaPlatforms: 'Meta Ads, Google Ads (Shopping + Search)',
+    crm: 'Shopify customer database',
+    emailPlatform: 'Klaviyo',
+    analyticsStack: 'GA4, Triple Whale, Klaviyo analytics',
+    websitePlatform: 'Shopify Plus',
+    currentTraffic: '180,000 monthly sessions',
+    currentLeadsOrders: '5,040 monthly orders',
+    currentCpaCac: 'CAC $51, CPA $44',
+    conversionRates: '2.8% overall, 4.1% returning visitors',
+    knownBottlenecks: 'Landing page friction, high Meta retargeting frequency, limited prospecting',
+    topCompetitors: 'Caraway Home, Our Place, Material Kitchen',
+    positioningNotes: 'Premium quality + sustainability story',
+    differentiators: 'B-corp certified, lifetime warranty, US-based customer service',
+  },
+};
+
+// c2 — Atlas Legal Group — Proposal stage (discovery complete, building proposal)
+export const c2Onboarding: OnboardingData = {
+  lifecycleStage: 'proposal_ready',
+  proposalReadyAt: '2026-03-10T10:00:00Z',
+  website: 'https://atlaslegal.com',
+  geography: 'Northeast US',
+  businessModelType: 'lead_generation',
+  primaryGrowthGoal: 'lead_volume',
+  stageProgress: [
+    { stage: 'lead', status: 'complete', percentComplete: 100 },
+    { stage: 'discovery', status: 'complete', percentComplete: 100 },
+    { stage: 'strategy', status: 'complete', percentComplete: 100 },
+    { stage: 'growth_model', status: 'in_progress', percentComplete: 60 },
+    { stage: 'proposal_ready', status: 'in_progress', percentComplete: 70 },
+    { stage: 'active_client', status: 'not_started', percentComplete: 0 },
+  ],
+  discovery: {
+    businessModel: 'lead_generation',
+    primaryProducts: 'Corporate law, M&A advisory, IP protection',
+    revenueStreams: 'Retainer fees (60%), project-based (40%)',
+    avgOrderValue: '$25,000 avg engagement',
+    coreCustomerSegments: 'Mid-market companies $10M-$100M revenue, C-suite decision makers',
+    revenueTargets: '40% increase in qualified leads',
+    customerLeadTargets: '50 qualified leads/month (up from 30)',
+    timeHorizon: '6 months',
+    majorGrowthPriorities: 'Digital thought leadership, website modernization, content pipeline',
+    funnelType: 'lead_gen',
+    leadQualSaleStructure: 'Content → Consultation request → Qualified call → Engagement',
+    closeRate: '18% from qualified lead to engagement',
+    salesCycleLength: '45-90 days',
+    paidMediaPlatforms: 'None currently',
+    crm: 'Clio (legal practice management)',
+    emailPlatform: 'Mailchimp (basic)',
+    analyticsStack: 'GA4 (basic setup)',
+    websitePlatform: 'WordPress (outdated theme)',
+    currentTraffic: '8,500 monthly sessions',
+    currentLeadsOrders: '30 consultation requests/month',
+    currentCpaCac: 'Unknown — no paid channels active',
+    conversionRates: '0.35% visitor to consultation request',
+    knownBottlenecks: 'Outdated website, no content strategy, reliance on referrals',
+    topCompetitors: 'Baker McKenzie (regional), Morrison & Foerster, local boutique firms',
+    positioningNotes: 'Trusted advisors with deep industry expertise',
+    differentiators: 'Senior partner involvement on every engagement, industry specialization',
+  },
+};
+
+// c3 — Pinnacle Academy — In Discovery
+export const c3Onboarding: OnboardingData = {
+  lifecycleStage: 'discovery',
+  website: 'https://pinnacleacademy.edu',
+  geography: 'Metro area, US',
+  businessModelType: 'lead_generation',
+  primaryGrowthGoal: 'lead_volume',
+  stageProgress: [
+    { stage: 'lead', status: 'complete', percentComplete: 100 },
+    { stage: 'discovery', status: 'in_progress', percentComplete: 65 },
+    { stage: 'strategy', status: 'in_progress', percentComplete: 40 },
+    { stage: 'growth_model', status: 'not_started', percentComplete: 0 },
+    { stage: 'proposal_ready', status: 'not_started', percentComplete: 0 },
+    { stage: 'active_client', status: 'not_started', percentComplete: 0 },
+  ],
+  discovery: {
+    businessModel: 'lead_generation',
+    primaryProducts: 'K-12 private education, enrichment programs',
+    revenueStreams: 'Tuition (90%), summer programs (10%)',
+    avgOrderValue: '$28,000 annual tuition',
+    coreCustomerSegments: 'Parents 30-50, HHI $120k+, metro area',
+    revenueTargets: '15% enrollment increase',
+    customerLeadTargets: '200 qualified inquiries per enrollment cycle',
+    timeHorizon: '12 months',
+    majorGrowthPriorities: 'Digital enrollment funnel, social proof, community engagement',
+    funnelType: 'lead_gen',
+    leadQualSaleStructure: '',
+    closeRate: '',
+    salesCycleLength: '',
+    paidMediaPlatforms: 'Facebook Ads (minimal)',
+    crm: '',
+    emailPlatform: '',
+    analyticsStack: '',
+    websitePlatform: '',
+    currentTraffic: '12,000 monthly sessions',
+    currentLeadsOrders: '45 inquiries/month during peak',
+    currentCpaCac: '',
+    conversionRates: '',
+    knownBottlenecks: '',
+    topCompetitors: '',
+    positioningNotes: '',
+    differentiators: '',
+  },
+};
+
+export function getOnboardingForClient(clientId: string): OnboardingData {
+  switch (clientId) {
+    case 'c1': return { ...c1Onboarding };
+    case 'c2': return { ...c2Onboarding };
+    case 'c3': return { ...c3Onboarding };
+    default: return { ...DEFAULT_ONBOARDING };
+  }
+}
