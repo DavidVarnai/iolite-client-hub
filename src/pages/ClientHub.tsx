@@ -79,6 +79,7 @@ function ClientHubInner() {
       );
       case 'strategy': return <ClientStrategy proposalMode={proposalMode} />;
       case 'growth-model': return <GrowthModelView />;
+      case 'proposal': return <ProposalView proposalMode={proposalMode} />;
       case 'campaigns': return <Campaigns client={client} />;
       case 'performance': return <ClientPerformance />;
       case 'meetings': return <MeetingHub />;
