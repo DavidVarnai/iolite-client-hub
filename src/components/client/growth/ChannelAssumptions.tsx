@@ -91,15 +91,65 @@ export default function ChannelAssumptions({ model, scenario, onUpdate }: Props)
           const output = calcFunnelOutputs(ca, avgBudget, model.funnelType);
 
           return (
-            <Card key={ca.id} className="border">
-              <CardHeader className="pb-3">
-                <CardTitle className="text-sm flex items-center justify-between">
-                  <span>{ca.channel}</span>
-                  <span className="text-xs font-normal text-muted-foreground">
-                    Avg. monthly budget: ${avgBudget.toLocaleString()}
-                  </span>
-                </CardTitle>
-              </CardHeader>
+            <ChannelCard
+              key={ca.id}
+              ca={ca}
+              avgBudget={avgBudget}
+              output={output}
+              model={model}
+              onAssumptionChange={handleAssumptionChange}
+            />
+          );
+        })}
+      </div>
+    </div>
+  );
+}
+
+function ChannelCard({ ca, avgBudget, output, model, onAssumptionChange }: {
+  ca: ChannelAssumption;
+  avgBudget: number;
+  output: ReturnType<typeof calcFunnelOutputs>;
+  model: GrowthModel;
+  onAssumptionChange: (channelId: string, field: keyof ChannelAssumption, value: number) => void;
+}) {
+  const [benchmarkStatus, setBenchmarkStatus] = useState<AiActionStatus>('idle');
+  const [benchmarks, setBenchmarks] = useState<BenchmarkResult | null>(null);
+
+  const handleSuggestBenchmarks = async () => {
+    setBenchmarkStatus('loading');
+    try {
+      const result = await runBenchmarks({ industry: 'General', channel: ca.channel });
+      setBenchmarks(result);
+      setBenchmarkStatus('success');
+    } catch {
+      setBenchmarkStatus('error');
+    }
+  };
+
+  const applyBenchmark = (metric: string, value: number) => {
+    const fieldMap: Record<string, keyof ChannelAssumption> = {
+      'CPM': 'cpm', 'CTR': 'ctr', 'CPC': 'cpc',
+      'LP Conv Rate': 'lpConvRate', 'CPL / CPA': 'targetCpa',
+      'AOV / Deal Size': 'aov',
+    };
+    const field = fieldMap[metric];
+    if (field) onAssumptionChange(ca.id, field, value);
+  };
+
+  return (
+    <Card className="border">
+      <CardHeader className="pb-3">
+        <CardTitle className="text-sm flex items-center justify-between">
+          <span>{ca.channel}</span>
+          <div className="flex items-center gap-3">
+            <AiActionButton label="Suggest Benchmarks" status={benchmarkStatus} onClick={handleSuggestBenchmarks} variant="compact" />
+            <span className="text-xs font-normal text-muted-foreground">
+              Avg. monthly budget: ${avgBudget.toLocaleString()}
+            </span>
+          </div>
+        </CardTitle>
+      </CardHeader>
               <CardContent className="space-y-4">
                 {/* Input fields */}
                 <div>
