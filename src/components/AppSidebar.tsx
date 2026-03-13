@@ -42,7 +42,7 @@ export function AppSidebar() {
 
         {/* Main navigation */}
         <SidebarGroup>
-          <SidebarGroupLabel className="text-[11px] uppercase tracking-wider text-muted-foreground font-medium">
+          <SidebarGroupLabel className="text-[11px] uppercase tracking-wider text-sidebar-highlight font-medium">
             Navigation
           </SidebarGroupLabel>
           <SidebarGroupContent>
@@ -53,8 +53,8 @@ export function AppSidebar() {
                     <NavLink
                       to={item.url}
                       end={item.url === '/'}
-                      className="text-sm px-3 py-2 rounded-md hover:bg-sidebar-accent transition-colors"
-                      activeClassName="bg-sidebar-accent text-primary font-medium"
+                      className="text-sm px-3 py-2 rounded-md text-sidebar-foreground hover:bg-sidebar-accent transition-colors"
+                      activeClassName="bg-sidebar-accent text-sidebar-highlight font-medium"
                     >
                       {!collapsed && <span>{item.title}</span>}
                     </NavLink>
@@ -68,18 +68,18 @@ export function AppSidebar() {
         {/* Active client context */}
         {activeClient && !collapsed && (
           <SidebarGroup>
-            <SidebarGroupLabel className="text-[11px] uppercase tracking-wider text-muted-foreground font-medium">
+            <SidebarGroupLabel className="text-[11px] uppercase tracking-wider text-sidebar-highlight font-medium">
               Active Client
             </SidebarGroupLabel>
             <SidebarGroupContent>
               <div className="px-3 py-2">
                 <div className="flex items-center gap-2.5">
-                  <div className="w-8 h-8 rounded-md bg-primary/10 flex items-center justify-center text-xs font-semibold text-primary">
+                  <div className="w-8 h-8 rounded-md bg-sidebar-highlight/20 flex items-center justify-center text-xs font-semibold text-sidebar-highlight">
                     {activeClient.logoInitials}
                   </div>
                   <div>
-                    <p className="text-sm font-medium text-foreground leading-tight">{activeClient.name}</p>
-                    <p className="text-[11px] text-muted-foreground capitalize">{activeClient.stage}</p>
+                    <p className="text-sm font-medium text-sidebar-foreground leading-tight">{activeClient.name}</p>
+                    <p className="text-[11px] text-sidebar-foreground/60 capitalize">{activeClient.stage}</p>
                   </div>
                 </div>
               </div>
@@ -90,7 +90,7 @@ export function AppSidebar() {
         {/* Admin — only visible to admin users */}
         {isAdminUser(currentUser.role) && (
           <SidebarGroup>
-            <SidebarGroupLabel className="text-[11px] uppercase tracking-wider text-muted-foreground font-medium">
+            <SidebarGroupLabel className="text-[11px] uppercase tracking-wider text-sidebar-highlight font-medium">
               System
             </SidebarGroupLabel>
             <SidebarGroupContent>
@@ -99,8 +99,8 @@ export function AppSidebar() {
                   <SidebarMenuButton asChild>
                     <NavLink
                       to="/admin"
-                      className="text-sm px-3 py-2 rounded-md hover:bg-sidebar-accent transition-colors"
-                      activeClassName="bg-sidebar-accent text-primary font-medium"
+                      className="text-sm px-3 py-2 rounded-md text-sidebar-foreground hover:bg-sidebar-accent transition-colors"
+                      activeClassName="bg-sidebar-accent text-sidebar-highlight font-medium"
                     >
                       {!collapsed && <span>Admin</span>}
                     </NavLink>
@@ -114,7 +114,7 @@ export function AppSidebar() {
         {/* Recent clients */}
         {!collapsed && (
           <SidebarGroup>
-            <SidebarGroupLabel className="text-[11px] uppercase tracking-wider text-muted-foreground font-medium">
+            <SidebarGroupLabel className="text-[11px] uppercase tracking-wider text-sidebar-highlight font-medium">
               Recent Clients
             </SidebarGroupLabel>
             <SidebarGroupContent>
@@ -124,10 +124,10 @@ export function AppSidebar() {
                     <SidebarMenuButton asChild>
                       <NavLink
                         to={`/clients/${client.id}`}
-                        className="text-sm px-3 py-1.5 rounded-md hover:bg-sidebar-accent transition-colors flex items-center gap-2"
-                        activeClassName="bg-sidebar-accent text-primary font-medium"
+                        className="text-sm px-3 py-1.5 rounded-md text-sidebar-foreground hover:bg-sidebar-accent transition-colors flex items-center gap-2"
+                        activeClassName="bg-sidebar-accent text-sidebar-highlight font-medium"
                       >
-                        <span className="w-5 h-5 rounded bg-primary/10 flex items-center justify-center text-[10px] font-semibold text-primary flex-shrink-0">
+                        <span className="w-5 h-5 rounded bg-sidebar-highlight/15 flex items-center justify-center text-[10px] font-semibold text-sidebar-highlight flex-shrink-0">
                           {client.logoInitials}
                         </span>
                         <span className="truncate">{client.name}</span>
