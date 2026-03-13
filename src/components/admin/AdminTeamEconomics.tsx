@@ -532,7 +532,9 @@ function AssignmentsSection() {
                           {details.map((d, i) => (
                             <Tooltip key={i}>
                               <TooltipTrigger asChild>
-                                <Badge variant="outline" className="text-xs cursor-default">{d.label}</Badge>
+                                <span>
+                                  <Badge variant="outline" className="text-xs cursor-default">{d.label}</Badge>
+                                </span>
                               </TooltipTrigger>
                               <TooltipContent><p className="text-xs">{d.tooltip}</p></TooltipContent>
                             </Tooltip>
