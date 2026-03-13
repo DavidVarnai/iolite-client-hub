@@ -8,6 +8,7 @@ import Clients from "@/pages/Clients";
 import ClientHub from "@/pages/ClientHub";
 import Templates from "@/pages/Templates";
 import InternalLibrary from "@/pages/InternalLibrary";
+import AdminHub from "@/pages/AdminHub";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -25,6 +26,7 @@ const App = () => (
             <Route path="/clients/:clientId/:tab" element={<ClientHub />} />
             <Route path="/templates" element={<Templates />} />
             <Route path="/library" element={<InternalLibrary />} />
+            <Route path="/admin" element={<AdminHub />} />
           </Route>
           <Route path="*" element={<NotFound />} />
         </Routes>
