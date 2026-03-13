@@ -246,7 +246,7 @@ export default function ClientOverview({
             </div>
             <div>
               <p className="text-xs text-muted-foreground">Contract Period</p>
-              <p>{format(new Date(client.contractStart), 'MMM d, yyyy')} — {format(new Date(client.contractEnd), 'MMM d, yyyy')}</p>
+              <p>{client.contractStart ? format(new Date(client.contractStart), 'MMM d, yyyy') : '—'} — {client.contractEnd ? format(new Date(client.contractEnd), 'MMM d, yyyy') : '—'}</p>
             </div>
           </div>
         </div>
