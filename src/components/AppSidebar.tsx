@@ -19,7 +19,6 @@ import { currentUser } from '@/data/seed';
 const navItems = [
   { title: 'Dashboard', url: '/' },
   { title: 'Clients', url: '/clients' },
-  { title: 'Templates', url: '/templates' },
   { title: 'Internal Library', url: '/library' },
 ];
 

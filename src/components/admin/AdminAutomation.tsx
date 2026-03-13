@@ -1,9 +1,21 @@
-import { Cpu, ShieldCheck, Webhook } from 'lucide-react';
+import { Cpu, Webhook } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
-import { Switch } from '@/components/ui/switch';
 import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
 import { seedAiModules } from '@/data/adminSeed';
+import type { AiModuleMode } from '@/types/admin';
+
+const modeConfig: Record<AiModuleMode, { label: string; className: string }> = {
+  disabled: { label: 'Disabled', className: 'bg-muted text-muted-foreground' },
+  approval_required: { label: 'Approval Required', className: 'bg-amber-500/10 text-amber-700 border-amber-500/20' },
+  auto_apply: { label: 'Auto Apply', className: 'bg-emerald-500/10 text-emerald-600 border-emerald-500/20' },
+};
+
+const modeOptions: { value: AiModuleMode; label: string }[] = [
+  { value: 'disabled', label: 'Disabled' },
+  { value: 'approval_required', label: 'Approval Required' },
+  { value: 'auto_apply', label: 'Auto Apply' },
+];
 
 export default function AdminAutomation() {
   return (
@@ -21,25 +33,34 @@ export default function AdminAutomation() {
           <Cpu className="h-4 w-4" /> AI Modules
         </h3>
         <div className="space-y-2">
-          {seedAiModules.map(mod => (
-            <Card key={mod.moduleId}>
-              <CardHeader className="py-3 px-4 flex-row items-center justify-between space-y-0">
-                <div>
-                  <CardTitle className="text-sm">{mod.label}</CardTitle>
-                  <CardDescription className="text-xs mt-0.5">{mod.description}</CardDescription>
-                </div>
-                <div className="flex items-center gap-4">
-                  {mod.requiresApproval && (
-                    <Badge variant="outline" className="text-[10px] bg-amber-500/10 text-amber-700 border-amber-500/20">
-                      <ShieldCheck className="h-3 w-3 mr-1" />
-                      Requires Approval
-                    </Badge>
-                  )}
-                  <Switch checked={mod.enabled} aria-label={`Toggle ${mod.label}`} />
-                </div>
-              </CardHeader>
-            </Card>
-          ))}
+          {seedAiModules.map(mod => {
+            const config = modeConfig[mod.mode];
+            return (
+              <Card key={mod.moduleId}>
+                <CardHeader className="py-3 px-4 flex-row items-center justify-between space-y-0">
+                  <div>
+                    <CardTitle className="text-sm">{mod.label}</CardTitle>
+                    <CardDescription className="text-xs mt-0.5">{mod.description}</CardDescription>
+                  </div>
+                  <div className="flex items-center gap-1 bg-muted rounded-lg p-0.5">
+                    {modeOptions.map(opt => (
+                      <button
+                        key={opt.value}
+                        className={`px-2.5 py-1 text-[11px] font-medium rounded-md transition-colors ${
+                          mod.mode === opt.value
+                            ? 'bg-background text-foreground shadow-sm'
+                            : 'text-muted-foreground hover:text-foreground'
+                        }`}
+                        aria-label={`Set ${mod.label} to ${opt.label}`}
+                      >
+                        {opt.label}
+                      </button>
+                    ))}
+                  </div>
+                </CardHeader>
+              </Card>
+            );
+          })}
         </div>
       </div>
 

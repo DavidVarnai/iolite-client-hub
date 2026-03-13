@@ -14,14 +14,17 @@ export type IntegrationId =
   | 'ai_provider';
 
 export type IntegrationStatus = 'connected' | 'disconnected' | 'error';
+export type ConfigurationCompleteness = 'none' | 'partial' | 'complete';
 
 export interface IntegrationConfig {
   id: IntegrationId;
   label: string;
   description: string;
   status: IntegrationStatus;
-  accountLabel?: string;      // e.g. "workspace: Iolite Ventures"
-  lastChecked?: string;       // ISO date
+  accountLabel?: string;        // e.g. "workspace: Iolite Ventures"
+  lastChecked?: string;         // ISO date
+  clientMappings?: number;      // number of clients mapped
+  configCompleteness: ConfigurationCompleteness;
   settings: Record<string, unknown>;
 }
 
@@ -34,6 +37,7 @@ export interface AdminUser {
   role: 'master_admin' | 'project_manager' | 'team_member' | 'client_user';
   avatar?: string;
   lastActive?: string;
+  assignedClientIds?: string[];
 }
 
 export interface RoleDefinition {
@@ -81,12 +85,13 @@ export interface TaxonomyGroup {
 
 /* ── Automation & AI ── */
 
+export type AiModuleMode = 'disabled' | 'approval_required' | 'auto_apply';
+
 export interface AiModuleControl {
   moduleId: string;
   label: string;
   description: string;
-  enabled: boolean;
-  requiresApproval: boolean;
+  mode: AiModuleMode;
 }
 
 /* ── System Settings ── */
