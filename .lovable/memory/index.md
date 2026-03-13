@@ -1,4 +1,17 @@
-Design system, architecture decisions, and onboarding module for the Agency OS project.
+# Memory: index.md
+Design system and architecture decisions for the Agency OS project.
+
+## Branding
+- App name: "Agency OS" (by Iolite Ventures)
+- Sidebar shows "IV" logo mark + "Agency OS" text
+- All references to "Iolite Client Hub" replaced with "Agency OS"
+
+## Brand Colors (Iolite Ventures)
+- Black: #1E1E1E (foreground)
+- White: #FFFFFF (background)
+- Blue 1: #243D87 / 224 57% 34% (primary — sidebar bg, buttons, ring)
+- Blue 2: #536EB5 / 224 39% 52% (secondary)
+- Blue 3: #9DBEE4 / 212 57% 75% (accent — light highlight)
 
 ## Growth Model Architecture
 - Normalized data model: GrowthModel → Scenario → BudgetLineItem/MediaChannelPlan → MonthlyRecords
@@ -9,23 +22,11 @@ Design system, architecture decisions, and onboarding module for the Agency OS p
 - All calculations are pure functions in src/lib/growthModelCalculations.ts
 - Data transformers in src/lib/growthModelTransformers.ts
 
-## Client Lifecycle & Onboarding
-- 6-stage lifecycle: Lead → Discovery → Strategy → Growth Model → Proposal Ready → Active Client
-- Types in src/types/onboarding.ts, seed data in src/data/onboardingSeed.ts
-- Lifecycle bar integrated into ClientHub (hidden in proposal mode)
-- Onboarding wizard: 5-step modal (Setup, Discovery, Strategy Draft, Growth Model, Proposal Ready)
-- Overview tab is the workflow home base with lifecycle status, discovery summary, proposal checklist
-- New client creation modal on Clients page with guided intake
-- computeStageReadiness() dynamically calculates progress from actual data
-- NextStepCard provides contextual guidance prompts
-- ProposalReadinessChecklist shows checklist before marking proposal ready
-- Activation flow transitions client to operating mode + saves baseline snapshot
-
 ## Design System
 - HSL color tokens defined in index.css :root
-- Primary: 226 89% 63% (Iolite Blue)
 - Font: Inter (sans), Source Serif 4 (serif)
 - Panel class: bg-card rounded-lg border
 - Tab pattern: tab-active / tab-inactive classes
 - Status badges: status-badge base + status-{stage}
 - Internal indicator: internal-indicator class with amber dot
+- Dark sidebar with white text (Blue 1 background)
