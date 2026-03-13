@@ -129,6 +129,30 @@ export default function ClientOverview({
         </div>
       </div>
 
+      {/* AI Market Research */}
+      <div className="panel p-5 space-y-3">
+        <div className="flex items-center justify-between">
+          <h2 className="text-sm font-semibold">Market Research</h2>
+          <AiActionButton label="Research Market" status={researchStatus} onClick={handleResearch} variant="compact" />
+        </div>
+        {researchStatus !== 'idle' && (
+          <AiResultPanel
+            title="Competitive & Market Research"
+            status={researchStatus}
+            sections={researchResult ? [
+              { heading: 'Market Overview', body: researchResult.marketOverview },
+              { heading: 'Top Competitors', body: researchResult.topCompetitors.map(c => `${c.name} — ${c.notes}`) },
+              { heading: 'Common Acquisition Channels', body: researchResult.acquisitionChannels },
+              { heading: 'Positioning Themes', body: researchResult.positioningThemes },
+              { heading: 'Benchmark Notes', body: researchResult.benchmarkNotes.map(b => `${b.metric}: ${b.range} — ${b.notes}`) },
+            ] : []}
+            onApprove={() => {}}
+            onDiscard={() => { setResearchStatus('idle'); setResearchResult(null); }}
+            approveLabel="Save to Discovery"
+          />
+        )}
+      </div>
+
       {/* Discovery Summary */}
       {onboarding.discovery.primaryProducts && (
         <div className="panel p-5 space-y-3">
