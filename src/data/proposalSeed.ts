@@ -107,7 +107,7 @@ export const seedProposals: Proposal[] = [
       lines: [
         { id: 'pl-5', label: 'Strategic Consulting — Discovery & Roadmap', type: 'service', serviceLineId: 'sl1', monthlyPrice: 8000, description: '3-month strategic engagement: audit, strategy development, implementation roadmap', setupFee: 2500 },
         { id: 'pl-6', label: 'Website Redesign & Development', type: 'service', serviceLineId: 'sl6', monthlyPrice: 0, description: 'Full website redesign with CMS, optimized for lead generation', setupFee: 35000, notes: 'One-time project fee, 8-10 week timeline' },
-        { id: 'pl-7', label: 'SEO Growth (optional)', type: 'add_on', serviceLineId: 'sl4', monthlyPrice: 4000, description: 'Ongoing SEO program starting after website launch' },
+        { id: 'pl-7', label: 'SEO Growth (optional)', type: 'add_on', serviceLineId: 'sl6', packageId: 'pkg-seo-growth', monthlyPrice: 4000, description: 'Ongoing SEO program starting after website launch' },
       ],
       subtotal: 12000,
       discountLabel: 'Bundled engagement discount',
