@@ -38,20 +38,16 @@ export function AppSidebar() {
         <div className="px-4 py-5 border-b border-sidebar-border">
           {!collapsed && (
             <div className="flex items-center gap-2.5">
-              <div className="w-7 h-7 rounded-md bg-primary flex items-center justify-center">
-                <span className="text-xs font-bold text-primary-foreground tracking-tight">IV</span>
-              </div>
+              <img src={ioliteLogo} alt="Iolite Ventures" className="w-7 h-7 object-contain" />
               <div>
-                <h1 className="text-sm font-semibold tracking-tight text-foreground">Agency OS</h1>
-                <p className="text-[10px] text-muted-foreground">by Iolite Ventures</p>
+                <h1 className="text-sm font-semibold tracking-tight text-sidebar-foreground">Agency OS</h1>
+                <p className="text-[10px] text-sidebar-foreground/60">by Iolite Ventures</p>
               </div>
             </div>
           )}
           {collapsed && (
             <div className="flex items-center justify-center">
-              <div className="w-7 h-7 rounded-md bg-primary flex items-center justify-center">
-                <span className="text-xs font-bold text-primary-foreground tracking-tight">IV</span>
-              </div>
+              <img src={ioliteLogo} alt="Iolite Ventures" className="w-7 h-7 object-contain" />
             </div>
           )}
         </div>
