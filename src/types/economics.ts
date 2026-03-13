@@ -59,7 +59,8 @@ export type CompensationComponentType =
   | 'flat_client_fee'
   | 'hourly'
   | 'revenue_share'
-  | 'profit_share';
+  | 'profit_share'
+  | 'threshold_share';
 
 export const COMP_TYPE_LABELS: Record<CompensationComponentType, string> = {
   salary_allocation: 'Salary Allocation',
@@ -67,6 +68,7 @@ export const COMP_TYPE_LABELS: Record<CompensationComponentType, string> = {
   hourly: 'Hourly',
   revenue_share: 'Revenue Share',
   profit_share: 'Profit Share',
+  threshold_share: 'Threshold Share',
 };
 
 export interface CompensationComponent {
