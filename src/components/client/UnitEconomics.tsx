@@ -60,9 +60,11 @@ export default function UnitEconomics() {
             </h3>
             <Tooltip>
               <TooltipTrigger asChild>
-                <Badge variant="outline" className={`text-xs ${marginColorClass}`}>
-                  Target: {marginTarget}%
-                </Badge>
+                <span>
+                  <Badge variant="outline" className={`text-xs ${marginColorClass}`}>
+                    Target: {marginTarget}%
+                  </Badge>
+                </span>
               </TooltipTrigger>
               <TooltipContent><p className="text-xs">Agency margin target from Economics Defaults</p></TooltipContent>
             </Tooltip>
