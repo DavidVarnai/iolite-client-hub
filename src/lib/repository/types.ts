@@ -89,6 +89,13 @@ export interface ServicePackageRepository {
   delete(id: string): void;
 }
 
+export interface SalesBundleRepository {
+  getAll(): SalesBundle[];
+  getById(id: string): SalesBundle | null;
+  save(bundle: SalesBundle): void;
+  delete(id: string): void;
+}
+
 export interface AppRepository {
   clients: ClientRepository;
   onboarding: OnboardingRepository;
@@ -101,4 +108,5 @@ export interface AppRepository {
   economicsDefaults: EconomicsDefaultsRepository;
   serviceLines: ServiceLineRepository;
   servicePackages: ServicePackageRepository;
+  salesBundles: SalesBundleRepository;
 }

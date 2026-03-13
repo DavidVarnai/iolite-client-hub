@@ -255,6 +255,23 @@ function createServicePackageRepo(): ServicePackageRepository {
   };
 }
 
+// ─── Sales Bundle Repository ───
+
+function createSalesBundleRepo(): SalesBundleRepository {
+  if (!localStorage.getItem(KEYS.salesBundles)) save(KEYS.salesBundles, seedSalesBundles);
+  return {
+    getAll: () => load<SalesBundle[]>(KEYS.salesBundles) || [],
+    getById(id) { return this.getAll().find(b => b.id === id) || null; },
+    save(bundle) {
+      const all = this.getAll();
+      const idx = all.findIndex(b => b.id === bundle.id);
+      idx >= 0 ? (all[idx] = bundle) : all.push(bundle);
+      save(KEYS.salesBundles, all);
+    },
+    delete(id) { save(KEYS.salesBundles, this.getAll().filter(b => b.id !== id)); },
+  };
+}
+
 // ─── Compose ───
 
 export function createLocalStorageRepository(): AppRepository {
@@ -270,5 +287,6 @@ export function createLocalStorageRepository(): AppRepository {
     economicsDefaults: createEconomicsDefaultsRepo(),
     serviceLines: createServiceLineRepo(),
     servicePackages: createServicePackageRepo(),
+    salesBundles: createSalesBundleRepo(),
   };
 }

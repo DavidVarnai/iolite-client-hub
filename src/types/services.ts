@@ -99,3 +99,22 @@ export interface ServicePackage {
   internalCost?: number;
   active: boolean;
 }
+
+/* ── Sales Bundle ── */
+
+export interface BundleServiceRef {
+  serviceLineId: string;
+  packageId?: string;       // optional — some included services may not have a package yet
+  label?: string;           // display override, e.g. "Analytics Setup"
+}
+
+export interface SalesBundle {
+  id: string;
+  name: string;
+  description: string;
+  targetClientType: string;
+  includedServices: BundleServiceRef[];
+  optionalAddOns: BundleServiceRef[];
+  estimatedMonthlyPrice?: number;
+  active: boolean;
+}

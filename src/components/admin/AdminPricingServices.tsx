@@ -542,6 +542,249 @@ function PackagesTab() {
 }
 
 /* ══════════════════════════════════════════════
+   BUNDLES SUB-TAB
+   ══════════════════════════════════════════════ */
+
+function BundlesTab() {
+  const [bundles, setBundles] = useState<SalesBundle[]>(() => repository.salesBundles.getAll());
+  const [lines] = useState<ServiceLine[]>(() => repository.serviceLines.getAll().filter(l => l.status === 'active'));
+  const [packages] = useState<ServicePackage[]>(() => repository.servicePackages.getAll().filter(p => p.active));
+  const [dialogOpen, setDialogOpen] = useState(false);
+  const [editId, setEditId] = useState<string | null>(null);
+  const [form, setForm] = useState<Omit<SalesBundle, 'id'>>({
+    name: '', description: '', targetClientType: '',
+    includedServices: [], optionalAddOns: [], active: true,
+  });
+
+  const reload = () => setBundles(repository.salesBundles.getAll());
+
+  const openCreate = () => {
+    setEditId(null);
+    setForm({ name: '', description: '', targetClientType: '', includedServices: [], optionalAddOns: [], active: true });
+    setDialogOpen(true);
+  };
+
+  const openEdit = (b: SalesBundle) => {
+    setEditId(b.id);
+    setForm({
+      name: b.name, description: b.description, targetClientType: b.targetClientType,
+      includedServices: b.includedServices.map(s => ({ ...s })),
+      optionalAddOns: b.optionalAddOns.map(s => ({ ...s })),
+      estimatedMonthlyPrice: b.estimatedMonthlyPrice, active: b.active,
+    });
+    setDialogOpen(true);
+  };
+
+  const handleDuplicate = (b: SalesBundle) => {
+    const dup: SalesBundle = {
+      ...b, id: `bnd_${Date.now()}`, name: `${b.name} (Copy)`,
+      includedServices: b.includedServices.map(s => ({ ...s })),
+      optionalAddOns: b.optionalAddOns.map(s => ({ ...s })),
+    };
+    repository.salesBundles.save(dup);
+    reload();
+  };
+
+  const handleSave = () => {
+    const id = editId || `bnd_${Date.now()}`;
+    const bundle: SalesBundle = { id, ...form };
+    repository.salesBundles.save(bundle);
+    reload(); setDialogOpen(false);
+  };
+
+  const toggleActive = (b: SalesBundle) => {
+    repository.salesBundles.save({ ...b, active: !b.active });
+    reload();
+  };
+
+  /* ── Service ref editor ── */
+  const ServiceRefEditor = ({ items, onChange, label }: { items: BundleServiceRef[]; onChange: (items: BundleServiceRef[]) => void; label: string }) => {
+    const addRef = () => onChange([...items, { serviceLineId: '', label: '' }]);
+    const updateRef = (idx: number, patch: Partial<BundleServiceRef>) => {
+      const updated = [...items];
+      updated[idx] = { ...updated[idx], ...patch };
+      onChange(updated);
+    };
+    const removeRef = (idx: number) => onChange(items.filter((_, i) => i !== idx));
+
+    return (
+      <div className="space-y-2">
+        <div className="flex items-center justify-between">
+          <Label className="text-sm font-medium">{label}</Label>
+          <Button variant="outline" size="sm" onClick={addRef}><Plus className="h-3 w-3 mr-1" /> Add</Button>
+        </div>
+        {items.map((ref, i) => (
+          <div key={i} className="grid grid-cols-[1fr_1fr_1fr_32px] gap-2 items-center">
+            <Select value={ref.serviceLineId || '_custom'} onValueChange={v => updateRef(i, { serviceLineId: v === '_custom' ? '' : v, packageId: undefined })}>
+              <SelectTrigger className="h-8 text-sm"><SelectValue placeholder="Service Line" /></SelectTrigger>
+              <SelectContent>
+                <SelectItem value="_custom">Custom / Other</SelectItem>
+                {lines.map(l => <SelectItem key={l.id} value={l.id}>{l.name}</SelectItem>)}
+              </SelectContent>
+            </Select>
+            {ref.serviceLineId ? (
+              <Select value={ref.packageId || '_none'} onValueChange={v => updateRef(i, { packageId: v === '_none' ? undefined : v })}>
+                <SelectTrigger className="h-8 text-sm"><SelectValue placeholder="Package" /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="_none">No specific package</SelectItem>
+                  {packages.filter(p => p.serviceLineId === ref.serviceLineId).map(p => <SelectItem key={p.id} value={p.id}>{p.name}</SelectItem>)}
+                </SelectContent>
+              </Select>
+            ) : (
+              <Input value={ref.label || ''} onChange={e => updateRef(i, { label: e.target.value })} placeholder="Custom label" className="h-8 text-sm" />
+            )}
+            <Input
+              value={ref.label || ''}
+              onChange={e => updateRef(i, { label: e.target.value })}
+              placeholder="Display label"
+              className="h-8 text-sm"
+            />
+            <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => removeRef(i)}><Trash2 className="h-3.5 w-3.5 text-destructive" /></Button>
+          </div>
+        ))}
+        {items.length === 0 && <p className="text-xs text-muted-foreground">No items added yet.</p>}
+      </div>
+    );
+  };
+
+  const activeBundles = bundles.filter(b => b.active);
+  const archivedBundles = bundles.filter(b => !b.active);
+
+  const renderBundleCard = (b: SalesBundle, isArchived = false) => (
+    <div key={b.id} className={`border rounded-lg p-4 space-y-3 ${isArchived ? 'opacity-60' : ''}`}>
+      <div className="flex items-start justify-between">
+        <div>
+          <div className="font-medium flex items-center gap-2">
+            <Layers className="h-4 w-4 text-primary" />
+            {b.name}
+          </div>
+          <p className="text-xs text-muted-foreground mt-0.5">{b.description}</p>
+        </div>
+        <div className="flex items-center gap-1">
+          {b.estimatedMonthlyPrice && (
+            <Badge variant="outline" className="text-xs mr-2">~{fmt(b.estimatedMonthlyPrice)}/mo</Badge>
+          )}
+          <Button variant="ghost" size="icon" onClick={() => openEdit(b)}><Pencil className="h-4 w-4" /></Button>
+          <Button variant="ghost" size="icon" onClick={() => handleDuplicate(b)}><Copy className="h-4 w-4" /></Button>
+          <Button variant="ghost" size="icon" onClick={() => toggleActive(b)}>
+            {isArchived ? <RotateCcw className="h-4 w-4" /> : <Archive className="h-4 w-4" />}
+          </Button>
+          {isArchived && <Button variant="ghost" size="icon" onClick={() => { repository.salesBundles.delete(b.id); reload(); }}><Trash2 className="h-4 w-4 text-destructive" /></Button>}
+        </div>
+      </div>
+
+      <div className="flex items-center gap-2">
+        <Badge variant="secondary" className="text-xs">{b.targetClientType}</Badge>
+        <span className="text-xs text-muted-foreground">{b.includedServices.length} services · {b.optionalAddOns.length} add-ons</span>
+      </div>
+
+      <div className="grid grid-cols-2 gap-4 text-sm">
+        <div>
+          <p className="text-xs font-medium text-muted-foreground mb-1">Included Services</p>
+          <ul className="space-y-0.5">
+            {b.includedServices.map((s, i) => (
+              <li key={i} className="text-sm flex items-center gap-1.5">
+                <span className="h-1.5 w-1.5 rounded-full bg-primary shrink-0" />
+                {s.label || s.serviceLineId}
+              </li>
+            ))}
+          </ul>
+        </div>
+        {b.optionalAddOns.length > 0 && (
+          <div>
+            <p className="text-xs font-medium text-muted-foreground mb-1">Optional Add-ons</p>
+            <ul className="space-y-0.5">
+              {b.optionalAddOns.map((s, i) => (
+                <li key={i} className="text-sm flex items-center gap-1.5 text-muted-foreground">
+                  <span className="h-1.5 w-1.5 rounded-full bg-muted-foreground/40 shrink-0" />
+                  {s.label || s.serviceLineId}
+                </li>
+              ))}
+            </ul>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+
+  return (
+    <div className="space-y-6">
+      <div className="flex items-center justify-between">
+        <div>
+          <h3 className="text-base font-semibold">Sales Bundles</h3>
+          <p className="text-sm text-muted-foreground">Pre-configured service packages for common client engagements.</p>
+        </div>
+        <Button size="sm" onClick={openCreate}><Plus className="h-4 w-4 mr-1" /> Add Bundle</Button>
+      </div>
+
+      {activeBundles.length > 0 && (
+        <div className="grid gap-4">{activeBundles.map(b => renderBundleCard(b))}</div>
+      )}
+      {activeBundles.length === 0 && (
+        <p className="text-sm text-muted-foreground text-center py-8">No bundles defined yet.</p>
+      )}
+
+      {archivedBundles.length > 0 && (
+        <div>
+          <h4 className="text-sm font-medium text-muted-foreground mb-2">Archived</h4>
+          <div className="grid gap-3">{archivedBundles.map(b => renderBundleCard(b, true))}</div>
+        </div>
+      )}
+
+      {/* Bundle Dialog */}
+      <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
+        <DialogContent className="sm:max-w-2xl max-h-[85vh] overflow-y-auto">
+          <DialogHeader><DialogTitle>{editId ? 'Edit Bundle' : 'New Bundle'}</DialogTitle></DialogHeader>
+          <div className="space-y-5 py-2">
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-1.5">
+                <Label>Bundle Name</Label>
+                <Input value={form.name} onChange={e => setForm(f => ({ ...f, name: e.target.value }))} placeholder="e.g. Ecommerce Growth" />
+              </div>
+              <div className="space-y-1.5">
+                <Label>Target Client Type</Label>
+                <Input value={form.targetClientType} onChange={e => setForm(f => ({ ...f, targetClientType: e.target.value }))} placeholder="e.g. Ecommerce, B2B" />
+              </div>
+            </div>
+            <div className="space-y-1.5">
+              <Label>Description</Label>
+              <Textarea value={form.description} onChange={e => setForm(f => ({ ...f, description: e.target.value }))} rows={2} />
+            </div>
+            <div className="space-y-1.5">
+              <Label>Estimated Monthly Price ($)</Label>
+              <Input type="number" value={form.estimatedMonthlyPrice ?? ''} onChange={e => setForm(f => ({ ...f, estimatedMonthlyPrice: e.target.value ? Number(e.target.value) : undefined }))} placeholder="Optional" className="max-w-xs" />
+            </div>
+
+            <Separator />
+            <ServiceRefEditor
+              label="Included Services"
+              items={form.includedServices}
+              onChange={items => setForm(f => ({ ...f, includedServices: items }))}
+            />
+
+            <Separator />
+            <ServiceRefEditor
+              label="Optional Add-ons"
+              items={form.optionalAddOns}
+              onChange={items => setForm(f => ({ ...f, optionalAddOns: items }))}
+            />
+
+            <div className="flex items-center gap-3">
+              <Switch checked={form.active} onCheckedChange={v => setForm(f => ({ ...f, active: v }))} />
+              <Label>Active</Label>
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setDialogOpen(false)}>Cancel</Button>
+            <Button onClick={handleSave} disabled={!form.name.trim()}>{editId ? 'Save Changes' : 'Create'}</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+    </div>
+  );
+}
+
+/* ══════════════════════════════════════════════
    MAIN COMPONENT
    ══════════════════════════════════════════════ */
 
@@ -558,12 +801,16 @@ export default function AdminPricingServices() {
         <TabsList>
           <TabsTrigger value="service_lines">Service Lines</TabsTrigger>
           <TabsTrigger value="packages">Packages</TabsTrigger>
+          <TabsTrigger value="bundles">Bundles</TabsTrigger>
         </TabsList>
         <TabsContent value="service_lines" className="mt-4">
           <ServiceLinesTab />
         </TabsContent>
         <TabsContent value="packages" className="mt-4">
           <PackagesTab />
+        </TabsContent>
+        <TabsContent value="bundles" className="mt-4">
+          <BundlesTab />
         </TabsContent>
       </Tabs>
     </div>
