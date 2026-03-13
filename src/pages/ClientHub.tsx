@@ -21,7 +21,7 @@ import UnitEconomics from '@/components/client/UnitEconomics';
 
 const TABS = [
   'overview', 'strategy', 'growth-model', 'campaigns', 'performance', 'meetings',
-  'comments', 'tasks', 'communications', 'documents', 'settings',
+  'comments', 'tasks', 'communications', 'documents', 'unit-economics', 'settings',
 ] as const;
 
 type WizardStep = 'setup' | 'discovery' | 'strategy' | 'growth_model' | 'proposal';
