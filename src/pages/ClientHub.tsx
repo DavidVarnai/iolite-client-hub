@@ -1,5 +1,5 @@
 import { useParams, useNavigate } from 'react-router-dom';
-import { seedClients } from '@/data/seed';
+import { getClients } from '@/data/seed';
 import { useState, useMemo } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
 import { getOnboardingForClient } from '@/data/onboardingSeed';
