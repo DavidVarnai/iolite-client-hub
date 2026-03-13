@@ -6,6 +6,19 @@ import { runPerformanceAnalysis } from '@/lib/ai/aiActions';
 import type { AiActionStatus, PerformanceAnalysisResult } from '@/types/ai';
 
 export default function ClientPerformance({ client }: { client: Client }) {
+  const [analysisStatus, setAnalysisStatus] = useState<AiActionStatus>('idle');
+  const [analysisResult, setAnalysisResult] = useState<PerformanceAnalysisResult | null>(null);
+
+  const handleAnalyze = async () => {
+    setAnalysisStatus('loading');
+    try {
+      const result = await runPerformanceAnalysis({ months: [] });
+      setAnalysisResult(result);
+      setAnalysisStatus('success');
+    } catch {
+      setAnalysisStatus('error');
+    }
+  };
   if (client.performance.length === 0) {
     return (
       <div className="p-6 max-w-4xl">
