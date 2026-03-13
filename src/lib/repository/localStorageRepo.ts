@@ -27,6 +27,7 @@ import type {
   EconomicsDefaultsRepository,
   ServiceLineRepository,
   ServicePackageRepository,
+  SalesBundleRepository,
 } from './types';
 import { DEFAULT_ONBOARDING } from '@/types/onboarding';
 import { seedClients } from '@/data/seed';
