@@ -38,6 +38,7 @@ import {
   seedClientEconomics,
   seedEconomicsDefaults,
 } from '@/data/economicsSeed';
+import { seedServiceLines } from '@/data/servicesSeed';
 
 // ─── Helpers ───
 
