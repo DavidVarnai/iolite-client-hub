@@ -100,4 +100,5 @@ export interface AppRepository {
   clientEconomics: ClientEconomicsRepository;
   economicsDefaults: EconomicsDefaultsRepository;
   serviceLines: ServiceLineRepository;
+  servicePackages: ServicePackageRepository;
 }
