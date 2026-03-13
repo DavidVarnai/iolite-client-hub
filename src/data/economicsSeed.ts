@@ -17,7 +17,7 @@ export const seedTeamMembers: TeamMember[] = [
   { id: 'tm3', name: 'Priya Patel', role: 'Marketing Specialist', workerType: 'full_time', status: 'active', notes: 'Handles paid media execution and email marketing.' },
   { id: 'tm4', name: 'Kelly Nguyen', role: 'Designer', workerType: 'contractor', status: 'active', notes: 'Freelance designer allocated across clients.' },
   { id: 'tm5', name: 'Mike Reeves', role: 'Email Specialist', workerType: 'contractor', status: 'active', notes: 'Flat-fee email marketing contractor.' },
-  { id: 'tm6', name: 'Seif Almadi', role: 'Campaign Manager', workerType: 'full_time', status: 'active', notes: 'Paid media campaign management with profit share structure.' },
+  { id: 'tm6', name: 'Seif Almadi', role: 'Campaign Manager', workerType: 'full_time', status: 'active', notes: 'Paid media account manager with base fee per client + threshold share on fees above base.' },
   { id: 'tm7', name: 'Michael Torres', role: 'Retention Lead', workerType: 'full_time', status: 'active', notes: 'Leads retention marketing with revenue share on fees.' },
 ];
 
