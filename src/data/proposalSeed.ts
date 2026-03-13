@@ -33,8 +33,8 @@ export const seedProposals: Proposal[] = [
     updatedAt: '2025-08-28T14:30:00Z',
     generatedAt: '2025-08-28T14:30:00Z',
     selectedBundleId: 'bundle-ecom',
-    selectedServiceLineIds: ['sl3', 'sl7', 'sl5'],
-    selectedPackageIds: ['pkg-pm-growth', 'pkg-email-growth', 'pkg-creative-standard'],
+    selectedServiceLineIds: ['sl3', 'sl7', 'sl4'],
+    selectedPackageIds: ['pkg-pm-growth', 'pkg-em-growth', 'pkg-cr-standard'],
     selectedAddOnIds: ['pkg-seo-starter'],
     summaryData: {
       executiveSummary:
