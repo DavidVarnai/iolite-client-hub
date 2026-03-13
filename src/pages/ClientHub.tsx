@@ -1,7 +1,13 @@
 import { useParams, useNavigate } from 'react-router-dom';
 import { seedClients } from '@/data/seed';
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
+import { getOnboardingForClient } from '@/data/onboardingSeed';
+import { getGrowthModelForClient } from '@/data/growthModelSeed';
+import { computeStageReadiness, getNextStepPrompt, OnboardingData } from '@/types/onboarding';
+import ClientLifecycleBar from '@/components/client/ClientLifecycleBar';
+import NextStepCard from '@/components/client/NextStepCard';
+import ClientOnboardingWizard from '@/components/client/ClientOnboardingWizard';
 import ClientOverview from '@/components/client/Overview';
 import ClientStrategy from '@/components/client/Strategy';
 import MeetingHub from '@/components/client/MeetingHub';
@@ -13,6 +19,7 @@ import ClientDocuments from '@/components/client/Documents';
 import ClientSettings from '@/components/client/ClientSettings';
 import Campaigns from '@/components/client/Campaigns';
 import GrowthModelView from '@/components/client/GrowthModel';
+import { Client } from '@/types';
 
 const TABS = [
   'overview', 'strategy', 'growth-model', 'campaigns', 'performance', 'meetings',
@@ -30,9 +37,24 @@ const stageClass: Record<string, string> = {
 export default function ClientHub() {
   const { clientId, tab } = useParams();
   const navigate = useNavigate();
-  const client = seedClients.find(c => c.id === clientId);
+  const seedClient = seedClients.find(c => c.id === clientId);
+  const [client, setClient] = useState<Client | null>(seedClient || null);
   const [proposalMode, setProposalMode] = useState(false);
+  const [showWizard, setShowWizard] = useState(false);
+  const [onboarding, setOnboarding] = useState<OnboardingData>(() => getOnboardingForClient(clientId || ''));
   const activeTab = (tab && TABS.includes(tab as any)) ? tab : 'overview';
+
+  const hasGrowthModel = !!getGrowthModelForClient(clientId || '');
+
+  const stageProgress = useMemo(() =>
+    client ? computeStageReadiness(onboarding, client, hasGrowthModel) : [],
+    [onboarding, client, hasGrowthModel]
+  );
+
+  const nextStep = useMemo(() =>
+    getNextStepPrompt(onboarding, stageProgress),
+    [onboarding, stageProgress]
+  );
 
   if (!client) {
     return (
@@ -44,9 +66,29 @@ export default function ClientHub() {
 
   const setTab = (t: string) => navigate(`/clients/${clientId}/${t}`);
 
+  const handleActivateClient = () => {
+    setOnboarding(prev => ({
+      ...prev,
+      lifecycleStage: 'active_client',
+      activatedAt: new Date().toISOString(),
+    }));
+  };
+
   const renderTab = () => {
     switch (activeTab) {
-      case 'overview': return <ClientOverview client={client} />;
+      case 'overview': return (
+        <ClientOverview
+          client={client}
+          onboarding={onboarding}
+          stageProgress={stageProgress}
+          nextStep={nextStep}
+          hasGrowthModel={hasGrowthModel}
+          onNavigateTab={setTab}
+          onOpenWizard={() => setShowWizard(true)}
+          onActivateClient={handleActivateClient}
+          onSetProposalMode={() => setProposalMode(true)}
+        />
+      );
       case 'strategy': return <ClientStrategy client={client} proposalMode={proposalMode} />;
       case 'growth-model': return <GrowthModelView client={client} />;
       case 'campaigns': return <Campaigns client={client} />;
@@ -57,7 +99,19 @@ export default function ClientHub() {
       case 'communications': return <ClientCommunications />;
       case 'documents': return <ClientDocuments client={client} />;
       case 'settings': return <ClientSettings client={client} />;
-      default: return <ClientOverview client={client} />;
+      default: return (
+        <ClientOverview
+          client={client}
+          onboarding={onboarding}
+          stageProgress={stageProgress}
+          nextStep={nextStep}
+          hasGrowthModel={hasGrowthModel}
+          onNavigateTab={setTab}
+          onOpenWizard={() => setShowWizard(true)}
+          onActivateClient={handleActivateClient}
+          onSetProposalMode={() => setProposalMode(true)}
+        />
+      );
     }
   };
 
@@ -76,18 +130,45 @@ export default function ClientHub() {
           <span className={stageClass[client.stage]}>{client.stage}</span>
         </div>
 
-        {/* Proposal mode toggle */}
-        <button
-          onClick={() => setProposalMode(!proposalMode)}
-          className={`px-4 py-2 rounded-md text-sm font-medium transition-all ${
-            proposalMode
-              ? 'bg-primary text-primary-foreground'
-              : 'bg-muted text-muted-foreground hover:text-foreground'
-          }`}
-        >
-          {proposalMode ? 'Exit Proposal Mode' : 'Present to Client'}
-        </button>
+        <div className="flex items-center gap-2">
+          <button
+            onClick={() => setShowWizard(true)}
+            className="px-4 py-2 rounded-md text-sm font-medium bg-muted text-muted-foreground hover:text-foreground transition-colors"
+          >
+            Onboarding
+          </button>
+          <button
+            onClick={() => setProposalMode(!proposalMode)}
+            className={`px-4 py-2 rounded-md text-sm font-medium transition-all ${
+              proposalMode
+                ? 'bg-primary text-primary-foreground'
+                : 'bg-muted text-muted-foreground hover:text-foreground'
+            }`}
+          >
+            {proposalMode ? 'Exit Proposal Mode' : 'Present to Client'}
+          </button>
+        </div>
       </div>
+
+      {/* Lifecycle bar */}
+      {!proposalMode && (
+        <ClientLifecycleBar
+          progress={stageProgress}
+          currentStage={onboarding.lifecycleStage}
+          onStageClick={setTab}
+        />
+      )}
+
+      {/* Next step prompt */}
+      {!proposalMode && nextStep && activeTab === 'overview' && (
+        <div className="px-6 pt-4">
+          <NextStepCard
+            message={nextStep.message}
+            action={nextStep.action}
+            onAction={() => nextStep.targetTab && setTab(nextStep.targetTab)}
+          />
+        </div>
+      )}
 
       {/* Tabs */}
       <div className="border-b px-6 flex gap-0 overflow-x-auto">
@@ -116,6 +197,18 @@ export default function ClientHub() {
           {renderTab()}
         </motion.div>
       </AnimatePresence>
+
+      {/* Onboarding wizard */}
+      {showWizard && (
+        <ClientOnboardingWizard
+          client={client}
+          onboarding={onboarding}
+          onUpdateOnboarding={setOnboarding}
+          onUpdateClient={setClient}
+          onClose={() => setShowWizard(false)}
+          onNavigateTab={setTab}
+        />
+      )}
     </div>
   );
 }
