@@ -85,6 +85,7 @@ function ClientHubInner() {
       case 'tasks': return <ClientTasks />;
       case 'communications': return <ClientCommunications />;
       case 'documents': return <ClientDocuments />;
+      case 'unit-economics': return <UnitEconomics />;
       case 'settings': return <ClientSettings onDeleteClient={() => navigate('/clients')} />;
       default: return (
         <ClientOverview
