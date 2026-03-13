@@ -12,7 +12,7 @@ import type {
   ClientEconomics,
   EconomicsDefaults,
 } from '@/types/economics';
-import type { ServiceLine, ServicePackage } from '@/types/services';
+import type { ServiceLine, ServicePackage, SalesBundle } from '@/types/services';
 
 export interface ClientRepository {
   getAll(): Client[];
