@@ -3,6 +3,10 @@ import type { GrowthModel, GrowthModelScenario, MonthlyActual } from '@/types/gr
 import { generateMonths, formatMonth, toForecastVsActualRows } from '@/lib/growthModelTransformers';
 import { calcVariance } from '@/lib/growthModelCalculations';
 import { Input } from '@/components/ui/input';
+import AiActionButton from '@/components/ai/AiActionButton';
+import AiResultPanel from '@/components/ai/AiResultPanel';
+import { runPerformanceAnalysis } from '@/lib/ai/aiActions';
+import type { AiActionStatus, PerformanceAnalysisResult } from '@/types/ai';
 
 interface Props {
   model: GrowthModel;
