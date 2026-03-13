@@ -146,6 +146,11 @@ export default function Clients() {
       comments: [],
       strategySections: [],
       documents: [],
+      contractStart: '',
+      contractEnd: '',
+      notes: '',
+      meetings: [],
+      performance: [],
     };
     addClient(newClient);
     setClients([...getClients()]);
