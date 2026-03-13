@@ -316,7 +316,14 @@ export default function ForecastVsActual({ model, scenario, onUpdate }: Props) {
       setAnalysisStatus('error');
     }
   };
-        <h3 className="text-sm font-semibold text-foreground">Forecast vs Actual Performance</h3>
+
+  return (
+    <div className="p-6 space-y-4">
+      <div className="flex items-center justify-between mb-2">
+        <div className="flex items-center gap-3">
+          <h3 className="text-sm font-semibold text-foreground">Forecast vs Actual Performance</h3>
+          <AiActionButton label="Analyze Performance" status={analysisStatus} onClick={handleAnalyze} variant="compact" />
+        </div>
         <div className="flex items-center gap-4">
           <div className="flex items-center gap-3 text-[10px]">
             <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-emerald-500"></span> Favorable</span>
@@ -343,6 +350,23 @@ export default function ForecastVsActual({ model, scenario, onUpdate }: Props) {
           </div>
         </div>
       </div>
+
+      {/* AI Analysis Result */}
+      {analysisStatus !== 'idle' && (
+        <AiResultPanel
+          title="Performance Analysis"
+          status={analysisStatus}
+          sections={analysisResult ? [
+            { heading: 'Summary', body: analysisResult.summary },
+            { heading: 'Key Drivers', body: analysisResult.keyDrivers },
+            { heading: 'Risks & Issues', body: analysisResult.risks },
+            { heading: 'Recommended Actions', body: analysisResult.recommendedActions },
+          ] : []}
+          onApprove={() => { setAnalysisStatus('idle'); }}
+          onDiscard={() => { setAnalysisStatus('idle'); setAnalysisResult(null); }}
+          approveLabel="Copy to Notes"
+        />
+      )}
 
       {viewMode === 'summary' ? (
         <SummaryView model={model} scenario={scenario} months={months} onUpdate={onUpdate} />
