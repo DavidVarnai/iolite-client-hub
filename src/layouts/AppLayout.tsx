@@ -11,7 +11,7 @@ export default function AppLayout() {
           <header className="context-bar">
             <div className="flex items-center gap-3">
               <SidebarTrigger className="text-muted-foreground hover:text-foreground" />
-              <span className="text-sm font-medium text-muted-foreground">Iolite Client Hub</span>
+              <span className="text-sm font-medium text-muted-foreground">Agency OS</span>
             </div>
           </header>
           <main className="flex-1 overflow-y-auto">

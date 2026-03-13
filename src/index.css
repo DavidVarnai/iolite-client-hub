@@ -4,55 +4,55 @@
 
 @layer base {
   :root {
-    /* Iolite Design System */
+    /* Agency OS – Iolite Ventures Brand */
     --font-sans: 'Inter', system-ui, sans-serif;
     --font-serif: 'Source Serif 4', Georgia, serif;
 
     /* Core palette – all HSL */
     --background: 0 0% 100%;            /* White #FFFFFF */
-    --foreground: 213 12% 10%;          /* Ink #171A1D */
+    --foreground: 0 0% 12%;             /* Near-black #1E1E1E */
 
-    --card: 210 17% 98%;               /* Oyster #F8F9FA */
-    --card-foreground: 213 12% 10%;
+    --card: 220 20% 97%;               /* Light blue-tint panel */
+    --card-foreground: 0 0% 12%;
 
     --popover: 0 0% 100%;
-    --popover-foreground: 213 12% 10%;
+    --popover-foreground: 0 0% 12%;
 
-    --primary: 226 89% 63%;            /* Iolite Blue #4C6EF5 */
+    --primary: 224 57% 34%;            /* Blue 1 #243D87 */
     --primary-foreground: 0 0% 100%;
 
-    --secondary: 210 17% 98%;          /* Oyster */
-    --secondary-foreground: 213 12% 10%;
+    --secondary: 224 39% 52%;          /* Blue 2 #536EB5 */
+    --secondary-foreground: 0 0% 100%;
 
-    --muted: 210 17% 98%;              /* Oyster */
-    --muted-foreground: 200 6% 43%;    /* Slate #687076 */
+    --muted: 220 20% 97%;
+    --muted-foreground: 220 8% 46%;
 
-    --accent: 226 89% 63%;             /* Iolite Blue */
-    --accent-foreground: 0 0% 100%;
+    --accent: 212 57% 75%;             /* Blue 3 #9DBEE4 */
+    --accent-foreground: 0 0% 12%;
 
     --destructive: 0 84% 60%;
     --destructive-foreground: 0 0% 100%;
 
-    --border: 210 14% 89%;             /* Ash #DEE2E6 */
-    --input: 210 14% 89%;
-    --ring: 226 89% 63%;
+    --border: 220 13% 89%;
+    --input: 220 13% 89%;
+    --ring: 224 57% 34%;
 
     --radius: 0.5rem;
 
     /* Extended tokens */
-    --amber: 45 96% 50%;               /* #FAB005 internal indicator */
-    --surface-panel: 210 17% 98%;      /* Oyster for panels */
-    --text-secondary: 200 6% 43%;      /* Slate */
+    --amber: 45 96% 50%;
+    --surface-panel: 220 20% 97%;
+    --text-secondary: 220 8% 46%;
 
     /* Sidebar */
-    --sidebar-background: 210 17% 98%;
-    --sidebar-foreground: 213 12% 10%;
-    --sidebar-primary: 226 89% 63%;
-    --sidebar-primary-foreground: 0 0% 100%;
-    --sidebar-accent: 210 14% 93%;
-    --sidebar-accent-foreground: 213 12% 10%;
-    --sidebar-border: 210 14% 89%;
-    --sidebar-ring: 226 89% 63%;
+    --sidebar-background: 224 57% 34%; /* Blue 1 — dark sidebar */
+    --sidebar-foreground: 0 0% 100%;
+    --sidebar-primary: 212 57% 75%;    /* Blue 3 highlight */
+    --sidebar-primary-foreground: 0 0% 12%;
+    --sidebar-accent: 224 39% 42%;     /* Blue 2 darkened */
+    --sidebar-accent-foreground: 0 0% 100%;
+    --sidebar-border: 224 39% 28%;
+    --sidebar-ring: 212 57% 75%;
   }
 }
 

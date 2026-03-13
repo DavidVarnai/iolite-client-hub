@@ -163,7 +163,7 @@ export default function Clients() {
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-2xl font-semibold tracking-tight">Clients</h1>
-          <p className="text-sm text-muted-foreground mt-1">All client engagements managed by Iolite Ventures.</p>
+          <p className="text-sm text-muted-foreground mt-1">All client engagements managed by your agency.</p>
         </div>
         <button
           onClick={() => setShowNewClient(true)}
