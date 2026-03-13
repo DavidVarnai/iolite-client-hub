@@ -154,6 +154,18 @@ export default function ExecutiveSummary({ model, mode }: Props) {
           ))}
         </div>
 
+        {/* AI Summary Result */}
+        {summaryStatus !== 'idle' && !presenting && (
+          <AiResultPanel
+            title={summaryResult?.title || 'Generated Summary'}
+            status={summaryStatus}
+            sections={summaryResult ? summaryResult.sections.map(s => ({ heading: s.heading, body: s.body })) : []}
+            onApprove={() => { setSummaryStatus('idle'); }}
+            onDiscard={() => { setSummaryStatus('idle'); setSummaryResult(null); }}
+            approveLabel="Save to Narratives"
+          />
+        )}
+
         {/* Charts */}
         <div className="grid grid-cols-2 gap-4">
           {/* Investment vs Revenue */}
