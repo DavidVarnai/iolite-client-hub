@@ -11,7 +11,7 @@ import {
   SidebarMenuItem,
   useSidebar,
 } from '@/components/ui/sidebar';
-import { seedClients } from '@/data/seed';
+import { getClients } from '@/data/seed';
 
 const navItems = [
   { title: 'Dashboard', url: '/' },
