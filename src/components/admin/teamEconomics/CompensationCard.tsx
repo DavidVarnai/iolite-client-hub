@@ -4,8 +4,8 @@
 import { CircleDot, Trash2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import type { CompensationComponent } from '@/types/economics';
-import { COMP_TYPE_LABELS, REVENUE_CATEGORY_LABELS } from '@/types/economics';
+import type { CompensationComponent } from '@/domains/economics';
+import { COMP_TYPE_LABELS, REVENUE_CATEGORY_LABELS } from '@/domains/economics';
 
 function DetailRow({ label, value }: { label: string; value: string }) {
   return (

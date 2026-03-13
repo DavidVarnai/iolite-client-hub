@@ -4,12 +4,12 @@
 import { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { toast } from 'sonner';
 import { repository } from '@/lib/repository';
-import type { CompensationComponent, CompensationComponentType, RevenueCategory } from '@/types/economics';
-import { COMP_TYPE_LABELS, REVENUE_CATEGORY_LABELS } from '@/types/economics';
+import type { CompensationComponent, CompensationComponentType, RevenueCategory } from '@/domains/economics';
+import { COMP_TYPE_LABELS, REVENUE_CATEGORY_LABELS } from '@/domains/economics';
+import { FormRow } from '@/components/ui/common';
 
 interface Props {
   memberId: string;
@@ -48,48 +48,40 @@ export default function CompensationForm({ memberId, onClose, onSaved }: Props) 
   return (
     <div className="bg-background border rounded-md p-4 mb-3 space-y-3">
       <div className="grid grid-cols-2 gap-3">
-        <div>
-          <Label className="text-xs">Component Type</Label>
+        <FormRow label="Component Type">
           <Select value={compType} onValueChange={v => setCompType(v as CompensationComponentType)}>
             <SelectTrigger className="h-9"><SelectValue /></SelectTrigger>
             <SelectContent>
               {Object.entries(COMP_TYPE_LABELS).map(([k, v]) => <SelectItem key={k} value={k}>{v}</SelectItem>)}
             </SelectContent>
           </Select>
-        </div>
+        </FormRow>
         {!isShareType && !isThresholdType && (
-          <div>
-            <Label className="text-xs">
-              {compType === 'hourly' ? 'Hourly Rate ($)' : compType === 'flat_client_fee' ? 'Default Monthly Fee ($)' : 'Monthly Salary ($)'}
-            </Label>
+          <FormRow label={compType === 'hourly' ? 'Hourly Rate ($)' : compType === 'flat_client_fee' ? 'Default Monthly Fee ($)' : 'Monthly Salary ($)'}>
             <Input type="number" value={amount} onChange={e => setAmount(Number(e.target.value))} className="h-9" />
-          </div>
+          </FormRow>
         )}
         {(isShareType || isThresholdType) && (
           <>
-            <div>
-              <Label className="text-xs">Share Percent (%)</Label>
+            <FormRow label="Share Percent (%)">
               <Input type="number" value={sharePercent} onChange={e => setSharePercent(Number(e.target.value))} className="h-9" />
-            </div>
-            <div>
-              <Label className="text-xs">{isThresholdType ? 'Revenue Category' : compType === 'revenue_share' ? 'Revenue Category' : 'Profit Category'}</Label>
+            </FormRow>
+            <FormRow label={isThresholdType ? 'Revenue Category' : compType === 'revenue_share' ? 'Revenue Category' : 'Profit Category'}>
               <Select value={category} onValueChange={v => setCategory(v as RevenueCategory)}>
                 <SelectTrigger className="h-9"><SelectValue /></SelectTrigger>
                 <SelectContent>
                   {Object.entries(REVENUE_CATEGORY_LABELS).map(([k, v]) => <SelectItem key={k} value={k}>{v}</SelectItem>)}
                 </SelectContent>
               </Select>
-            </div>
+            </FormRow>
             {isThresholdType && (
-              <div>
-                <Label className="text-xs">Base Fee Threshold ($)</Label>
+              <FormRow label="Base Fee Threshold ($)">
                 <Input type="number" value={thresholdAmount} onChange={e => setThresholdAmount(e.target.value)} placeholder="e.g. 3000" className="h-9" />
-              </div>
+              </FormRow>
             )}
-            <div>
-              <Label className="text-xs">Cap Amount (optional)</Label>
+            <FormRow label="Cap Amount (optional)">
               <Input type="number" value={capAmount} onChange={e => setCapAmount(e.target.value)} placeholder="No cap" className="h-9" />
-            </div>
+            </FormRow>
           </>
         )}
       </div>

@@ -4,12 +4,11 @@
 import { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { Badge } from '@/components/ui/badge';
 import { toast } from 'sonner';
 import { repository } from '@/lib/repository';
-import type { EconomicsDefaults } from '@/types/economics';
-import { REVENUE_CATEGORY_LABELS, COMP_TYPE_LABELS } from '@/types/economics';
+import type { EconomicsDefaults } from '@/domains/economics';
+import { REVENUE_CATEGORY_LABELS, COMP_TYPE_LABELS } from '@/domains/economics';
+import { PanelSection, FormRow, BadgeList } from '@/components/ui/common';
 
 export default function EconomicsDefaultsPanel() {
   const [defaults, setDefaults] = useState<EconomicsDefaults>(() => repository.economicsDefaults.get());
@@ -26,43 +25,28 @@ export default function EconomicsDefaultsPanel() {
         <p className="text-xs text-muted-foreground mb-4">Global settings for margin targets and economic modeling.</p>
       </div>
 
-      <div className="panel p-5 space-y-4">
-        <h4 className="text-sm font-medium">General</h4>
+      <PanelSection title="General">
         <div className="grid grid-cols-2 gap-4">
-          <div>
-            <Label>Default Currency</Label>
+          <FormRow label="Default Currency">
             <Input value={defaults.currency} onChange={e => setDefaults(d => ({ ...d, currency: e.target.value }))} />
-          </div>
-          <div>
-            <Label>Margin Target (%)</Label>
+          </FormRow>
+          <FormRow label="Margin Target (%)">
             <Input type="number" value={defaults.marginTarget} onChange={e => setDefaults(d => ({ ...d, marginTarget: Number(e.target.value) }))} />
-          </div>
+          </FormRow>
         </div>
-      </div>
+      </PanelSection>
 
-      <div className="panel p-5 space-y-3">
-        <h4 className="text-sm font-medium">Active Revenue Categories</h4>
-        <p className="text-xs text-muted-foreground">Service categories used for revenue tracking and share-based compensation.</p>
-        <div className="flex flex-wrap gap-2">
-          {defaults.defaultRevenueCategories.map(cat => (
-            <Badge key={cat} variant="outline" className="text-xs">
-              {REVENUE_CATEGORY_LABELS[cat]}
-            </Badge>
-          ))}
-        </div>
-      </div>
+      <PanelSection title="Active Revenue Categories" description="Service categories used for revenue tracking and share-based compensation.">
+        <BadgeList
+          items={defaults.defaultRevenueCategories.map(cat => ({ key: cat, label: REVENUE_CATEGORY_LABELS[cat] }))}
+        />
+      </PanelSection>
 
-      <div className="panel p-5 space-y-3">
-        <h4 className="text-sm font-medium">Compensation Types</h4>
-        <p className="text-xs text-muted-foreground">Supported compensation component types for team cost modeling.</p>
-        <div className="flex flex-wrap gap-2">
-          {defaults.defaultCompensationCategories.map(comp => (
-            <Badge key={comp} variant="outline" className="text-xs">
-              {COMP_TYPE_LABELS[comp]}
-            </Badge>
-          ))}
-        </div>
-      </div>
+      <PanelSection title="Compensation Types" description="Supported compensation component types for team cost modeling.">
+        <BadgeList
+          items={defaults.defaultCompensationCategories.map(comp => ({ key: comp, label: COMP_TYPE_LABELS[comp] }))}
+        />
+      </PanelSection>
 
       <Button onClick={handleSave}>Save Defaults</Button>
     </div>
