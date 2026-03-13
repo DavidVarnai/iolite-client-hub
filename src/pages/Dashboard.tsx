@@ -1,5 +1,5 @@
 import { Link } from 'react-router-dom';
-import { seedClients } from '@/data/seed';
+import { repository } from '@/lib/repository';
 import { format } from 'date-fns';
 
 const stageClass: Record<string, string> = {
@@ -11,14 +11,15 @@ const stageClass: Record<string, string> = {
 };
 
 export default function Dashboard() {
-  const activeClients = seedClients.filter(c => c.stage === 'active');
-  const allTasks = seedClients.flatMap(c => c.tasks);
+  const allClients = repository.clients.getAll();
+  const activeClients = allClients.filter(c => c.stage === 'active');
+  const allTasks = allClients.flatMap(c => c.tasks);
   const overdueTasks = allTasks.filter(t => t.status !== 'done' && new Date(t.dueDate) < new Date());
-  const recentMeetings = seedClients
+  const recentMeetings = allClients
     .flatMap(c => c.meetings.map(m => ({ ...m, clientName: c.name, clientId: c.id })))
     .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())
     .slice(0, 5);
-  const unresolvedComments = seedClients.flatMap(c => c.comments.filter(cm => cm.status === 'open'));
+  const unresolvedComments = allClients.flatMap(c => c.comments.filter(cm => cm.status === 'open'));
 
   return (
     <div className="p-6 max-w-6xl mx-auto space-y-8">
@@ -47,7 +48,7 @@ export default function Dashboard() {
         <div className="panel p-5">
           <h2 className="text-sm font-semibold mb-4">Clients</h2>
           <div className="space-y-3">
-            {seedClients.map(client => (
+            {allClients.map(client => (
               <Link
                 key={client.id}
                 to={`/clients/${client.id}`}
@@ -97,7 +98,7 @@ export default function Dashboard() {
         <h2 className="text-sm font-semibold mb-4">Open Tasks</h2>
         <div className="space-y-2">
           {allTasks.filter(t => t.status !== 'done').map(task => {
-            const client = seedClients.find(c => c.tasks.some(ct => ct.id === task.id));
+            const client = allClients.find(c => c.tasks.some(ct => ct.id === task.id));
             const isOverdue = new Date(task.dueDate) < new Date();
             return (
               <div key={task.id} className="flex items-center justify-between py-2 px-3 rounded-md hover:bg-muted/50 transition-colors">

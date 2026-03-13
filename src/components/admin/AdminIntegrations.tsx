@@ -5,6 +5,7 @@ import { Button } from '@/components/ui/button';
 import { Progress } from '@/components/ui/progress';
 import { defaultIntegrations } from '@/data/adminSeed';
 import type { ConfigurationCompleteness } from '@/types/admin';
+import { toast } from '@/hooks/use-toast';
 
 const statusConfig = {
   connected: { icon: CheckCircle2, label: 'Connected', className: 'bg-emerald-500/10 text-emerald-600 border-emerald-500/20' },
@@ -19,6 +20,13 @@ const configLabels: Record<ConfigurationCompleteness, { label: string; percent: 
 };
 
 export default function AdminIntegrations() {
+  const handleIntegrationAction = (label: string, status: string) => {
+    toast({
+      title: status === 'connected' ? `${label} Settings` : `Connect ${label}`,
+      description: 'Integration configuration coming soon.',
+    });
+  };
+
   return (
     <div className="max-w-4xl space-y-6">
       <div>
@@ -80,7 +88,12 @@ export default function AdminIntegrations() {
                       </span>
                     )}
                   </div>
-                  <Button variant="outline" size="sm" className="text-xs">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="text-xs"
+                    onClick={() => handleIntegrationAction(integration.label, integration.status)}
+                  >
                     <ExternalLink className="h-3 w-3 mr-1.5" />
                     {integration.status === 'connected' ? 'Configure' : 'Connect'}
                   </Button>

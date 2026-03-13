@@ -1,9 +1,11 @@
+import { useState } from 'react';
 import { Cpu, Webhook } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
 import { seedAiModules } from '@/data/adminSeed';
 import type { AiModuleMode } from '@/types/admin';
+import { toast } from '@/hooks/use-toast';
 
 const modeConfig: Record<AiModuleMode, { label: string; className: string }> = {
   disabled: { label: 'Disabled', className: 'bg-muted text-muted-foreground' },
@@ -18,6 +20,21 @@ const modeOptions: { value: AiModuleMode; label: string }[] = [
 ];
 
 export default function AdminAutomation() {
+  const [modules, setModules] = useState(() =>
+    seedAiModules.map(m => ({ ...m }))
+  );
+
+  const handleModeChange = (moduleId: string, newMode: AiModuleMode) => {
+    setModules(prev =>
+      prev.map(m => m.moduleId === moduleId ? { ...m, mode: newMode } : m)
+    );
+    const mod = modules.find(m => m.moduleId === moduleId);
+    toast({
+      title: `${mod?.label || 'Module'} updated`,
+      description: `Mode set to ${modeOptions.find(o => o.value === newMode)?.label}.`,
+    });
+  };
+
   return (
     <div className="max-w-4xl space-y-8">
       <div>
@@ -33,8 +50,7 @@ export default function AdminAutomation() {
           <Cpu className="h-4 w-4" /> AI Modules
         </h3>
         <div className="space-y-2">
-          {seedAiModules.map(mod => {
-            const config = modeConfig[mod.mode];
+          {modules.map(mod => {
             return (
               <Card key={mod.moduleId}>
                 <CardHeader className="py-3 px-4 flex-row items-center justify-between space-y-0">
@@ -46,6 +62,7 @@ export default function AdminAutomation() {
                     {modeOptions.map(opt => (
                       <button
                         key={opt.value}
+                        onClick={() => handleModeChange(mod.moduleId, opt.value)}
                         className={`px-2.5 py-1 text-[11px] font-medium rounded-md transition-colors ${
                           mod.mode === opt.value
                             ? 'bg-background text-foreground shadow-sm'

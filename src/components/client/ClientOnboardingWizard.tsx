@@ -44,14 +44,8 @@ function ClientSetupStep() {
       </div>
 
       <div className="grid grid-cols-2 gap-4">
-        <SelectField label="Business Model" value={onboarding.businessModelType || 'other'}
-          options={[
-            { value: 'ecommerce', label: 'Ecommerce' },
-            { value: 'lead_generation', label: 'Lead Generation' },
-            { value: 'hybrid', label: 'Hybrid' },
-            { value: 'other', label: 'Other' },
-          ]}
-          onChange={(v) => updateOnboarding({ ...onboarding, businessModelType: v as BusinessModel })} />
+        <Field label="Website" value={onboarding.website || ''}
+          onChange={(v) => updateOnboarding({ ...onboarding, website: v })} />
         <Field label="Geography" value={onboarding.geography || ''}
           onChange={(v) => updateOnboarding({ ...onboarding, geography: v })} />
       </div>
@@ -73,14 +67,6 @@ function ClientSetupStep() {
           }} />
       </div>
 
-      <SelectField label="Primary Growth Goal" value={onboarding.primaryGrowthGoal || 'revenue_growth'}
-        options={[
-          { value: 'revenue_growth', label: 'Revenue Growth' },
-          { value: 'lead_volume', label: 'Lead Volume' },
-          { value: 'market_expansion', label: 'Market Expansion' },
-          { value: 'brand_awareness', label: 'Brand Awareness' },
-        ]}
-        onChange={(v) => updateOnboarding({ ...onboarding, primaryGrowthGoal: v as GrowthGoal })} />
 
       <div>
         <label className="text-xs font-medium text-muted-foreground uppercase tracking-wider mb-1.5 block">Notes</label>
