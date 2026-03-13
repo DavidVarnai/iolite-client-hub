@@ -116,6 +116,6 @@ export const seedEconomicsDefaults: EconomicsDefaults = {
     'retention_marketing', 'web_design', 'creative', 'development', 'seo', 'copywriting', 'analytics',
   ],
   defaultCompensationCategories: [
-    'salary_allocation', 'flat_client_fee', 'hourly', 'revenue_share', 'profit_share',
+    'salary_allocation', 'flat_client_fee', 'hourly', 'revenue_share', 'profit_share', 'threshold_share',
   ],
 };

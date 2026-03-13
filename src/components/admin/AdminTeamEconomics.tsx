@@ -358,18 +358,21 @@ function CompensationForm({ memberId, onClose, onSaved }: { memberId: string; on
   const [sharePercent, setSharePercent] = useState(10);
   const [category, setCategory] = useState<RevenueCategory>('paid_media_management');
   const [capAmount, setCapAmount] = useState<string>('');
+  const [thresholdAmount, setThresholdAmount] = useState<string>('');
 
   const isShareType = compType === 'revenue_share' || compType === 'profit_share';
+  const isThresholdType = compType === 'threshold_share';
 
   const handleSave = () => {
     const comp: CompensationComponent = {
       id: `cc_${Date.now()}`,
       teamMemberId: memberId,
       componentType: compType,
-      amount: isShareType ? 0 : amount,
-      sharePercent: isShareType ? sharePercent / 100 : undefined,
-      appliesToCategory: isShareType ? category : undefined,
+      amount: (isShareType || isThresholdType) ? 0 : amount,
+      sharePercent: (isShareType || isThresholdType) ? sharePercent / 100 : undefined,
+      appliesToCategory: (isShareType || isThresholdType) ? category : undefined,
       capAmount: capAmount ? Number(capAmount) : undefined,
+      thresholdAmount: isThresholdType ? Number(thresholdAmount) : undefined,
       isDefault: true,
     };
     repository.compensation.save(comp);
@@ -389,7 +392,7 @@ function CompensationForm({ memberId, onClose, onSaved }: { memberId: string; on
             </SelectContent>
           </Select>
         </div>
-        {!isShareType && (
+        {!isShareType && !isThresholdType && (
           <div>
             <Label className="text-xs">
               {compType === 'hourly' ? 'Hourly Rate ($)' : compType === 'flat_client_fee' ? 'Default Monthly Fee ($)' : 'Monthly Salary ($)'}
@@ -397,14 +400,14 @@ function CompensationForm({ memberId, onClose, onSaved }: { memberId: string; on
             <Input type="number" value={amount} onChange={e => setAmount(Number(e.target.value))} className="h-9" />
           </div>
         )}
-        {isShareType && (
+        {(isShareType || isThresholdType) && (
           <>
             <div>
               <Label className="text-xs">Share Percent (%)</Label>
               <Input type="number" value={sharePercent} onChange={e => setSharePercent(Number(e.target.value))} className="h-9" />
             </div>
             <div>
-              <Label className="text-xs">{compType === 'revenue_share' ? 'Revenue Category' : 'Profit Category'}</Label>
+              <Label className="text-xs">{isThresholdType ? 'Revenue Category' : compType === 'revenue_share' ? 'Revenue Category' : 'Profit Category'}</Label>
               <Select value={category} onValueChange={v => setCategory(v as RevenueCategory)}>
                 <SelectTrigger className="h-9"><SelectValue /></SelectTrigger>
                 <SelectContent>
@@ -412,6 +415,12 @@ function CompensationForm({ memberId, onClose, onSaved }: { memberId: string; on
                 </SelectContent>
               </Select>
             </div>
+            {isThresholdType && (
+              <div>
+                <Label className="text-xs">Base Fee Threshold ($)</Label>
+                <Input type="number" value={thresholdAmount} onChange={e => setThresholdAmount(e.target.value)} placeholder="e.g. 3000" className="h-9" />
+              </div>
+            )}
             <div>
               <Label className="text-xs">Cap Amount (optional)</Label>
               <Input type="number" value={capAmount} onChange={e => setCapAmount(e.target.value)} placeholder="No cap" className="h-9" />

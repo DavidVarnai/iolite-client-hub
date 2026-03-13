@@ -178,6 +178,21 @@ export function computeClientTeamCosts(
           });
           break;
         }
+        case 'threshold_share': {
+          const pct = comp.sharePercent ?? 0;
+          const threshold = comp.thresholdAmount ?? 0;
+          const categoryLabel = comp.appliesToCategory ? REVENUE_CATEGORY_LABELS[comp.appliesToCategory] : 'N/A';
+          const rev = comp.appliesToCategory ? (revenueMap.get(comp.appliesToCategory) ?? 0) : 0;
+          const cost = calcThresholdShare(pct, rev, threshold, comp.capAmount);
+          const incremental = Math.max(0, rev - threshold);
+          totalCost += cost;
+          formulaLines.push({
+            label: 'Threshold Share',
+            formula: `${(pct * 100).toFixed(0)}% of ${categoryLabel} above $${threshold.toLocaleString()} threshold · incremental $${incremental.toLocaleString()}${comp.capAmount ? ` · cap $${comp.capAmount.toLocaleString()}` : ''}`,
+            amount: cost,
+          });
+          break;
+        }
       }
     }
 
