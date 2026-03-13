@@ -64,7 +64,7 @@ export const seedAssignments: ClientTeamAssignment[] = [
   { id: 'ca12', teamMemberId: 'tm2', clientId: 'c3', roleOnClient: 'Project Manager', allocationPercent: 30, isActive: true, notes: '' },
   { id: 'ca13', teamMemberId: 'tm3', clientId: 'c3', roleOnClient: 'Social Media Specialist', allocationPercent: 50, isActive: true, notes: '' },
   { id: 'ca14', teamMemberId: 'tm4', clientId: 'c3', roleOnClient: 'Designer', allocationPercent: 30, isActive: true, notes: '' },
-  { id: 'ca15', teamMemberId: 'tm6', clientId: 'c3', roleOnClient: 'Campaign Manager', allocationPercent: 50, isActive: true, notes: '' },
+  { id: 'ca15', teamMemberId: 'tm6', clientId: 'c3', roleOnClient: 'Campaign Manager', flatFeeOverride: 2000, isActive: true, notes: '' },
 ];
 
 /* ── Client Economics (Revenue + Other Costs) ── */
