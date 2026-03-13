@@ -73,28 +73,6 @@ function NewClientModal({ onClose, onCreate }: { onClose: () => void; onCreate: 
                 className="w-full rounded-md border bg-background px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-ring" />
             </div>
           </div>
-          <div className="grid grid-cols-2 gap-4">
-            <div>
-              <label className="text-xs font-medium text-muted-foreground uppercase tracking-wider mb-1.5 block">Business Model</label>
-              <select value={businessModel} onChange={(e) => setBusinessModel(e.target.value)}
-                className="w-full rounded-md border bg-background px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-ring">
-                <option value="ecommerce">Ecommerce</option>
-                <option value="lead_generation">Lead Generation</option>
-                <option value="hybrid">Hybrid</option>
-                <option value="other">Other</option>
-              </select>
-            </div>
-            <div>
-              <label className="text-xs font-medium text-muted-foreground uppercase tracking-wider mb-1.5 block">Primary Growth Goal</label>
-              <select value={growthGoal} onChange={(e) => setGrowthGoal(e.target.value)}
-                className="w-full rounded-md border bg-background px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-ring">
-                <option value="revenue_growth">Revenue Growth</option>
-                <option value="lead_volume">Lead Volume</option>
-                <option value="market_expansion">Market Expansion</option>
-                <option value="brand_awareness">Brand Awareness</option>
-              </select>
-            </div>
-          </div>
         </div>
 
         <div className="flex items-center justify-end gap-2 px-6 py-4 border-t">
