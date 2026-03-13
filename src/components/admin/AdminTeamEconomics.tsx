@@ -285,6 +285,7 @@ function CompensationPanel({ memberId, compensation, onChanged }: { memberId: st
 
 function CompensationCard({ comp, onDelete }: { comp: CompensationComponent; onDelete: () => void }) {
   const isShare = comp.componentType === 'revenue_share' || comp.componentType === 'profit_share';
+  const isThreshold = comp.componentType === 'threshold_share';
 
   return (
     <div className="bg-background rounded-md border px-4 py-3 text-sm">
@@ -315,6 +316,16 @@ function CompensationCard({ comp, onDelete }: { comp: CompensationComponent; onD
                   label={comp.componentType === 'revenue_share' ? 'Revenue Category' : 'Profit Category'}
                   value={comp.appliesToCategory ? REVENUE_CATEGORY_LABELS[comp.appliesToCategory] : 'Not set'}
                 />
+                {comp.capAmount != null && (
+                  <DetailRow label="Cap" value={`$${comp.capAmount.toLocaleString()}`} />
+                )}
+              </>
+            )}
+            {isThreshold && (
+              <>
+                <DetailRow label="Share %" value={`${((comp.sharePercent || 0) * 100).toFixed(0)}%`} />
+                <DetailRow label="Revenue Category" value={comp.appliesToCategory ? REVENUE_CATEGORY_LABELS[comp.appliesToCategory] : 'Not set'} />
+                <DetailRow label="Base Threshold" value={`$${(comp.thresholdAmount || 0).toLocaleString()}`} />
                 {comp.capAmount != null && (
                   <DetailRow label="Cap" value={`$${comp.capAmount.toLocaleString()}`} />
                 )}
