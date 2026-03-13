@@ -1,4 +1,9 @@
+import { useState } from 'react';
 import { Client, SERVICE_CHANNEL_LABELS } from '@/types';
+import AiActionButton from '@/components/ai/AiActionButton';
+import AiResultPanel from '@/components/ai/AiResultPanel';
+import { runPerformanceAnalysis } from '@/lib/ai/aiActions';
+import type { AiActionStatus, PerformanceAnalysisResult } from '@/types/ai';
 
 export default function ClientPerformance({ client }: { client: Client }) {
   if (client.performance.length === 0) {
