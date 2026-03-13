@@ -12,6 +12,7 @@ import type {
   ClientEconomics,
   EconomicsDefaults,
 } from '@/types/economics';
+import type { ServiceLine } from '@/types/services';
 
 export interface ClientRepository {
   getAll(): Client[];
