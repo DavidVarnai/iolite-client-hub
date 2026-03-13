@@ -59,6 +59,18 @@ export function calcProfitShare(
   return cap ? Math.min(raw, cap) : raw;
 }
 
+/** Threshold share: share applies only to revenue above a base threshold. */
+export function calcThresholdShare(
+  sharePercent: number,
+  relevantRevenue: number,
+  thresholdAmount: number,
+  cap?: number
+): number {
+  const incremental = Math.max(0, relevantRevenue - thresholdAmount);
+  const raw = sharePercent * incremental;
+  return cap ? Math.min(raw, cap) : raw;
+}
+
 export function calcMarginSummary(
   totalRevenue: number,
   totalTeamCost: number,
