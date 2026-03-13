@@ -289,10 +289,33 @@ function DetailedView({ model, scenario, months, onUpdate }: Props & { months: s
 export default function ForecastVsActual({ model, scenario, onUpdate }: Props) {
   const [viewMode, setViewMode] = useState<ViewMode>('summary');
   const months = useMemo(() => generateMonths(model.startMonth, model.monthCount), [model]);
+  const [analysisStatus, setAnalysisStatus] = useState<AiActionStatus>('idle');
+  const [analysisResult, setAnalysisResult] = useState<PerformanceAnalysisResult | null>(null);
 
-  return (
-    <div className="p-6 space-y-4">
-      <div className="flex items-center justify-between mb-2">
+  const rows = useMemo(() => toForecastVsActualRows(scenario, model.actuals, months, model.funnelType), [scenario, model.actuals, months, model.funnelType]);
+
+  const handleAnalyze = async () => {
+    setAnalysisStatus('loading');
+    try {
+      const monthData = months.map(month => {
+        const monthRows = rows.filter(r => r.month === month);
+        return {
+          month,
+          forecastSpend: monthRows.reduce((s, r) => s + r.forecastSpend, 0),
+          actualSpend: monthRows.reduce((s, r) => s + r.actualSpend, 0),
+          forecastResults: monthRows.reduce((s, r) => s + r.forecastResults, 0),
+          actualResults: monthRows.reduce((s, r) => s + r.actualResults, 0),
+          forecastRevenue: monthRows.reduce((s, r) => s + r.forecastRevenue, 0),
+          actualRevenue: monthRows.reduce((s, r) => s + r.actualRevenue, 0),
+        };
+      });
+      const result = await runPerformanceAnalysis({ months: monthData });
+      setAnalysisResult(result);
+      setAnalysisStatus('success');
+    } catch {
+      setAnalysisStatus('error');
+    }
+  };
         <h3 className="text-sm font-semibold text-foreground">Forecast vs Actual Performance</h3>
         <div className="flex items-center gap-4">
           <div className="flex items-center gap-3 text-[10px]">
