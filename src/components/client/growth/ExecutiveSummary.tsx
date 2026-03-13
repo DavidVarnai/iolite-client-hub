@@ -30,6 +30,28 @@ const COLORS = [
 export default function ExecutiveSummary({ model, mode }: Props) {
   const [presenting, setPresenting] = useState(false);
 
+  const [summaryStatus, setSummaryStatus] = useState<AiActionStatus>('idle');
+  const [summaryResult, setSummaryResult] = useState<SummaryWriterResult | null>(null);
+  const [summaryType, setSummaryType] = useState<SummaryType>('proposal');
+
+  const handleGenerateSummary = async (type: SummaryType) => {
+    setSummaryType(type);
+    setSummaryStatus('loading');
+    try {
+      const result = await runSummaryWriter({
+        summaryType: type,
+        clientName: model.name,
+        investmentTotal: rollups.totalInvestment,
+        mediaTotal: rollups.totalMediaBudget,
+        projectedRevenue: rollups.forecastRevenue,
+      });
+      setSummaryResult(result);
+      setSummaryStatus('success');
+    } catch {
+      setSummaryStatus('error');
+    }
+  };
+
   // In presentation mode, always filter to client-visible data
   const displayModel = useMemo(() => {
     if (presenting || mode === 'planning') return filterClientVisible(model);
