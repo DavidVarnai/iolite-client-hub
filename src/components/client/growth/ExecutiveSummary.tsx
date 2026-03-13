@@ -137,7 +137,6 @@ export default function ExecutiveSummary({ model, mode }: Props) {
                 Present to Client
               </button>
             </div>
-            </button>
           )}
         </div>
 
