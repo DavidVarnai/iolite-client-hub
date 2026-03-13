@@ -35,21 +35,8 @@ export function AppSidebar() {
     <Sidebar collapsible="icon">
       <SidebarContent>
         {/* Brand */}
-        <div className="px-4 py-5 border-b border-sidebar-border">
-          {!collapsed && (
-            <div className="flex items-center gap-2.5">
-              <img src={ioliteLogo} alt="Iolite Ventures" className="w-7 h-7 object-contain" />
-              <div>
-                <h1 className="text-sm font-semibold tracking-tight text-sidebar-foreground">Agency OS</h1>
-                <p className="text-[10px] text-sidebar-foreground/60">by Iolite Ventures</p>
-              </div>
-            </div>
-          )}
-          {collapsed && (
-            <div className="flex items-center justify-center">
-              <img src={ioliteLogo} alt="Iolite Ventures" className="w-7 h-7 object-contain" />
-            </div>
-          )}
+        <div className="px-4 py-5 border-b border-sidebar-border flex items-center justify-center">
+          <img src={ioliteLogo} alt="Iolite Ventures" className={collapsed ? "h-7 object-contain" : "h-10 object-contain"} />
         </div>
 
         {/* Main navigation */}
