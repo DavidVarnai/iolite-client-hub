@@ -81,6 +81,14 @@ export interface ServiceLineRepository {
   delete(id: string): void;
 }
 
+export interface ServicePackageRepository {
+  getAll(): ServicePackage[];
+  getByServiceLine(serviceLineId: string): ServicePackage[];
+  getById(id: string): ServicePackage | null;
+  save(pkg: ServicePackage): void;
+  delete(id: string): void;
+}
+
 export interface AppRepository {
   clients: ClientRepository;
   onboarding: OnboardingRepository;
