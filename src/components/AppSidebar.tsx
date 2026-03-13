@@ -88,6 +88,30 @@ export function AppSidebar() {
           </SidebarGroup>
         )}
 
+        {/* Admin — only visible to admin users */}
+        {isAdminUser(currentUser.role) && (
+          <SidebarGroup>
+            <SidebarGroupLabel className="text-[11px] uppercase tracking-wider text-muted-foreground font-medium">
+              System
+            </SidebarGroupLabel>
+            <SidebarGroupContent>
+              <SidebarMenu>
+                <SidebarMenuItem>
+                  <SidebarMenuButton asChild>
+                    <NavLink
+                      to="/admin"
+                      className="text-sm px-3 py-2 rounded-md hover:bg-sidebar-accent transition-colors"
+                      activeClassName="bg-sidebar-accent text-primary font-medium"
+                    >
+                      {!collapsed && <span>Admin</span>}
+                    </NavLink>
+                  </SidebarMenuButton>
+                </SidebarMenuItem>
+              </SidebarMenu>
+            </SidebarGroupContent>
+          </SidebarGroup>
+        )}
+
         {/* Recent clients */}
         {!collapsed && (
           <SidebarGroup>

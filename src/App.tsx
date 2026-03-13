@@ -26,6 +26,7 @@ const App = () => (
             <Route path="/clients/:clientId/:tab" element={<ClientHub />} />
             <Route path="/templates" element={<Templates />} />
             <Route path="/library" element={<InternalLibrary />} />
+            <Route path="/admin" element={<AdminHub />} />
           </Route>
           <Route path="*" element={<NotFound />} />
         </Routes>
