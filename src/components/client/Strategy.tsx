@@ -1,6 +1,10 @@
 import { Client, SERVICE_CHANNEL_LABELS, StrategySection } from '@/types';
 import { useState } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
+import AiActionButton from '@/components/ai/AiActionButton';
+import AiResultPanel from '@/components/ai/AiResultPanel';
+import { runStrategyDraft } from '@/lib/ai/aiActions';
+import type { AiActionStatus, StrategyDraftResult } from '@/types/ai';
 
 function StrategySectionCard({ section, proposalMode }: { section: StrategySection; proposalMode: boolean }) {
   const [showInternal, setShowInternal] = useState(false);
