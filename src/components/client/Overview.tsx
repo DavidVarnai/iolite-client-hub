@@ -1,8 +1,13 @@
+import { useState } from 'react';
 import { Client, SERVICE_CHANNEL_LABELS } from '@/types';
 import { OnboardingData, ClientLifecycleProgress, getProposalChecklist, LIFECYCLE_STAGES } from '@/types/onboarding';
 import { format } from 'date-fns';
 import { Check, Circle, Rocket, Settings, ArrowRight, ChevronRight } from 'lucide-react';
 import ProposalReadinessChecklist from './ProposalReadinessChecklist';
+import AiActionButton from '@/components/ai/AiActionButton';
+import AiResultPanel from '@/components/ai/AiResultPanel';
+import { runMarketResearch } from '@/lib/ai/aiActions';
+import type { AiActionStatus, MarketResearchResult } from '@/types/ai';
 
 interface Props {
   client: Client;
