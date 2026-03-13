@@ -25,7 +25,8 @@ export function AppSidebar() {
   const collapsed = state === 'collapsed';
   const location = useLocation();
 
-  const activeClient = seedClients.find(c =>
+  const clients = getClients();
+  const activeClient = clients.find(c =>
     location.pathname.startsWith(`/clients/${c.id}`)
   );
 
