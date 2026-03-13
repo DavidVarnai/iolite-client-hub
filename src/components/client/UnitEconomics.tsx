@@ -2,7 +2,7 @@
  * Client Unit Economics tab — revenue, team cost allocation, other costs, margin summary.
  */
 import { useState, useMemo } from 'react';
-import { DollarSign, Users, TrendingUp, TrendingDown, Pencil, Plus, Trash2, X } from 'lucide-react';
+import { DollarSign, Users, TrendingUp, TrendingDown, Pencil, Plus, Trash2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -10,7 +10,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { toast } from 'sonner';
 import { repository } from '@/lib/repository';
 import { useClientContext } from '@/contexts/ClientContext';
-import { computeClientTeamCosts, calcMarginSummary, type TeamMemberCostLine } from '@/lib/economicsCalculations';
+import { computeClientTeamCosts, calcMarginSummary } from '@/lib/economicsCalculations';
 import type { ClientEconomics, ClientRevenueEntry, OtherCostEntry, RevenueCategory } from '@/types/economics';
 import { REVENUE_CATEGORY_LABELS } from '@/types/economics';
 
@@ -39,7 +39,11 @@ export default function UnitEconomics() {
     repository.clientEconomics.save(updated);
   };
 
-  const marginColor = margin.estimatedMarginPercent >= 50 ? 'text-green-600' : margin.estimatedMarginPercent >= 30 ? 'text-amber-600' : 'text-destructive';
+  const marginColorClass = margin.estimatedMarginPercent >= 50
+    ? 'text-primary'
+    : margin.estimatedMarginPercent >= 30
+      ? 'text-muted-foreground'
+      : 'text-destructive';
 
   return (
     <div className="p-6 space-y-6">
@@ -53,10 +57,19 @@ export default function UnitEconomics() {
           <SummaryCard label="Team Cost" value={`$${totalTeamCost.toLocaleString()}`} sub="/month" />
           <SummaryCard label="Other Costs" value={`$${totalOtherCosts.toLocaleString()}`} sub="/month" />
           <SummaryCard label="Total Cost" value={`$${margin.totalEstimatedCost.toLocaleString()}`} sub="/month" />
-          <SummaryCard label="Gross Profit" value={`$${margin.estimatedGrossProfit.toLocaleString()}`} sub="/month" icon={margin.estimatedGrossProfit >= 0 ? <TrendingUp className="h-4 w-4 text-green-600" /> : <TrendingDown className="h-4 w-4 text-destructive" />} />
+          <SummaryCard
+            label="Gross Profit"
+            value={`$${margin.estimatedGrossProfit.toLocaleString()}`}
+            sub="/month"
+            icon={margin.estimatedGrossProfit >= 0
+              ? <TrendingUp className="h-4 w-4 text-primary" />
+              : <TrendingDown className="h-4 w-4 text-destructive" />}
+          />
           <div className="text-center">
             <p className="text-xs text-muted-foreground mb-1">Est. Margin</p>
-            <p className={`text-2xl font-bold ${marginColor}`}>{margin.estimatedMarginPercent.toFixed(1)}%</p>
+            <p className={`text-2xl font-bold ${marginColorClass}`}>
+              {margin.estimatedMarginPercent.toFixed(1)}%
+            </p>
           </div>
         </div>
       </div>
@@ -74,13 +87,15 @@ export default function UnitEconomics() {
           <RevenueEditor economics={economics} onSave={persistEconomics} />
         ) : (
           <div className="space-y-2">
-            {economics.revenueEntries.length === 0 && <p className="text-sm text-muted-foreground italic">No revenue entries. Click Edit to add.</p>}
+            {economics.revenueEntries.length === 0 && (
+              <p className="text-sm text-muted-foreground italic">No revenue entries. Click Edit to add.</p>
+            )}
             {economics.revenueEntries.map((r, i) => (
               <div key={i} className="flex items-center justify-between bg-muted/30 rounded-md px-4 py-2.5 text-sm">
                 <span>{REVENUE_CATEGORY_LABELS[r.category] || r.category}</span>
                 <span className="font-medium">${r.monthlyAmount.toLocaleString()}/mo</span>
               </div>
-            )))}
+            ))}
           </div>
         )}
       </div>
@@ -90,7 +105,9 @@ export default function UnitEconomics() {
         <h3 className="text-base font-semibold mb-4 flex items-center gap-2">
           <Users className="h-4 w-4 text-primary" /> Team Cost Allocation
         </h3>
-        {teamCostLines.length === 0 && <p className="text-sm text-muted-foreground italic">No team members assigned to this client.</p>}
+        {teamCostLines.length === 0 && (
+          <p className="text-sm text-muted-foreground italic">No team members assigned to this client.</p>
+        )}
         <div className="space-y-2">
           {teamCostLines.map(line => (
             <div key={line.teamMemberId} className="flex items-center justify-between bg-muted/30 rounded-md px-4 py-3 text-sm">
@@ -101,7 +118,7 @@ export default function UnitEconomics() {
               </div>
               <span className="font-semibold">${line.estimatedMonthlyCost.toLocaleString()}/mo</span>
             </div>
-          )))}
+          ))}
         </div>
       </div>
 
@@ -118,13 +135,15 @@ export default function UnitEconomics() {
           <OtherCostsEditor economics={economics} onSave={persistEconomics} />
         ) : (
           <div className="space-y-2">
-            {economics.otherCosts.length === 0 && <p className="text-sm text-muted-foreground italic">No other costs. Click Edit to add software, tools, or vendor costs.</p>}
+            {economics.otherCosts.length === 0 && (
+              <p className="text-sm text-muted-foreground italic">No other costs. Click Edit to add software, tools, or vendor costs.</p>
+            )}
             {economics.otherCosts.map(c => (
               <div key={c.id} className="flex items-center justify-between bg-muted/30 rounded-md px-4 py-2.5 text-sm">
                 <span>{c.label}</span>
                 <span className="font-medium">${c.monthlyAmount.toLocaleString()}/mo</span>
               </div>
-            )))}
+            ))}
           </div>
         )}
       </div>
@@ -155,7 +174,9 @@ function RevenueEditor({ economics, onSave }: { economics: ClientEconomics; onSa
   const [newAmt, setNewAmt] = useState(0);
 
   const usedCats = new Set(entries.map(e => e.category));
-  const availableCats = Object.keys(REVENUE_CATEGORY_LABELS).filter(k => !usedCats.has(k as RevenueCategory)) as RevenueCategory[];
+  const availableCats = Object.keys(REVENUE_CATEGORY_LABELS).filter(
+    k => !usedCats.has(k as RevenueCategory)
+  ) as RevenueCategory[];
 
   const handleAdd = () => {
     if (newAmt <= 0) return;
@@ -163,7 +184,9 @@ function RevenueEditor({ economics, onSave }: { economics: ClientEconomics; onSa
     setEntries(updated);
     onSave({ ...economics, revenueEntries: updated });
     setNewAmt(0);
-    if (availableCats.length > 1) setNewCat(availableCats.find(c => c !== newCat) || availableCats[0]);
+    if (availableCats.length > 1) {
+      setNewCat(availableCats.find(c => c !== newCat) || availableCats[0]);
+    }
   };
 
   const handleRemove = (idx: number) => {
@@ -184,12 +207,17 @@ function RevenueEditor({ economics, onSave }: { economics: ClientEconomics; onSa
       {entries.map((r, i) => (
         <div key={i} className="flex items-center gap-3">
           <span className="text-sm flex-1">{REVENUE_CATEGORY_LABELS[r.category]}</span>
-          <Input type="number" className="w-32 h-9" value={r.monthlyAmount} onChange={e => handleUpdate(i, Number(e.target.value))} />
+          <Input
+            type="number"
+            className="w-32 h-9"
+            value={r.monthlyAmount}
+            onChange={e => handleUpdate(i, Number(e.target.value))}
+          />
           <Button variant="ghost" size="icon" className="h-8 w-8 text-destructive" onClick={() => handleRemove(i)}>
             <Trash2 className="h-3.5 w-3.5" />
           </Button>
         </div>
-      )))}
+      ))}
       {availableCats.length > 0 && (
         <div className="flex items-end gap-3 pt-2 border-t">
           <div className="flex-1">
@@ -197,7 +225,9 @@ function RevenueEditor({ economics, onSave }: { economics: ClientEconomics; onSa
             <Select value={newCat} onValueChange={v => setNewCat(v as RevenueCategory)}>
               <SelectTrigger className="h-9"><SelectValue /></SelectTrigger>
               <SelectContent>
-                {availableCats.map(k => <SelectItem key={k} value={k}>{REVENUE_CATEGORY_LABELS[k]}</SelectItem>)}
+                {availableCats.map(k => (
+                  <SelectItem key={k} value={k}>{REVENUE_CATEGORY_LABELS[k]}</SelectItem>
+                ))}
               </SelectContent>
             </Select>
           </div>
@@ -244,7 +274,7 @@ function OtherCostsEditor({ economics, onSave }: { economics: ClientEconomics; o
             <Trash2 className="h-3.5 w-3.5" />
           </Button>
         </div>
-      )))}
+      ))}
       <div className="flex items-end gap-3 pt-2 border-t">
         <div className="flex-1">
           <Label className="text-xs">Label</Label>
