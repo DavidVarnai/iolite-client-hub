@@ -5,13 +5,13 @@ import { useState } from 'react';
 import { X } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Textarea } from '@/components/ui/textarea';
 import { toast } from 'sonner';
 import { repository } from '@/lib/repository';
-import type { TeamMember, WorkerType, TeamMemberStatus } from '@/types/economics';
-import { WORKER_TYPE_LABELS } from '@/types/economics';
+import type { TeamMember, WorkerType, TeamMemberStatus } from '@/domains/economics';
+import { WORKER_TYPE_LABELS } from '@/domains/economics';
+import { FormRow } from '@/components/ui/common';
 
 interface Props {
   memberId: string | null;
@@ -50,19 +50,21 @@ export default function TeamMemberForm({ memberId, onClose, onSaved }: Props) {
         <Button variant="ghost" size="icon" className="h-7 w-7" onClick={onClose}><X className="h-4 w-4" /></Button>
       </div>
       <div className="grid grid-cols-2 gap-4">
-        <div><Label>Name</Label><Input value={name} onChange={e => setName(e.target.value)} /></div>
-        <div><Label>Role / Title</Label><Input value={role} onChange={e => setRole(e.target.value)} /></div>
-        <div>
-          <Label>Worker Type</Label>
+        <FormRow label="Name">
+          <Input value={name} onChange={e => setName(e.target.value)} />
+        </FormRow>
+        <FormRow label="Role / Title">
+          <Input value={role} onChange={e => setRole(e.target.value)} />
+        </FormRow>
+        <FormRow label="Worker Type">
           <Select value={workerType} onValueChange={v => setWorkerType(v as WorkerType)}>
             <SelectTrigger><SelectValue /></SelectTrigger>
             <SelectContent>
               {Object.entries(WORKER_TYPE_LABELS).map(([k, v]) => <SelectItem key={k} value={k}>{v}</SelectItem>)}
             </SelectContent>
           </Select>
-        </div>
-        <div>
-          <Label>Status</Label>
+        </FormRow>
+        <FormRow label="Status">
           <Select value={status} onValueChange={v => setStatus(v as TeamMemberStatus)}>
             <SelectTrigger><SelectValue /></SelectTrigger>
             <SelectContent>
@@ -70,9 +72,11 @@ export default function TeamMemberForm({ memberId, onClose, onSaved }: Props) {
               <SelectItem value="inactive">Inactive</SelectItem>
             </SelectContent>
           </Select>
-        </div>
+        </FormRow>
       </div>
-      <div><Label>Notes</Label><Textarea value={notes} onChange={e => setNotes(e.target.value)} rows={2} /></div>
+      <FormRow label="Notes">
+        <Textarea value={notes} onChange={e => setNotes(e.target.value)} rows={2} />
+      </FormRow>
       <div className="flex justify-end gap-2">
         <Button variant="outline" onClick={onClose}>Cancel</Button>
         <Button onClick={handleSave}>Save</Button>
