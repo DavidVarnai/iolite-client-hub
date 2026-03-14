@@ -261,7 +261,8 @@ function StrategyDraftStep({ onNavigateTab }: { onNavigateTab: (tab: string) => 
     { channel: 'content_development', label: 'Content / SEO' },
     { channel: 'website_development', label: 'Website' },
     { channel: 'brand_strategy', label: 'Brand / Creative' },
-    { channel: 'app_development', label: 'Development / Analytics' },
+    { channel: 'analytics_tracking', label: 'Analytics & Tracking' },
+    { channel: 'app_development', label: 'Development' },
   ];
 
   const existingSections = new Set(client.strategySections.map(s => s.channel));
