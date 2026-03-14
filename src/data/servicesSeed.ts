@@ -64,4 +64,22 @@ export const seedServiceLines: ServiceLine[] = [
     defaultUnit: 'month',
     status: 'active',
   },
+  {
+    id: 'sl8',
+    name: 'Operational Transition Support',
+    description: 'Fractional COO / operational leadership for business transitions, process rebuilds, and systems optimization.',
+    pricingType: 'hourly',
+    defaultUnit: 'hour',
+    status: 'active',
+    defaultRateMin: 200,
+    defaultRateMax: 200,
+  },
+  {
+    id: 'sl9',
+    name: 'Analytics & Tracking',
+    description: 'Analytics implementation, conversion tracking, and reporting dashboard setup.',
+    pricingType: 'scope_package',
+    defaultUnit: 'month',
+    status: 'active',
+  },
 ];

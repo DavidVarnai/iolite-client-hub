@@ -7,10 +7,10 @@ import type { ClientRepository, OnboardingRepository } from './types';
 import { load, persist, STORAGE_KEYS } from './helpers';
 import { DEFAULT_ONBOARDING } from '@/types/onboarding';
 import { seedClients } from '@/data/seed';
-import { c1Onboarding, c2Onboarding, c3Onboarding } from '@/data/onboardingSeed';
+import { c1Onboarding, c2Onboarding, c3Onboarding, c4Onboarding, c5Onboarding, c6Onboarding } from '@/data/onboardingSeed';
 
 function seedOnboardingMap(): Record<string, OnboardingData> {
-  return { c1: { ...c1Onboarding }, c2: { ...c2Onboarding }, c3: { ...c3Onboarding } };
+  return { c1: { ...c1Onboarding }, c2: { ...c2Onboarding }, c3: { ...c3Onboarding }, c4: { ...c4Onboarding }, c5: { ...c5Onboarding }, c6: { ...c6Onboarding } };
 }
 
 export function createClientRepo(): ClientRepository {

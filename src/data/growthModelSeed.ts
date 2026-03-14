@@ -167,7 +167,121 @@ const c3Model: GrowthModel = {
   ],
 };
 
-export const seedGrowthModels: GrowthModel[] = [c1Model, c2Model, c3Model];
+// ===== C4: HIBA Academy (Education / Lead Gen) =====
+const c4Model: GrowthModel = {
+  id: 'gm-c4', clientId: 'c4', name: 'Enrollment Growth 2026',
+  status: 'active', startMonth: '2026-01', monthCount: 12,
+  funnelType: 'lead_gen', visibility: 'client',
+  createdAt: '2025-12-10T10:00:00Z', updatedAt: '2026-03-10T10:00:00Z',
+  scenarios: [{
+    id: 'sc-c4-base', modelId: 'gm-c4', name: 'base', isDefault: true,
+    createdAt: '2025-12-10T10:00:00Z',
+    budgetLineItems: [
+      { id: 'bli-c4-1', scenarioId: 'sc-c4-base', category: 'agency', name: 'Paid Media Management', billingType: 'monthly', isInternal: false, notes: '', monthlyRecords: mr('bli-c4-1', months12.map(m => [m, 1500])) },
+      { id: 'bli-c4-2', scenarioId: 'sc-c4-base', category: 'agency', name: 'Social Media Management', billingType: 'monthly', isInternal: false, notes: '', monthlyRecords: mr('bli-c4-2', months12.map(m => [m, 1500])) },
+      { id: 'bli-c4-3', scenarioId: 'sc-c4-base', category: 'agency', name: 'Creative', billingType: 'monthly', isInternal: false, notes: '', monthlyRecords: mr('bli-c4-3', months12.map(m => [m, 1000])) },
+      { id: 'bli-c4-4', scenarioId: 'sc-c4-base', category: 'agency', name: 'Retention Marketing', billingType: 'monthly', isInternal: false, notes: 'Email marketing', monthlyRecords: mr('bli-c4-4', months12.map(m => [m, 800])) },
+      { id: 'bli-c4-5', scenarioId: 'sc-c4-base', category: 'agency', name: 'Analytics', billingType: 'one_time', isInternal: false, notes: 'Tracking setup', monthlyRecords: mr('bli-c4-5', [['2026-01', 2000]]) },
+    ],
+    mediaChannelPlans: [
+      { id: 'mcp-c4-1', scenarioId: 'sc-c4-base', channel: 'Meta', objective: 'Enrollment awareness & inquiry gen', notes: 'Primary channel for parent targeting', monthlyRecords: mmr('mcp-c4-1', months12.map((m, i) => [m, i >= 0 && i <= 3 ? 3000 : 1500])) },
+      { id: 'mcp-c4-2', scenarioId: 'sc-c4-base', channel: 'Google', objective: 'Private school search capture', notes: 'Intent-based enrollment keywords', monthlyRecords: mmr('mcp-c4-2', months12.map((m, i) => [m, i >= 0 && i <= 3 ? 2000 : 1000])) },
+    ],
+    channelAssumptions: [
+      { id: 'ca-c4-1', scenarioId: 'sc-c4-base', channel: 'Meta', cpm: 15, ctr: 1.0, cpc: 1.50, lpConvRate: 4.5, leadConvRate: 25, callConvRate: 3, qualRate: 40, closeRate: 35, targetCpl: 55, targetCpa: 400, aov: 12000 },
+      { id: 'ca-c4-2', scenarioId: 'sc-c4-base', channel: 'Google', cpm: 20, ctr: 3.5, cpc: 0.57, lpConvRate: 5.0, leadConvRate: 30, callConvRate: 5, qualRate: 45, closeRate: 35, targetCpl: 40, targetCpa: 300, aov: 12000 },
+    ],
+    revenueAssumption: {
+      id: 'ra-c4', scenarioId: 'sc-c4-base', avgDealSize: 12000, closeRate: 35,
+      salesCycleLag: 1, repeatMultiplier: 1.0, grossMarginPct: 60,
+      attributionWindow: 60, leadToSaleDelay: 21,
+    },
+  }],
+  actuals: [],
+  narratives: [
+    { id: 'nar-c4-1', modelId: 'gm-c4', section: 'plan_summary', content: 'Enrollment Growth 2026 plan targets 30+ additional student enrollments through a focused digital strategy combining Meta awareness campaigns and Google Search demand capture. Total planned marketing investment of ~$85K with projected enrollment revenue of $360K.', isInternal: false, updatedAt: '2026-01-10T10:00:00Z' },
+  ],
+  snapshots: [],
+};
+
+// ===== C5: CIS US (IT Services / Lead Gen) =====
+const c5Model: GrowthModel = {
+  id: 'gm-c5', clientId: 'c5', name: 'CIS Growth Plan 2026',
+  status: 'draft', startMonth: '2026-04', monthCount: 9,
+  funnelType: 'lead_gen', visibility: 'internal',
+  createdAt: '2026-03-10T10:00:00Z', updatedAt: '2026-03-14T10:00:00Z',
+  scenarios: [{
+    id: 'sc-c5-base', modelId: 'gm-c5', name: 'base', isDefault: true,
+    createdAt: '2026-03-10T10:00:00Z',
+    budgetLineItems: [
+      { id: 'bli-c5-1', scenarioId: 'sc-c5-base', category: 'agency', name: 'Fractional CMO + COO', billingType: 'monthly', isInternal: false, notes: 'David — $10,000/month ($200/hr × ~50hrs). Covers both FCMO and operational transition.', monthlyRecords: mr('bli-c5-1', months12.slice(3, 12).map(m => [m, 10000])) },
+      { id: 'bli-c5-2', scenarioId: 'sc-c5-base', category: 'agency', name: 'Paid Media Management', billingType: 'monthly', isInternal: false, notes: '', monthlyRecords: mr('bli-c5-2', months12.slice(3, 12).map(m => [m, 1500])) },
+      { id: 'bli-c5-3', scenarioId: 'sc-c5-base', category: 'agency', name: 'Social Media Management', billingType: 'monthly', isInternal: false, notes: '', monthlyRecords: mr('bli-c5-3', months12.slice(3, 12).map(m => [m, 800])) },
+      { id: 'bli-c5-4', scenarioId: 'sc-c5-base', category: 'agency', name: 'Retention Marketing', billingType: 'monthly', isInternal: false, notes: 'Email setup and management', monthlyRecords: mr('bli-c5-4', months12.slice(3, 12).map(m => [m, 600])) },
+      { id: 'bli-c5-5', scenarioId: 'sc-c5-base', category: 'agency', name: 'Analytics', billingType: 'one_time', isInternal: false, notes: 'Tracking setup', monthlyRecords: mr('bli-c5-5', [['2026-04', 2500]]) },
+    ],
+    mediaChannelPlans: [
+      { id: 'mcp-c5-1', scenarioId: 'sc-c5-base', channel: 'Google', objective: 'Managed IT service search campaigns', notes: 'High-intent keywords', monthlyRecords: mmr('mcp-c5-1', months12.slice(3, 12).map(m => [m, 3000])) },
+      { id: 'mcp-c5-2', scenarioId: 'sc-c5-base', channel: 'LinkedIn', objective: 'B2B decision-maker targeting', notes: 'Phase 2 launch', monthlyRecords: mmr('mcp-c5-2', months12.slice(5, 12).map(m => [m, 2000])) },
+    ],
+    channelAssumptions: [
+      { id: 'ca-c5-1', scenarioId: 'sc-c5-base', channel: 'Google', cpm: 30, ctr: 3.8, cpc: 7.89, lpConvRate: 4.5, leadConvRate: 22, callConvRate: 5, qualRate: 35, closeRate: 22, targetCpl: 100, targetCpa: 1500, aov: 42000 },
+      { id: 'ca-c5-2', scenarioId: 'sc-c5-base', channel: 'LinkedIn', cpm: 45, ctr: 0.5, cpc: 9.0, lpConvRate: 2.5, leadConvRate: 18, callConvRate: 0, qualRate: 30, closeRate: 18, targetCpl: 180, targetCpa: 3000, aov: 42000 },
+    ],
+    revenueAssumption: {
+      id: 'ra-c5', scenarioId: 'sc-c5-base', avgDealSize: 42000, closeRate: 22,
+      salesCycleLag: 2, repeatMultiplier: 1.0, grossMarginPct: 55,
+      attributionWindow: 90, leadToSaleDelay: 30,
+    },
+  }],
+  actuals: [],
+  narratives: [
+    { id: 'nar-c5-1', modelId: 'gm-c5', section: 'plan_summary', content: 'CIS US growth plan targeting 20+ qualified leads/month through Google Search and LinkedIn. David providing $10,000/month combined FCMO + FCOO leadership covering marketing strategy and operational transition. Total planned investment ~$165K over 9 months.', isInternal: true, updatedAt: '2026-03-14T10:00:00Z' },
+  ],
+  snapshots: [],
+};
+
+// ===== C6: Venturity (IT Services / Lead Gen) =====
+const c6Model: GrowthModel = {
+  id: 'gm-c6', clientId: 'c6', name: 'Venturity Growth Plan 2026',
+  status: 'draft', startMonth: '2026-03', monthCount: 12,
+  funnelType: 'lead_gen', visibility: 'client',
+  createdAt: '2026-02-15T10:00:00Z', updatedAt: '2026-03-14T10:00:00Z',
+  scenarios: [{
+    id: 'sc-c6-base', modelId: 'gm-c6', name: 'base', isDefault: true,
+    createdAt: '2026-02-15T10:00:00Z',
+    budgetLineItems: [
+      { id: 'bli-c6-1', scenarioId: 'sc-c6-base', category: 'agency', name: 'Fractional CMO', billingType: 'monthly', isInternal: false, notes: 'David — strategic marketing leadership', monthlyRecords: mr('bli-c6-1', months12.slice(2, 12).map(m => [m, 5000])) },
+      { id: 'bli-c6-2', scenarioId: 'sc-c6-base', category: 'agency', name: 'Paid Media Management', billingType: 'monthly', isInternal: false, notes: '', monthlyRecords: mr('bli-c6-2', months12.slice(2, 12).map(m => [m, 2500])) },
+      { id: 'bli-c6-3', scenarioId: 'sc-c6-base', category: 'agency', name: 'Social Media Management', billingType: 'monthly', isInternal: false, notes: '', monthlyRecords: mr('bli-c6-3', months12.slice(2, 12).map(m => [m, 2000])) },
+      { id: 'bli-c6-4', scenarioId: 'sc-c6-base', category: 'agency', name: 'Retention Marketing', billingType: 'monthly', isInternal: false, notes: 'Email + SMS', monthlyRecords: mr('bli-c6-4', months12.slice(2, 12).map(m => [m, 1500])) },
+      { id: 'bli-c6-5', scenarioId: 'sc-c6-base', category: 'agency', name: 'Analytics', billingType: 'one_time', isInternal: false, notes: 'Full tracking setup', monthlyRecords: mr('bli-c6-5', [['2026-03', 3000]]) },
+      { id: 'bli-c6-6', scenarioId: 'sc-c6-base', category: 'agency', name: 'Web Design', billingType: 'phased', isInternal: false, notes: 'Website rebuild', monthlyRecords: mr('bli-c6-6', [['2026-03', 5000], ['2026-04', 5000], ['2026-05', 5000]]) },
+    ],
+    mediaChannelPlans: [
+      { id: 'mcp-c6-1', scenarioId: 'sc-c6-base', channel: 'Google', objective: 'IT services search campaigns', notes: '', monthlyRecords: mmr('mcp-c6-1', months12.slice(2, 12).map(m => [m, 5000])) },
+      { id: 'mcp-c6-2', scenarioId: 'sc-c6-base', channel: 'LinkedIn', objective: 'B2B decision-maker prospecting', notes: '', monthlyRecords: mmr('mcp-c6-2', months12.slice(3, 12).map(m => [m, 3000])) },
+      { id: 'mcp-c6-3', scenarioId: 'sc-c6-base', channel: 'Meta', objective: 'Retargeting and awareness', notes: 'Phase 2', monthlyRecords: mmr('mcp-c6-3', months12.slice(5, 12).map(m => [m, 2000])) },
+    ],
+    channelAssumptions: [
+      { id: 'ca-c6-1', scenarioId: 'sc-c6-base', channel: 'Google', cpm: 28, ctr: 4.0, cpc: 7.0, lpConvRate: 5.0, leadConvRate: 25, callConvRate: 5, qualRate: 40, closeRate: 25, targetCpl: 90, targetCpa: 1200, aov: 60000 },
+      { id: 'ca-c6-2', scenarioId: 'sc-c6-base', channel: 'LinkedIn', cpm: 42, ctr: 0.6, cpc: 7.0, lpConvRate: 3.0, leadConvRate: 20, callConvRate: 0, qualRate: 35, closeRate: 20, targetCpl: 140, targetCpa: 2500, aov: 60000 },
+      { id: 'ca-c6-3', scenarioId: 'sc-c6-base', channel: 'Meta', cpm: 18, ctr: 0.8, cpc: 2.25, lpConvRate: 2.5, leadConvRate: 15, callConvRate: 0, qualRate: 25, closeRate: 15, targetCpl: 120, targetCpa: 2000, aov: 60000 },
+    ],
+    revenueAssumption: {
+      id: 'ra-c6', scenarioId: 'sc-c6-base', avgDealSize: 60000, closeRate: 25,
+      salesCycleLag: 2, repeatMultiplier: 1.0, grossMarginPct: 55,
+      attributionWindow: 90, leadToSaleDelay: 45,
+    },
+  }],
+  actuals: [],
+  narratives: [
+    { id: 'nar-c6-1', modelId: 'gm-c6', section: 'plan_summary', content: 'Venturity growth plan builds a full-funnel marketing engine from scratch. Google Search for demand capture, LinkedIn for B2B prospecting, Meta for retargeting. Total planned investment ~$280K over 10 months with target of 30+ qualified leads/month and projected new ARR of $1.8M.', isInternal: false, updatedAt: '2026-03-14T10:00:00Z' },
+  ],
+  snapshots: [],
+};
+
+export const seedGrowthModels: GrowthModel[] = [c1Model, c2Model, c3Model, c4Model, c5Model, c6Model];
 
 export function getGrowthModelForClient(clientId: string): GrowthModel | undefined {
   return seedGrowthModels.find(m => m.clientId === clientId);
