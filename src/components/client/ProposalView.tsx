@@ -634,6 +634,35 @@ function ProposalConfigPanel({ clientId, onGenerate }: {
                     </Select>
                   )}
                 </div>
+                {/* Fractional CMO hours input */}
+                {isSelected && sl.name.toLowerCase().includes('strategic') && (
+                  <div className="px-4 pb-3 pt-0 flex items-center gap-2">
+                    <span className="text-xs text-muted-foreground">Hours/month:</span>
+                    <Input
+                      type="number"
+                      value={cmoHoursPerMonth || ''}
+                      onChange={(e) => setCmoHoursPerMonth(parseInt(e.target.value) || 0)}
+                      className="h-7 w-24 text-xs"
+                      placeholder="e.g., 20"
+                    />
+                  </div>
+                )}
+                {/* Web dev pricing mode toggle */}
+                {isSelected && (sl.name.toLowerCase().includes('website') || sl.name.toLowerCase().includes('web dev')) && (
+                  <div className="px-4 pb-3 pt-0 flex items-center gap-2">
+                    <span className="text-xs text-muted-foreground">Pricing:</span>
+                    <div className="flex rounded-md border overflow-hidden">
+                      <button
+                        onClick={() => setWebDevPricingMode('hourly')}
+                        className={`px-3 py-1 text-[11px] font-medium transition-colors ${webDevPricingMode === 'hourly' ? 'bg-primary text-primary-foreground' : 'bg-background text-muted-foreground hover:text-foreground'}`}
+                      >Hourly (T&M)</button>
+                      <button
+                        onClick={() => setWebDevPricingMode('package')}
+                        className={`px-3 py-1 text-[11px] font-medium transition-colors ${webDevPricingMode === 'package' ? 'bg-primary text-primary-foreground' : 'bg-background text-muted-foreground hover:text-foreground'}`}
+                      >Package</button>
+                    </div>
+                  </div>
+                )}
                 {/* Deliverables preview */}
                 {isSelected && selectedPkg && selectedPkg.deliverables.length > 0 && (
                   <div className="px-4 pb-3 pt-0">
