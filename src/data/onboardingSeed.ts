@@ -10,6 +10,7 @@ export const c1Onboarding: OnboardingData = {
   activatedAt: '2025-09-01T10:00:00Z',
   website: 'https://meridiancommerce.com',
   geography: 'United States',
+  serviceArea: 'Nationwide (DTC)',
   businessModelType: 'ecommerce',
   primaryGrowthGoal: 'revenue_growth',
   stageProgress: [
