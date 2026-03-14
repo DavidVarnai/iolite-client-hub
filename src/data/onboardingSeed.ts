@@ -145,11 +145,161 @@ export const c3Onboarding: OnboardingData = {
   },
 };
 
+// c4 — HIBA Academy — Active (recently onboarded)
+export const c4Onboarding: OnboardingData = {
+  lifecycleStage: 'active_client',
+  onboardingCompletedAt: '2025-12-15T10:00:00Z',
+  proposalReadyAt: '2025-12-10T10:00:00Z',
+  activatedAt: '2026-01-01T10:00:00Z',
+  website: 'https://hibaacademy.com',
+  geography: 'United States',
+  serviceArea: 'Greater metro area',
+  businessModelType: 'lead_generation',
+  primaryGrowthGoal: 'lead_volume',
+  stageProgress: [
+    { stage: 'lead', status: 'complete', percentComplete: 100 },
+    { stage: 'discovery', status: 'complete', percentComplete: 100 },
+    { stage: 'strategy', status: 'complete', percentComplete: 100 },
+    { stage: 'growth_model', status: 'complete', percentComplete: 100 },
+    { stage: 'proposal_ready', status: 'complete', percentComplete: 100 },
+    { stage: 'active_client', status: 'complete', percentComplete: 100 },
+  ],
+  discovery: {
+    businessModel: 'lead_generation',
+    primaryProducts: 'Islamic-centered K-8 private education, after-school enrichment, summer programs',
+    revenueStreams: 'Tuition (90%), enrichment programs (10%)',
+    avgOrderValue: '$12,000 annual tuition',
+    coreCustomerSegments: 'Muslim parents 28-50, HHI $80k+, metro area, value faith-based education and academic excellence',
+    revenueTargets: '20% enrollment increase (30 additional students)',
+    customerLeadTargets: '150+ qualified enrollment inquiries per cycle',
+    timeHorizon: '12 months',
+    majorGrowthPriorities: 'Build digital enrollment funnel, scale beyond word-of-mouth, establish social proof online',
+    funnelType: 'lead_gen',
+    leadQualSaleStructure: 'Website inquiry → Tour booking → Campus visit → Application → Enrollment',
+    closeRate: '35% from tour to enrollment',
+    salesCycleLength: '2-8 weeks from inquiry to enrollment decision',
+    paidMediaPlatforms: 'Facebook (boosted posts only, no structured campaigns)',
+    crm: 'None (spreadsheet tracking)',
+    emailPlatform: 'Mailchimp (basic, rarely used)',
+    analyticsStack: 'Wix basic analytics',
+    websitePlatform: 'Wix',
+    currentTraffic: '3,500 monthly sessions',
+    currentLeadsOrders: '15-20 inquiries/month during peak',
+    currentCpaCac: 'Unknown — no paid tracking',
+    conversionRates: 'Unknown — no conversion tracking',
+    knownBottlenecks: 'No conversion tracking, no landing pages, reliance on word-of-mouth, manual inquiry follow-up',
+    topCompetitors: 'Local private schools, charter schools, other Islamic schools in metro area',
+    positioningNotes: 'Strong community reputation, faith-based academic excellence, small class sizes',
+    differentiators: 'Islamic values integration, dual-language programs, strong parent community, personalized attention',
+  },
+};
+
+// c5 — CIS US — Active (transition phase)
+export const c5Onboarding: OnboardingData = {
+  lifecycleStage: 'active_client',
+  onboardingCompletedAt: '2025-12-20T10:00:00Z',
+  proposalReadyAt: '2025-12-15T10:00:00Z',
+  activatedAt: '2026-01-01T10:00:00Z',
+  website: 'https://cisus.com',
+  geography: 'United States',
+  serviceArea: 'Regional — Mid-Atlantic / Northeast',
+  businessModelType: 'lead_generation',
+  primaryGrowthGoal: 'lead_volume',
+  stageProgress: [
+    { stage: 'lead', status: 'complete', percentComplete: 100 },
+    { stage: 'discovery', status: 'complete', percentComplete: 100 },
+    { stage: 'strategy', status: 'complete', percentComplete: 100 },
+    { stage: 'growth_model', status: 'in_progress', percentComplete: 60 },
+    { stage: 'proposal_ready', status: 'complete', percentComplete: 100 },
+    { stage: 'active_client', status: 'complete', percentComplete: 100 },
+  ],
+  discovery: {
+    businessModel: 'lead_generation',
+    primaryProducts: 'Managed IT services, cybersecurity, cloud solutions, help desk support, network infrastructure',
+    revenueStreams: 'Managed service contracts/MRR (75%), project-based IT work (25%)',
+    avgOrderValue: '$3,500/month managed service contract',
+    coreCustomerSegments: 'SMBs 10-200 employees, $1M-$50M revenue, industries: professional services, healthcare, finance',
+    revenueTargets: '30% growth in managed service MRR',
+    customerLeadTargets: '20+ qualified leads/month',
+    timeHorizon: '12 months',
+    majorGrowthPriorities: 'Build demand generation engine, transition operations to Venturity partnership, rebuild AutoTask workflows, establish digital marketing presence',
+    funnelType: 'lead_gen',
+    leadQualSaleStructure: 'Website/ad → Lead form/call → Discovery call → IT assessment → Proposal → Close',
+    closeRate: '22% from qualified lead to contract',
+    salesCycleLength: '30-60 days',
+    paidMediaPlatforms: 'None currently',
+    crm: 'AutoTask (PSA/CRM — being rebuilt)',
+    emailPlatform: 'None (manual outreach)',
+    analyticsStack: 'Basic Google Analytics',
+    websitePlatform: 'WordPress',
+    currentTraffic: '2,500 monthly sessions',
+    currentLeadsOrders: '5-8 inbound leads/month (mostly referral)',
+    currentCpaCac: 'Unknown — referral-based acquisition',
+    conversionRates: 'Unknown',
+    knownBottlenecks: 'Reliance on referrals, no digital marketing, AutoTask needs rebuild, operational transition in progress',
+    topCompetitors: 'Local MSPs, regional IT services firms',
+    positioningNotes: 'Established reputation, deep technical expertise, personal service',
+    differentiators: 'Senior engineer involvement, fast response times, industry-specific compliance knowledge',
+  },
+};
+
+// c6 — Venturity — Active (building from ground up)
+export const c6Onboarding: OnboardingData = {
+  lifecycleStage: 'active_client',
+  onboardingCompletedAt: '2026-01-25T10:00:00Z',
+  proposalReadyAt: '2026-01-20T10:00:00Z',
+  activatedAt: '2026-02-01T10:00:00Z',
+  website: 'https://venturity.com',
+  geography: 'United States',
+  serviceArea: 'National — focus on East Coast metro areas',
+  businessModelType: 'lead_generation',
+  primaryGrowthGoal: 'market_expansion',
+  stageProgress: [
+    { stage: 'lead', status: 'complete', percentComplete: 100 },
+    { stage: 'discovery', status: 'complete', percentComplete: 100 },
+    { stage: 'strategy', status: 'complete', percentComplete: 100 },
+    { stage: 'growth_model', status: 'in_progress', percentComplete: 50 },
+    { stage: 'proposal_ready', status: 'complete', percentComplete: 100 },
+    { stage: 'active_client', status: 'complete', percentComplete: 100 },
+  ],
+  discovery: {
+    businessModel: 'lead_generation',
+    primaryProducts: 'Managed IT services, cybersecurity solutions, cloud migration, IT consulting, co-managed IT',
+    revenueStreams: 'Managed service contracts/MRR (70%), project-based (20%), consulting (10%)',
+    avgOrderValue: '$5,000/month managed service contract',
+    coreCustomerSegments: 'Mid-market businesses 20-500 employees, $2M-$100M revenue, industries: professional services, healthcare, manufacturing, finance',
+    revenueTargets: '50% revenue growth through new client acquisition and CIS partnership integration',
+    customerLeadTargets: '30+ qualified leads/month',
+    timeHorizon: '12 months',
+    majorGrowthPriorities: 'Brand establishment, demand generation, CIS integration, multi-channel marketing engine, website rebuild',
+    funnelType: 'lead_gen',
+    leadQualSaleStructure: 'Website/ad/referral → Lead capture → Discovery call → IT assessment → Proposal → Close',
+    closeRate: '25% from qualified lead to contract',
+    salesCycleLength: '45-90 days',
+    paidMediaPlatforms: 'None currently',
+    crm: 'HubSpot (setting up)',
+    emailPlatform: 'HubSpot (setting up)',
+    analyticsStack: 'None (building)',
+    websitePlatform: 'WordPress (basic, needs rebuild)',
+    currentTraffic: '1,200 monthly sessions',
+    currentLeadsOrders: '3-5 inbound leads/month',
+    currentCpaCac: 'Unknown — new to digital marketing',
+    conversionRates: 'Unknown',
+    knownBottlenecks: 'No marketing infrastructure, new brand, need to build everything from scratch',
+    topCompetitors: 'Regional MSPs, national IT services firms, CIS (now partner)',
+    positioningNotes: 'Modern, growth-oriented IT services partner for mid-market businesses',
+    differentiators: 'Modern tech stack, proactive approach, strategic IT consulting, scalable solutions, CIS partnership for expanded capabilities',
+  },
+};
+
 export function getOnboardingForClient(clientId: string): OnboardingData {
   switch (clientId) {
     case 'c1': return { ...c1Onboarding };
     case 'c2': return { ...c2Onboarding };
     case 'c3': return { ...c3Onboarding };
+    case 'c4': return { ...c4Onboarding };
+    case 'c5': return { ...c5Onboarding };
+    case 'c6': return { ...c6Onboarding };
     default: return { ...DEFAULT_ONBOARDING };
   }
 }

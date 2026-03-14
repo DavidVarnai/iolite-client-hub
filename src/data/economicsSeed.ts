@@ -135,6 +135,49 @@ export const seedClientEconomics: ClientEconomics[] = [
       { id: 'oc3', label: 'Social Scheduling Tool', monthlyAmount: 80 },
     ],
   },
+  // HIBA Academy (c4)
+  {
+    clientId: 'c4',
+    revenueEntries: [
+      { category: 'paid_media_management', monthlyAmount: 1500 },
+      { category: 'social_media_management', monthlyAmount: 1500 },
+      { category: 'creative', monthlyAmount: 1000 },
+      { category: 'retention_marketing', monthlyAmount: 800 },
+      { category: 'analytics', monthlyAmount: 500 },
+    ],
+    otherCosts: [],
+  },
+  // CIS US (c5) — David's $10,000/month split across FCMO + operational
+  {
+    clientId: 'c5',
+    revenueEntries: [
+      { category: 'fractional_cmo', monthlyAmount: 6000 },
+      { category: 'paid_media_management', monthlyAmount: 1500 },
+      { category: 'social_media_management', monthlyAmount: 800 },
+      { category: 'retention_marketing', monthlyAmount: 600 },
+      { category: 'analytics', monthlyAmount: 500 },
+    ],
+    otherCosts: [
+      { id: 'oc4', label: 'Operational Transition Support (FCOO)', monthlyAmount: 4000 },
+      { id: 'oc5', label: 'CallRail', monthlyAmount: 150 },
+    ],
+  },
+  // Venturity (c6)
+  {
+    clientId: 'c6',
+    revenueEntries: [
+      { category: 'fractional_cmo', monthlyAmount: 5000 },
+      { category: 'paid_media_management', monthlyAmount: 2500 },
+      { category: 'social_media_management', monthlyAmount: 2000 },
+      { category: 'retention_marketing', monthlyAmount: 1500 },
+      { category: 'web_design', monthlyAmount: 3000 },
+      { category: 'analytics', monthlyAmount: 500 },
+    ],
+    otherCosts: [
+      { id: 'oc6', label: 'HubSpot License', monthlyAmount: 200 },
+      { id: 'oc7', label: 'CallRail', monthlyAmount: 150 },
+    ],
+  },
 ];
 
 /* ── Economics Defaults ── */
