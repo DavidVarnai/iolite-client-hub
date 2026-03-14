@@ -78,6 +78,7 @@ function ClientHubInner() {
           onSetProposalMode={() => setProposalMode(true)}
         />
       );
+      case 'intelligence': return <MarketIntelligenceTab />;
       case 'strategy': return <ClientStrategy proposalMode={proposalMode} />;
       case 'growth-model': return <GrowthModelView />;
       case 'proposal': return <ProposalView proposalMode={proposalMode} />;
