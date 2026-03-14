@@ -14,7 +14,6 @@ interface Props {
 }
 
 const fmt = formatCurrency;
-}
 
 function EditableGrid({ rows, months, onChange, label }: {
   rows: GridRow[];
