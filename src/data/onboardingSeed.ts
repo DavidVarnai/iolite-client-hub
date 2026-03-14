@@ -145,11 +145,128 @@ export const c3Onboarding: OnboardingData = {
   },
 };
 
+// c4 — HIBA Academy — Active (enrollment-focused)
+export const c4Onboarding: OnboardingData = {
+  lifecycleStage: 'discovery',
+  website: '',
+  geography: 'San Francisco, CA',
+  serviceArea: 'San Francisco Bay Area',
+  businessModelType: 'lead_generation',
+  primaryGrowthGoal: 'brand_awareness',
+  discovery: {
+    businessModel: 'lead_generation',
+    primaryProducts: 'Private bilingual K-8 education',
+    revenueStreams: 'Annual tuition',
+    avgOrderValue: 'Annual tuition',
+    coreCustomerSegments: 'Parents with children ages 4-14 seeking bilingual private education',
+    revenueTargets: 'Enrollment growth for school opening',
+    customerLeadTargets: 'Student enrollment',
+    timeHorizon: '12 months',
+    majorGrowthPriorities: 'Enrollment growth and brand awareness prior to school opening',
+    funnelType: 'lead_gen',
+    leadQualSaleStructure: '',
+    closeRate: '',
+    salesCycleLength: '',
+    paidMediaPlatforms: '',
+    crm: '',
+    emailPlatform: '',
+    analyticsStack: '',
+    websitePlatform: '',
+    currentTraffic: '',
+    currentLeadsOrders: '',
+    currentCpaCac: '',
+    conversionRates: '',
+    knownBottlenecks: '',
+    topCompetitors: '',
+    positioningNotes: '',
+    differentiators: '',
+  },
+};
+
+// c5 — CIS — Active (MSP lead gen)
+export const c5Onboarding: OnboardingData = {
+  lifecycleStage: 'discovery',
+  website: '',
+  geography: 'United States',
+  serviceArea: 'National',
+  businessModelType: 'lead_generation',
+  primaryGrowthGoal: 'lead_volume',
+  discovery: {
+    businessModel: 'lead_generation',
+    primaryProducts: 'IT Services, IAM, Managed Service Provider',
+    revenueStreams: 'Managed IT service contracts',
+    avgOrderValue: '$5,000/month managed service contract',
+    coreCustomerSegments: 'Mid-market companies, 20-500 employees, $2M-$100M revenue. Industries: healthcare, manufacturing, professional services.',
+    revenueTargets: 'New MSP client acquisition',
+    customerLeadTargets: 'Qualified MSP leads',
+    timeHorizon: '12 months',
+    majorGrowthPriorities: 'New MSP client acquisition',
+    funnelType: 'lead_gen',
+    leadQualSaleStructure: '',
+    closeRate: '',
+    salesCycleLength: '',
+    paidMediaPlatforms: '',
+    crm: '',
+    emailPlatform: '',
+    analyticsStack: '',
+    websitePlatform: '',
+    currentTraffic: '',
+    currentLeadsOrders: '',
+    currentCpaCac: '',
+    conversionRates: '',
+    knownBottlenecks: '',
+    topCompetitors: '',
+    positioningNotes: '',
+    differentiators: '',
+  },
+};
+
+// c6 — Venturity — Active (financial services, NOT MSP/IT)
+export const c6Onboarding: OnboardingData = {
+  lifecycleStage: 'discovery',
+  website: '',
+  geography: 'United States',
+  serviceArea: 'National',
+  businessModelType: 'lead_generation',
+  primaryGrowthGoal: 'lead_volume',
+  discovery: {
+    businessModel: 'lead_generation',
+    primaryProducts: 'Financial advisory and services',
+    revenueStreams: 'Financial services engagements',
+    avgOrderValue: 'Financial services engagement',
+    coreCustomerSegments: 'Businesses and individuals requiring financial advisory services',
+    revenueTargets: 'Client acquisition',
+    customerLeadTargets: 'Qualified financial advisory leads',
+    timeHorizon: '12 months',
+    majorGrowthPriorities: 'Client acquisition',
+    funnelType: 'lead_gen',
+    leadQualSaleStructure: '',
+    closeRate: '',
+    salesCycleLength: '',
+    paidMediaPlatforms: '',
+    crm: '',
+    emailPlatform: '',
+    analyticsStack: '',
+    websitePlatform: '',
+    currentTraffic: '',
+    currentLeadsOrders: '',
+    currentCpaCac: '',
+    conversionRates: '',
+    knownBottlenecks: '',
+    topCompetitors: '',
+    positioningNotes: '',
+    differentiators: '',
+  },
+};
+
 export function getOnboardingForClient(clientId: string): OnboardingData {
   switch (clientId) {
     case 'c1': return { ...c1Onboarding };
     case 'c2': return { ...c2Onboarding };
     case 'c3': return { ...c3Onboarding };
+    case 'c4': return { ...c4Onboarding };
+    case 'c5': return { ...c5Onboarding };
+    case 'c6': return { ...c6Onboarding };
     default: return { ...DEFAULT_ONBOARDING };
   }
 }
