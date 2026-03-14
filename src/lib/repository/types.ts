@@ -15,6 +15,7 @@ import type {
 import type { ServiceLine, ServicePackage, SalesBundle } from '@/types/services';
 import type { Proposal } from '@/types/proposal';
 import type { ProposalDefaults } from '@/types/proposal';
+import type { MarketIntelligenceRepository, MarketIntelligenceDefaultsRepository } from './marketIntelligenceRepo';
 
 export interface ClientRepository {
   getAll(): Client[];
