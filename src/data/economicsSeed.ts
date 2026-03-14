@@ -43,6 +43,12 @@ export const seedCompensation: CompensationComponent[] = [
   // Michael — base salary + revenue share
   { id: 'cc8', teamMemberId: 'tm7', componentType: 'salary_allocation', amount: 5000, isDefault: true },
   { id: 'cc9', teamMemberId: 'tm7', componentType: 'revenue_share', amount: 0, sharePercent: 0.10, appliesToCategory: 'retention_marketing', isDefault: true },
+  // David — hourly ($200/hr)
+  { id: 'cc10', teamMemberId: 'tm8', componentType: 'hourly', amount: 200, isDefault: true },
+  // Veronica — flat client fee
+  { id: 'cc11', teamMemberId: 'tm9', componentType: 'flat_client_fee', amount: 1500, isDefault: true },
+  // Mark — flat client fee
+  { id: 'cc12', teamMemberId: 'tm10', componentType: 'flat_client_fee', amount: 1200, isDefault: true },
 ];
 
 /* ── Client Assignments ── */
