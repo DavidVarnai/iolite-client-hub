@@ -216,10 +216,10 @@ export function getNextStepPrompt(onboarding: OnboardingData, stageProgress: Cli
 
   switch (current) {
     case 'lead':
-      return { message: 'Start discovery to understand this client\'s business and goals.', action: 'Begin Discovery', targetTab: 'overview' };
+      return { message: 'Start discovery to understand this client\'s business and goals.', action: 'Begin Discovery', openWizard: true };
     case 'discovery':
       if (stageInfo.percentComplete < 80) {
-        return { message: 'Complete discovery to unlock strategy recommendations.', action: 'Continue Discovery', targetTab: 'overview' };
+        return { message: 'Complete discovery to unlock strategy recommendations.', action: 'Continue Discovery', openWizard: true };
       }
       return { message: 'Discovery is ready. Start building the strategy.', action: 'Draft Strategy', targetTab: 'strategy' };
     case 'strategy':
