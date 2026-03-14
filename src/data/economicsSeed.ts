@@ -74,6 +74,28 @@ export const seedAssignments: ClientTeamAssignment[] = [
   { id: 'ca13', teamMemberId: 'tm3', clientId: 'c3', roleOnClient: 'Social Media Specialist', allocationPercent: 50, isActive: true, notes: '' },
   { id: 'ca14', teamMemberId: 'tm4', clientId: 'c3', roleOnClient: 'Designer', allocationPercent: 30, isActive: true, notes: '' },
   { id: 'ca15', teamMemberId: 'tm6', clientId: 'c3', roleOnClient: 'Campaign Manager', flatFeeOverride: 2000, isActive: true, notes: '' },
+
+  // HIBA Academy (c4)
+  { id: 'ca16', teamMemberId: 'tm8', clientId: 'c4', roleOnClient: 'Strategy Lead', hourlyRateOverride: 200, isActive: true, notes: 'Strategic oversight, ~10 hrs/month' },
+  { id: 'ca17', teamMemberId: 'tm6', clientId: 'c4', roleOnClient: 'Paid Media Specialist', flatFeeOverride: 1500, isActive: true, notes: '' },
+  { id: 'ca18', teamMemberId: 'tm10', clientId: 'c4', roleOnClient: 'Social Media Manager', flatFeeOverride: 1200, isActive: true, notes: '' },
+  { id: 'ca19', teamMemberId: 'tm4', clientId: 'c4', roleOnClient: 'Production Designer', allocationPercent: 20, isActive: true, notes: '' },
+  { id: 'ca20', teamMemberId: 'tm5', clientId: 'c4', roleOnClient: 'Email Specialist', flatFeeOverride: 800, isActive: true, notes: '' },
+
+  // CIS US (c5)
+  { id: 'ca21', teamMemberId: 'tm8', clientId: 'c5', roleOnClient: 'Fractional CMO + COO', hourlyRateOverride: 200, isActive: true, notes: '$10,000/month total (~50 hrs). Covers FCMO + operational transition.' },
+  { id: 'ca22', teamMemberId: 'tm9', clientId: 'c5', roleOnClient: 'Project Manager', flatFeeOverride: 1500, isActive: true, notes: '' },
+  { id: 'ca23', teamMemberId: 'tm6', clientId: 'c5', roleOnClient: 'Paid Media Specialist', flatFeeOverride: 1500, isActive: true, notes: '' },
+  { id: 'ca24', teamMemberId: 'tm10', clientId: 'c5', roleOnClient: 'Social Media Manager', flatFeeOverride: 800, isActive: true, notes: '' },
+  { id: 'ca25', teamMemberId: 'tm5', clientId: 'c5', roleOnClient: 'Email Specialist', flatFeeOverride: 600, isActive: true, notes: '' },
+
+  // Venturity (c6)
+  { id: 'ca26', teamMemberId: 'tm8', clientId: 'c6', roleOnClient: 'Fractional CMO', hourlyRateOverride: 200, isActive: true, notes: 'Strategic marketing leadership, ~25 hrs/month' },
+  { id: 'ca27', teamMemberId: 'tm9', clientId: 'c6', roleOnClient: 'Project Manager', flatFeeOverride: 1500, isActive: true, notes: '' },
+  { id: 'ca28', teamMemberId: 'tm6', clientId: 'c6', roleOnClient: 'Paid Media Specialist', flatFeeOverride: 2500, isActive: true, notes: '' },
+  { id: 'ca29', teamMemberId: 'tm10', clientId: 'c6', roleOnClient: 'Social Media Manager', flatFeeOverride: 1500, isActive: true, notes: '' },
+  { id: 'ca30', teamMemberId: 'tm4', clientId: 'c6', roleOnClient: 'Production Designer', allocationPercent: 25, isActive: true, notes: 'Website + social creative' },
+  { id: 'ca31', teamMemberId: 'tm5', clientId: 'c6', roleOnClient: 'Email Specialist', flatFeeOverride: 1500, isActive: true, notes: '' },
 ];
 
 /* ── Client Economics (Revenue + Other Costs) ── */
