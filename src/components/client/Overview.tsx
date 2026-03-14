@@ -1,13 +1,9 @@
-import { useState } from 'react';
 import { SERVICE_CHANNEL_LABELS } from '@/types';
 import { LIFECYCLE_STAGES, getProposalChecklist } from '@/types/onboarding';
 import { format } from 'date-fns';
 import { Check, Circle, Rocket, Settings, ArrowRight, ChevronRight } from 'lucide-react';
 import ProposalReadinessChecklist from './ProposalReadinessChecklist';
-import AiActionButton from '@/components/ai/AiActionButton';
-import AiResultPanel from '@/components/ai/AiResultPanel';
-import { runMarketResearch } from '@/lib/ai/aiActions';
-import type { AiActionStatus, MarketResearchResult } from '@/types/ai';
+import RunMIButton from './marketIntelligence/RunMIButton';
 import { useClientContext } from '@/contexts/ClientContext';
 
 interface Props {
@@ -18,47 +14,11 @@ interface Props {
 }
 
 export default function ClientOverview({ onNavigateTab, onOpenWizard, onActivateClient, onSetProposalMode }: Props) {
-  const { client, onboarding, stageProgress, hasGrowthModel, saveAiArtifact } = useClientContext();
+  const { client, onboarding, stageProgress, hasGrowthModel } = useClientContext();
   const primaryContact = client.contacts.find(c => c.isPrimary);
   const proposalChecklist = getProposalChecklist(onboarding, client, hasGrowthModel);
   const isActive = onboarding.lifecycleStage === 'active_client';
   const isProposalReady = onboarding.lifecycleStage === 'proposal_ready';
-
-  const [researchStatus, setResearchStatus] = useState<AiActionStatus>('idle');
-  const [researchResult, setResearchResult] = useState<MarketResearchResult | null>(null);
-
-  const handleResearch = async () => {
-    setResearchStatus('loading');
-    try {
-      const result = await runMarketResearch({
-        clientWebsite: onboarding.website,
-        industry: client.industry,
-        geography: onboarding.geography,
-        businessModel: onboarding.discovery.businessModel,
-        knownCompetitors: onboarding.discovery.topCompetitors ? onboarding.discovery.topCompetitors.split(',').map(s => s.trim()) : undefined,
-      });
-      setResearchResult(result);
-      setResearchStatus('success');
-    } catch {
-      setResearchStatus('error');
-    }
-  };
-
-  const handleApproveResearch = () => {
-    if (!researchResult) return;
-    saveAiArtifact({
-      id: `art-${Date.now()}`,
-      clientId: client.id,
-      type: 'market_research',
-      sourceModule: 'overview',
-      content: researchResult as unknown as Record<string, unknown>,
-      status: 'accepted',
-      createdAt: new Date().toISOString(),
-      acceptedAt: new Date().toISOString(),
-    });
-    setResearchStatus('idle');
-    setResearchResult(null);
-  };
 
   return (
     <div className="p-6 max-w-5xl space-y-6">
@@ -128,6 +88,7 @@ export default function ClientOverview({ onNavigateTab, onOpenWizard, onActivate
                 <ArrowRight className="h-3.5 w-3.5" />
               </button>
             )}
+            <RunMIButton />
             <button
               onClick={onSetProposalMode}
               className="w-full flex items-center justify-between px-3 py-2 rounded-md bg-muted text-sm hover:bg-muted/80 transition-colors"
@@ -139,28 +100,21 @@ export default function ClientOverview({ onNavigateTab, onOpenWizard, onActivate
         </div>
       </div>
 
-      {/* AI Market Research */}
+      {/* Market Intelligence */}
       <div className="panel p-5 space-y-3">
         <div className="flex items-center justify-between">
-          <h2 className="text-sm font-semibold">Market Research</h2>
-          <AiActionButton label="Research Market" status={researchStatus} onClick={handleResearch} variant="compact" />
+          <h2 className="text-sm font-semibold">Market Intelligence</h2>
+          <RunMIButton variant="compact" />
         </div>
-        {researchStatus !== 'idle' && (
-          <AiResultPanel
-            title="Competitive & Market Research"
-            status={researchStatus}
-            sections={researchResult ? [
-              { heading: 'Market Overview', body: researchResult.marketOverview },
-              { heading: 'Top Competitors', body: researchResult.topCompetitors.map(c => `${c.name} — ${c.notes}`) },
-              { heading: 'Common Acquisition Channels', body: researchResult.acquisitionChannels },
-              { heading: 'Positioning Themes', body: researchResult.positioningThemes },
-              { heading: 'Benchmark Notes', body: researchResult.benchmarkNotes.map(b => `${b.metric}: ${b.range} — ${b.notes}`) },
-            ] : []}
-            onApprove={handleApproveResearch}
-            onDiscard={() => { setResearchStatus('idle'); setResearchResult(null); }}
-            approveLabel="Save to Discovery"
-          />
-        )}
+        <p className="text-sm text-muted-foreground">
+          Run structured research to generate keyword themes, competitor profiles, audience models, and benchmark assumptions.
+        </p>
+        <button
+          onClick={() => onNavigateTab('intelligence')}
+          className="text-xs text-primary hover:underline"
+        >
+          View Intelligence History →
+        </button>
       </div>
 
       {/* Discovery Summary */}

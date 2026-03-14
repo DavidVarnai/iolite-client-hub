@@ -19,9 +19,10 @@ import Campaigns from '@/components/client/Campaigns';
 import GrowthModelView from '@/components/client/GrowthModel';
 import UnitEconomics from '@/components/client/UnitEconomics';
 import ProposalView from '@/components/client/proposal/ProposalView';
+import MarketIntelligenceTab from '@/components/client/marketIntelligence/MarketIntelligenceTab';
 
 const TABS = [
-  'overview', 'strategy', 'growth-model', 'proposal', 'campaigns', 'performance', 'meetings',
+  'overview', 'intelligence', 'strategy', 'growth-model', 'proposal', 'campaigns', 'performance', 'meetings',
   'comments', 'tasks', 'communications', 'documents', 'unit-economics', 'settings',
 ] as const;
 
@@ -77,6 +78,7 @@ function ClientHubInner() {
           onSetProposalMode={() => setProposalMode(true)}
         />
       );
+      case 'intelligence': return <MarketIntelligenceTab />;
       case 'strategy': return <ClientStrategy proposalMode={proposalMode} />;
       case 'growth-model': return <GrowthModelView />;
       case 'proposal': return <ProposalView proposalMode={proposalMode} />;
@@ -168,7 +170,7 @@ function ClientHubInner() {
               activeTab === t ? 'tab-active' : 'tab-inactive'
             }`}
           >
-            {t === 'growth-model' ? 'Growth Model' : t === 'unit-economics' ? 'Unit Economics' : t === 'proposal' ? 'Proposal' : t}
+            {t === 'growth-model' ? 'Growth Model' : t === 'unit-economics' ? 'Unit Economics' : t === 'proposal' ? 'Proposal' : t === 'intelligence' ? 'Intelligence' : t}
           </button>
         ))}
       </div>
