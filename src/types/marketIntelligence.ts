@@ -1,16 +1,61 @@
 /**
  * Market Intelligence Engine types — structured research layer.
+ * Supports channel-specific outputs: search-based vs audience-based.
  */
 
-/* ── Sub-types ── */
+/* ── Channel Classification ── */
+
+export type ChannelType = 'search' | 'audience' | 'content' | 'email' | 'other';
+
+export const CHANNEL_TYPE_MAP: Record<string, ChannelType> = {
+  'Google Ads': 'search',
+  'Google Search': 'search',
+  'Bing Ads': 'search',
+  'Meta Ads': 'audience',
+  'Facebook Ads': 'audience',
+  'Instagram Ads': 'audience',
+  'TikTok': 'audience',
+  'LinkedIn': 'audience',
+  'Spotify': 'audience',
+  'YouTube': 'audience',
+  'Content/SEO': 'content',
+  'Email': 'email',
+  'Email/SMS': 'email',
+};
+
+export function getChannelType(channel: string): ChannelType {
+  return CHANNEL_TYPE_MAP[channel] || 'other';
+}
+
+/* ── Keyword-based outputs (Search channels) ── */
 
 export interface KeywordTheme {
   id: string;
   theme: string;
   intentType: 'informational' | 'navigational' | 'transactional' | 'commercial';
   keywordExamples: string[];
+  demandCaptureRationale?: string;
   notes?: string;
 }
+
+/* ── Audience-based outputs (Meta, LinkedIn, Spotify, etc.) ── */
+
+export interface AudienceModel {
+  id: string;
+  channel: string;
+  channelType: ChannelType;
+  audienceDefinition: string;
+  targetingCriteria: string[];
+  funnelStage: 'awareness' | 'consideration' | 'conversion' | 'retention';
+  estimatedReachMin?: number;
+  estimatedReachMax?: number;
+  recommendedCPM?: number;
+  recommendedCTR?: number;
+  recommendedCVR?: number;
+  reasoning: string;
+}
+
+/* ── Competitor Profiles ── */
 
 export interface CompetitorProfile {
   id: string;
@@ -21,25 +66,23 @@ export interface CompetitorProfile {
   notes?: string;
 }
 
-export interface AudienceModel {
-  id: string;
-  channel: string;
-  audienceDefinition: string;
-  estimatedReachMin?: number;
-  estimatedReachMax?: number;
-  reasoning: string;
-}
+/* ── Channel Recommendations ── */
 
 export interface ChannelRecommendation {
   channel: string;
+  channelType: ChannelType;
   role: string;
   rationale: string;
   priority: 'high' | 'medium' | 'low';
 }
 
+/* ── Benchmark Assumptions ── */
+
 export interface BenchmarkAssumption {
   channel: string;
+  channelType: ChannelType;
   metric: string;
+  unit: string;
   low: number;
   high: number;
   recommended: number;
