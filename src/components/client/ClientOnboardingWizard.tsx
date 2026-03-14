@@ -62,13 +62,21 @@ function ClientSetupStep() {
       </div>
 
       <div className="grid grid-cols-2 gap-4">
-        <Field label="Website" value={onboarding.website || ''}
-          onChange={(v) => updateOnboarding({ ...onboarding, website: v })} />
         <Field label="Geography" value={onboarding.geography || ''}
-          onChange={(v) => updateOnboarding({ ...onboarding, geography: v })} />
+          onChange={(v) => updateOnboarding({ ...onboarding, geography: v })}
+          placeholder="e.g., United States, Europe"
+          hint="Country or region" />
+        <Field label="Service Area" value={onboarding.serviceArea || ''}
+          onChange={(v) => updateOnboarding({ ...onboarding, serviceArea: v })}
+          placeholder="e.g., Phoenix Metro Area, AZ"
+          hint="Where does this business serve customers? City, state, or radius" />
       </div>
 
       <div className="grid grid-cols-2 gap-4">
+        <Field label="Business Address" value={onboarding.businessAddress || ''}
+          onChange={(v) => updateOnboarding({ ...onboarding, businessAddress: v })}
+          placeholder="e.g., 123 Main St, Phoenix, AZ 85001"
+          hint="Physical location (if applicable)" />
         <Field label="Primary Contact Name" value={client.contacts[0]?.name || ''}
           onChange={(v) => {
             const contacts = [...client.contacts];
@@ -76,6 +84,9 @@ function ClientSetupStep() {
             else contacts[0] = { ...contacts[0], name: v };
             updateClient({ ...client, contacts });
           }} />
+      </div>
+
+      <div className="grid grid-cols-2 gap-4">
         <Field label="Primary Contact Email" value={client.contacts[0]?.email || ''}
           onChange={(v) => {
             const contacts = [...client.contacts];
