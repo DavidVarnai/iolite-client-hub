@@ -7,6 +7,8 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import AiActionButton from '@/components/ai/AiActionButton';
 import { runBenchmarks } from '@/lib/ai/aiActions';
 import type { AiActionStatus, BenchmarkResult } from '@/types/ai';
+import { useClientContext } from '@/contexts/ClientContext';
+import { Info } from 'lucide-react';
 
 interface Props {
   model: GrowthModel;
