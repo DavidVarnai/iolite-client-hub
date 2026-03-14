@@ -208,7 +208,7 @@ export function getProposalChecklist(
   ];
 }
 
-export function getNextStepPrompt(onboarding: OnboardingData, stageProgress: ClientLifecycleProgress[]): { message: string; action: string; targetTab?: string } | null {
+export function getNextStepPrompt(onboarding: OnboardingData, stageProgress: ClientLifecycleProgress[]): { message: string; action: string; targetTab?: string; openWizard?: boolean } | null {
   const current = onboarding.lifecycleStage;
 
   const stageInfo = stageProgress.find(s => s.stage === current);
