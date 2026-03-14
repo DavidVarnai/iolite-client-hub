@@ -7,6 +7,7 @@ import { runStrategyDraft } from '@/lib/ai/aiActions';
 import type { AiActionStatus, StrategyDraftResult } from '@/types/ai';
 import { useClientContext } from '@/contexts/ClientContext';
 import { Plus, Trash2 } from 'lucide-react';
+import RunMIButton from '@/components/client/marketIntelligence/RunMIButton';
 
 function StrategySectionCard({ section, proposalMode }: { section: StrategySection; proposalMode: boolean }) {
   const { client, onboarding, updateClient, saveAiArtifact } = useClientContext();
