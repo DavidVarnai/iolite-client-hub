@@ -7,6 +7,8 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import AiActionButton from '@/components/ai/AiActionButton';
 import { runBenchmarks } from '@/lib/ai/aiActions';
 import type { AiActionStatus, BenchmarkResult } from '@/types/ai';
+import { useClientContext } from '@/contexts/ClientContext';
+import { Info } from 'lucide-react';
 
 interface Props {
   model: GrowthModel;
@@ -48,6 +50,13 @@ function fmt(n: number): string {
 }
 
 export default function ChannelAssumptions({ model, scenario, onUpdate }: Props) {
+  const { onboarding } = useClientContext();
+  const globalAov = useMemo(() => {
+    const raw = onboarding.discovery.avgOrderValue || '';
+    const parsed = parseFloat(raw.replace(/[^0-9.]/g, ''));
+    return isNaN(parsed) ? 0 : parsed;
+  }, [onboarding.discovery.avgOrderValue]);
+
   const handleFunnelChange = (ft: FunnelType) => {
     onUpdate({ ...model, funnelType: ft });
   };
@@ -67,6 +76,17 @@ export default function ChannelAssumptions({ model, scenario, onUpdate }: Props)
 
   return (
     <div className="p-6 space-y-6">
+      {/* Global AOV */}
+      <div className="panel p-4 flex items-center gap-3">
+        <Info className="h-4 w-4 text-primary shrink-0" />
+        <div className="flex-1">
+          <p className="text-xs font-medium text-foreground">
+            Global AOV / Deal Size: <span className="text-primary font-semibold">{globalAov > 0 ? `$${globalAov.toLocaleString()}` : 'Not set'}</span>
+          </p>
+          <p className="text-[10px] text-muted-foreground">Set in Client Discovery → Business Overview → Avg Order Value / Deal Size</p>
+        </div>
+      </div>
+
       {/* Funnel type selector */}
       <div className="flex items-center gap-4">
         <label className="text-sm font-semibold text-foreground">Funnel Model</label>
@@ -88,7 +108,9 @@ export default function ChannelAssumptions({ model, scenario, onUpdate }: Props)
           const mp = scenario.mediaChannelPlans.find(m => m.channel === ca.channel);
           const avgBudget = mp && mp.monthlyRecords.length > 0
             ? mp.monthlyRecords.reduce((s, r) => s + r.plannedBudget, 0) / mp.monthlyRecords.length : 0;
-          const output = calcFunnelOutputs(ca, avgBudget, model.funnelType);
+          // Use global AOV for funnel calculations
+          const caWithGlobalAov = { ...ca, aov: globalAov || ca.aov };
+          const output = calcFunnelOutputs(caWithGlobalAov, avgBudget, model.funnelType);
 
           return (
             <ChannelCard
@@ -98,6 +120,7 @@ export default function ChannelAssumptions({ model, scenario, onUpdate }: Props)
               output={output}
               model={model}
               onAssumptionChange={handleAssumptionChange}
+              globalAov={globalAov}
             />
           );
         })}
@@ -106,12 +129,13 @@ export default function ChannelAssumptions({ model, scenario, onUpdate }: Props)
   );
 }
 
-function ChannelCard({ ca, avgBudget, output, model, onAssumptionChange }: {
+function ChannelCard({ ca, avgBudget, output, model, onAssumptionChange, globalAov }: {
   ca: ChannelAssumption;
   avgBudget: number;
   output: ReturnType<typeof calcFunnelOutputs>;
   model: GrowthModel;
   onAssumptionChange: (channelId: string, field: keyof ChannelAssumption, value: number) => void;
+  globalAov: number;
 }) {
   const [benchmarkStatus, setBenchmarkStatus] = useState<AiActionStatus>('idle');
   const [benchmarks, setBenchmarks] = useState<BenchmarkResult | null>(null);
@@ -159,7 +183,19 @@ function ChannelCard({ ca, avgBudget, output, model, onAssumptionChange }: {
             <InputField label="CTR" value={ca.ctr} onChange={(v) => onAssumptionChange(ca.id, 'ctr', v)} suffix="%" />
             <InputField label="CPC" value={ca.cpc} onChange={(v) => onAssumptionChange(ca.id, 'cpc', v)} suffix="$" />
             <InputField label="LP Conv Rate" value={ca.lpConvRate} onChange={(v) => onAssumptionChange(ca.id, 'lpConvRate', v)} suffix="%" />
-            <InputField label="AOV / Deal" value={ca.aov} onChange={(v) => onAssumptionChange(ca.id, 'aov', v)} suffix="$" />
+            <div>
+              <label className="text-[10px] font-medium text-muted-foreground uppercase tracking-wider">AOV / Deal</label>
+              <div className="relative">
+                <Input
+                  type="number"
+                  value={globalAov || ca.aov || ''}
+                  readOnly
+                  className="h-8 text-xs tabular-nums pr-8 bg-muted/50 cursor-not-allowed"
+                />
+                <span className="absolute right-2 top-1/2 -translate-y-1/2 text-[10px] text-muted-foreground">$</span>
+              </div>
+              <p className="text-[9px] text-muted-foreground mt-0.5">From Discovery</p>
+            </div>
             {(model.funnelType === 'lead_gen' || model.funnelType === 'hybrid') && (
               <>
                 <InputField label="Lead Conv" value={ca.leadConvRate} onChange={(v) => onAssumptionChange(ca.id, 'leadConvRate', v)} suffix="%" />

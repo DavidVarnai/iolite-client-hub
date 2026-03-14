@@ -248,6 +248,7 @@ const STRATEGY_CHANNELS: { channel: ServiceChannel; label: string }[] = [
   { channel: 'content_development', label: 'Content Development' },
   { channel: 'website_development', label: 'Website Development' },
   { channel: 'brand_strategy', label: 'Brand Strategy' },
+  { channel: 'analytics_tracking', label: 'Analytics & Tracking' },
   { channel: 'app_development', label: 'App Development' },
 ];
 

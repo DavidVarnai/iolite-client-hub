@@ -10,6 +10,7 @@ export const c1Onboarding: OnboardingData = {
   activatedAt: '2025-09-01T10:00:00Z',
   website: 'https://meridiancommerce.com',
   geography: 'United States',
+  serviceArea: 'Nationwide (DTC)',
   businessModelType: 'ecommerce',
   primaryGrowthGoal: 'revenue_growth',
   stageProgress: [
@@ -56,6 +57,7 @@ export const c2Onboarding: OnboardingData = {
   proposalReadyAt: '2026-03-10T10:00:00Z',
   website: 'https://atlaslegal.com',
   geography: 'Northeast US',
+  serviceArea: 'Northeast US — Boston, NYC, Philadelphia',
   businessModelType: 'lead_generation',
   primaryGrowthGoal: 'lead_volume',
   stageProgress: [
@@ -101,6 +103,8 @@ export const c3Onboarding: OnboardingData = {
   lifecycleStage: 'discovery',
   website: 'https://pinnacleacademy.edu',
   geography: 'Metro area, US',
+  serviceArea: 'Metro Area, Phoenix AZ',
+  businessAddress: '4521 E Camelback Rd, Phoenix, AZ 85018',
   businessModelType: 'lead_generation',
   primaryGrowthGoal: 'lead_volume',
   stageProgress: [

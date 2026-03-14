@@ -434,15 +434,47 @@ function ProposalConfigPanel({ clientId, onGenerate }: {
   clientId: string;
   onGenerate: (config: GenerationConfig) => void;
 }) {
+  const { client } = useClientContext();
   const bundles = useMemo(() => repository.salesBundles.getAll().filter(b => b.active), []);
   const serviceLines = useMemo(() => repository.serviceLines.getAll().filter(sl => sl.status === 'active'), []);
   const allPackages = useMemo(() => repository.servicePackages.getAll().filter(p => p.active), []);
   const growthModel = useMemo(() => repository.growthModels.get(clientId) || null, [clientId]);
 
+  // Build strategy-to-service-line mapping for pre-selection
+  const strategyChannelToSlId = useMemo(() => {
+    const map: Record<string, string> = {};
+    for (const sl of serviceLines) {
+      // Match by name similarity to channel labels
+      const nameLower = sl.name.toLowerCase();
+      if (nameLower.includes('paid media') || nameLower.includes('paid search') || nameLower.includes('ppc')) map['paid_media'] = sl.id;
+      if (nameLower.includes('social media') || nameLower.includes('social')) map['social_media'] = sl.id;
+      if (nameLower.includes('email') || nameLower.includes('retention')) map['email_marketing'] = sl.id;
+      if (nameLower.includes('content') || nameLower.includes('seo')) map['content_development'] = sl.id;
+      if (nameLower.includes('website') || nameLower.includes('web dev')) map['website_development'] = sl.id;
+      if (nameLower.includes('brand') || nameLower.includes('creative')) map['brand_strategy'] = sl.id;
+      if (nameLower.includes('strategic') || nameLower.includes('cmo') || nameLower.includes('consulting')) map['strategic_consulting'] = sl.id;
+      if (nameLower.includes('analytics') || nameLower.includes('tracking')) map['analytics_tracking'] = sl.id;
+      if (nameLower.includes('app') || nameLower.includes('development') || nameLower.includes('platform')) map['app_development'] = sl.id;
+    }
+    return map;
+  }, [serviceLines]);
+
+  // Pre-select service lines based on strategy sections
+  const preSelectedSlIds = useMemo(() => {
+    const ids: string[] = [];
+    for (const section of client.strategySections) {
+      const slId = strategyChannelToSlId[section.channel];
+      if (slId && !ids.includes(slId)) ids.push(slId);
+    }
+    return ids;
+  }, [client.strategySections, strategyChannelToSlId]);
+
   const [selectedBundleId, setSelectedBundleId] = useState<string | undefined>();
-  const [selectedSlIds, setSelectedSlIds] = useState<string[]>([]);
+  const [selectedSlIds, setSelectedSlIds] = useState<string[]>(preSelectedSlIds);
   const [selectedPkgIds, setSelectedPkgIds] = useState<string[]>([]);
   const [selectedAddOnIds, setSelectedAddOnIds] = useState<string[]>([]);
+  const [cmoHoursPerMonth, setCmoHoursPerMonth] = useState<number>(0);
+  const [webDevPricingMode, setWebDevPricingMode] = useState<'hourly' | 'package'>('package');
 
   const selectedBundle = bundles.find(b => b.id === selectedBundleId);
 
@@ -566,6 +598,11 @@ function ProposalConfigPanel({ clientId, onGenerate }: {
           <Layers className="h-4.5 w-4.5 text-primary" />
           <h3 className="font-semibold text-sm">Services & Packages</h3>
         </div>
+        {preSelectedSlIds.length > 0 && (
+          <p className="text-xs text-primary bg-primary/5 rounded-md px-3 py-2">
+            ✓ {preSelectedSlIds.length} service(s) pre-selected based on your strategy sections
+          </p>
+        )}
         <div className="space-y-3">
           {serviceLines.map(sl => {
             const isSelected = selectedSlIds.includes(sl.id);
@@ -602,6 +639,35 @@ function ProposalConfigPanel({ clientId, onGenerate }: {
                     </Select>
                   )}
                 </div>
+                {/* Fractional CMO hours input */}
+                {isSelected && sl.name.toLowerCase().includes('strategic') && (
+                  <div className="px-4 pb-3 pt-0 flex items-center gap-2">
+                    <span className="text-xs text-muted-foreground">Hours/month:</span>
+                    <Input
+                      type="number"
+                      value={cmoHoursPerMonth || ''}
+                      onChange={(e) => setCmoHoursPerMonth(parseInt(e.target.value) || 0)}
+                      className="h-7 w-24 text-xs"
+                      placeholder="e.g., 20"
+                    />
+                  </div>
+                )}
+                {/* Web dev pricing mode toggle */}
+                {isSelected && (sl.name.toLowerCase().includes('website') || sl.name.toLowerCase().includes('web dev')) && (
+                  <div className="px-4 pb-3 pt-0 flex items-center gap-2">
+                    <span className="text-xs text-muted-foreground">Pricing:</span>
+                    <div className="flex rounded-md border overflow-hidden">
+                      <button
+                        onClick={() => setWebDevPricingMode('hourly')}
+                        className={`px-3 py-1 text-[11px] font-medium transition-colors ${webDevPricingMode === 'hourly' ? 'bg-primary text-primary-foreground' : 'bg-background text-muted-foreground hover:text-foreground'}`}
+                      >Hourly (T&M)</button>
+                      <button
+                        onClick={() => setWebDevPricingMode('package')}
+                        className={`px-3 py-1 text-[11px] font-medium transition-colors ${webDevPricingMode === 'package' ? 'bg-primary text-primary-foreground' : 'bg-background text-muted-foreground hover:text-foreground'}`}
+                      >Package</button>
+                    </div>
+                  </div>
+                )}
                 {/* Deliverables preview */}
                 {isSelected && selectedPkg && selectedPkg.deliverables.length > 0 && (
                   <div className="px-4 pb-3 pt-0">
