@@ -299,6 +299,7 @@ export default function ClientStrategy({ proposalMode }: { proposalMode: boolean
         </div>
         <div className="flex items-center gap-2">
           {proposalMode && <span className="status-proposal">Proposal View</span>}
+          {!proposalMode && <RunMIButton variant="compact" />}
           {!proposalMode && availableChannels.length > 0 && (
             <button onClick={() => setShowAddSection(!showAddSection)}
               className="flex items-center gap-1.5 px-3 py-1.5 bg-primary text-primary-foreground text-xs font-medium rounded-md hover:opacity-90 transition-opacity">
