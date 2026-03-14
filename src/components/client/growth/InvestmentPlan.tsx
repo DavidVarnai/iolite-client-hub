@@ -1,9 +1,10 @@
-import { useMemo } from 'react';
+import { useMemo, useState, useCallback } from 'react';
 import type { GrowthModel, GrowthModelScenario } from '@/types/growthModel';
 import { generateMonths, formatMonth, toMonthlyGrid, GridRow } from '@/lib/growthModelTransformers';
 import { Input } from '@/components/ui/input';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
-import { ChevronDown } from 'lucide-react';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { ChevronDown, DollarSign } from 'lucide-react';
 
 interface Props {
   model: GrowthModel;
