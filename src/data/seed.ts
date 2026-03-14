@@ -301,8 +301,6 @@ const seedClients: Client[] = [
       { id: 'd5', clientId: 'c3', title: 'February Monthly Recap', type: 'recap', createdAt: '2026-03-02', updatedAt: '2026-03-04', author: 'Priya Patel' },
     ],
   },
-];
-
   // ── CLIENT 4 — HIBA Academy ──
   {
     id: 'c4',
