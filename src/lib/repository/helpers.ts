@@ -30,4 +30,6 @@ export const STORAGE_KEYS = {
   salesBundles: 'agencyos_sales_bundles',
   proposals: 'agencyos_proposals',
   proposalDefaults: 'agencyos_proposal_defaults',
+  marketIntelligence: 'agencyos_market_intelligence',
+  marketIntelligenceDefaults: 'agencyos_market_intelligence_defaults',
 } as const;

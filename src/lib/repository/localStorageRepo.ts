@@ -18,6 +18,7 @@ import {
   createSalesBundleRepo,
 } from './pricingRepo';
 import { createProposalRepo, createProposalDefaultsRepo } from './proposalRepo';
+import { createMarketIntelligenceRepo, createMarketIntelligenceDefaultsRepo } from './marketIntelligenceRepo';
 
 export function createLocalStorageRepository(): AppRepository {
   return {
@@ -35,5 +36,7 @@ export function createLocalStorageRepository(): AppRepository {
     salesBundles: createSalesBundleRepo(),
     proposals: createProposalRepo(),
     proposalDefaults: createProposalDefaultsRepo(),
+    marketIntelligence: createMarketIntelligenceRepo(),
+    marketIntelligenceDefaults: createMarketIntelligenceDefaultsRepo(),
   };
 }
