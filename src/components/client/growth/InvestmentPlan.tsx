@@ -13,8 +13,7 @@ interface Props {
   onUpdate: (model: GrowthModel) => void;
 }
 
-function fmt(n: number): string {
-  return n.toLocaleString('en-US', { style: 'currency', currency: 'USD', minimumFractionDigits: 0, maximumFractionDigits: 0 });
+const fmt = formatCurrency;
 }
 
 function EditableGrid({ rows, months, onChange, label }: {
