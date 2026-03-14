@@ -36,5 +36,7 @@ export function createLocalStorageRepository(): AppRepository {
     salesBundles: createSalesBundleRepo(),
     proposals: createProposalRepo(),
     proposalDefaults: createProposalDefaultsRepo(),
+    marketIntelligence: createMarketIntelligenceRepo(),
+    marketIntelligenceDefaults: createMarketIntelligenceDefaultsRepo(),
   };
 }

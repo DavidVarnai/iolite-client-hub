@@ -127,4 +127,6 @@ export interface AppRepository {
   salesBundles: SalesBundleRepository;
   proposals: ProposalRepository;
   proposalDefaults: ProposalDefaultsRepository;
+  marketIntelligence: MarketIntelligenceRepository;
+  marketIntelligenceDefaults: MarketIntelligenceDefaultsRepository;
 }
