@@ -196,6 +196,30 @@ const CHANNEL_DRAFTS: Record<string, (req: StrategyDraftRequest, ctx: any) => St
       'Internal adoption: team alignment on brand voice and visual standards',
     ],
   }),
+
+  analytics_tracking: (req, ctx) => ({
+    objectives: `Implement a comprehensive analytics and tracking infrastructure for ${ctx.primaryProducts || 'the business'} that provides full-funnel visibility, accurate attribution, and actionable insights. Ensure all marketing channels are properly measured to enable data-driven optimization.`,
+    keyInitiatives: [
+      'GA4 setup and configuration: custom events, conversions, enhanced ecommerce/lead tracking, audience building',
+      'Google Tag Manager implementation: centralized tag management, trigger-based event tracking, data layer architecture',
+      'Conversion tracking: platform pixels (Meta CAPI, Google Ads, LinkedIn Insight), server-side tracking where supported',
+      'Attribution modeling: define and implement attribution framework (data-driven or position-based) aligned to business model',
+      'Reporting dashboards: build Looker Studio or equivalent dashboards for campaign performance, funnel analysis, and ROI tracking',
+    ],
+    timelineIdeas: 'Month 1: Audit existing tracking, fix critical gaps, implement GA4 and GTM foundations. Month 2: Deploy conversion tracking across all paid channels, set up server-side tracking. Month 3: Build reporting dashboards, train team, establish QA process for ongoing tracking accuracy.',
+    dependencies: [
+      'Website/CMS admin access for tag installation',
+      'Google Analytics and GTM account access',
+      'Ad platform admin access (Meta Business Manager, Google Ads, etc.)',
+      'CRM/backend access for server-side event integration',
+    ],
+    successMetrics: [
+      'Tracking accuracy: 95%+ match rate between platform-reported and analytics conversions',
+      'Full-funnel visibility: all key events tracked from impression to conversion',
+      'Dashboard adoption: stakeholders using dashboards for weekly decision-making',
+      'Attribution clarity: clear understanding of channel contribution and incrementality',
+    ],
+  }),
 };
 
 export async function fetchStrategyDraft(req: StrategyDraftRequest): Promise<StrategyDraftResult> {
