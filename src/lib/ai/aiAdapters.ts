@@ -46,32 +46,192 @@ export async function fetchMarketResearch(req: MarketResearchRequest): Promise<M
   };
 }
 
-// ─── Mock: Strategy Draft ───
+// ─── Mock: Strategy Draft (channel-specific) ───
+
+const CHANNEL_DRAFTS: Record<string, (req: StrategyDraftRequest, ctx: any) => StrategyDraftResult> = {
+  paid_media: (req, ctx) => ({
+    objectives: `Build a scalable paid media engine for ${ctx.primaryProducts || 'the product line'} that drives efficient customer acquisition. Target a blended ROAS of 4:1+ within 6 months through structured campaign architecture, audience segmentation, and creative testing across Google and Meta platforms.`,
+    keyInitiatives: [
+      'Audit existing ad accounts and restructure campaign architecture (branded, prospecting, retargeting)',
+      `Build audience strategy: lookalikes from top customers, interest-based for ${ctx.coreCustomerSegments || 'core segments'}, and retargeting pools`,
+      'Launch creative testing framework: 3-4 concepts per month with systematic winner identification',
+      'Implement conversion tracking and attribution model (GA4 + platform pixels)',
+      `Allocate budget with 60/30/10 split: prospecting / retargeting / branded search`,
+    ],
+    timelineIdeas: 'Month 1: Account audit, pixel/tracking setup, campaign architecture. Month 2-3: Launch prospecting and retargeting campaigns, begin creative testing. Month 4-6: Optimize based on data, scale winners, test new audiences and placements.',
+    dependencies: [
+      'Ad account access (Google Ads, Meta Business Manager)',
+      'Creative assets: product photography, lifestyle imagery, video',
+      'Landing pages optimized for conversion',
+      'Clear definition of primary KPI (ROAS, CPA, or CPL target)',
+    ],
+    successMetrics: [
+      `CPA within ${ctx.knownBottlenecks ? 'improved range addressing current bottlenecks' : 'industry benchmark range'}`,
+      'ROAS improvement of 30%+ over baseline within 90 days',
+      'Creative testing velocity: minimum 3 new concepts per month',
+      'Incrementality measurement showing true channel contribution',
+    ],
+  }),
+
+  email_marketing: (req, ctx) => ({
+    objectives: `Architect a retention and lifecycle email program that captures 25-35% of total revenue through automated flows and strategic campaigns. Build a segmented, behavior-driven communication system for ${ctx.primaryProducts || 'the product portfolio'}.`,
+    keyInitiatives: [
+      'Audit and rebuild core automation flows: Welcome Series, Abandoned Cart/Browse, Post-Purchase, Win-Back',
+      `Develop segmentation framework based on purchase behavior, engagement, and ${ctx.coreCustomerSegments || 'customer lifecycle stage'}`,
+      'Design campaign calendar: 2-3 campaigns/week with mix of promotional, educational, and brand content',
+      'Implement deliverability best practices: authentication (SPF, DKIM, DMARC), list hygiene, sunset policies',
+      'Build SMS as complementary channel for time-sensitive and high-intent moments',
+    ],
+    timelineIdeas: 'Month 1: Platform audit, flow architecture, segmentation setup. Month 2-3: Launch core flows (Welcome, Cart, Post-Purchase), begin campaign cadence. Month 4-6: Add advanced flows (Win-Back, VIP, Browse Abandon), A/B test subject lines and content.',
+    dependencies: [
+      'ESP access (Klaviyo, Mailchimp, etc.) with clean subscriber list',
+      'Product feed integration for dynamic content and recommendations',
+      'Brand guidelines and email design templates',
+      'Discount/promotion strategy alignment with broader marketing calendar',
+    ],
+    successMetrics: [
+      'Email-attributed revenue reaching 25%+ of total revenue within 6 months',
+      'Flow revenue as % of total email revenue: target 50%+',
+      'List growth rate: 10-15% quarter-over-quarter',
+      'Deliverability: inbox placement rate >95%, bounce rate <2%',
+    ],
+  }),
+
+  content_development: (req, ctx) => ({
+    objectives: `Build a content and SEO strategy that establishes organic authority and drives sustained traffic growth for ${ctx.primaryProducts || 'key product/service categories'}. Target 40%+ organic traffic growth within 12 months through strategic content creation and technical optimization.`,
+    keyInitiatives: [
+      'Conduct comprehensive keyword research: identify high-value head terms and long-tail opportunities',
+      `Develop content pillars aligned to ${ctx.coreCustomerSegments || 'target audience'} pain points and search intent`,
+      'Create editorial calendar: 8-12 pieces/month across blog, guides, comparison pages, and FAQ content',
+      'Technical SEO audit and remediation: site speed, crawlability, schema markup, internal linking',
+      'Build link acquisition strategy through guest posting, digital PR, and resource link building',
+    ],
+    timelineIdeas: 'Month 1: Keyword research, content audit, technical SEO assessment. Month 2-3: Begin content production, fix critical technical issues. Month 4-6: Scale content output, begin link building, track ranking improvements. Month 7-12: Optimize based on performance data, expand content depth.',
+    dependencies: [
+      'Access to Google Search Console and analytics platforms',
+      'Subject matter expert availability for content review',
+      'CMS access for content publishing and technical changes',
+      'Competitive content landscape analysis',
+    ],
+    successMetrics: [
+      'Organic traffic growth: 40%+ year-over-year',
+      'Keyword rankings: top 10 positions for 50+ target keywords within 12 months',
+      'Organic conversion rate maintained or improved vs. baseline',
+      'Domain authority improvement through quality backlink acquisition',
+    ],
+  }),
+
+  social_media: (req, ctx) => ({
+    objectives: `Develop a social media presence that builds brand awareness, community engagement, and drives qualified traffic for ${ctx.primaryProducts || 'the brand'}. Focus on platform-specific content strategies that resonate with ${ctx.coreCustomerSegments || 'target demographics'}.`,
+    keyInitiatives: [
+      'Audit current social presence and define platform priorities (Instagram, TikTok, LinkedIn based on audience)',
+      'Develop content pillar framework: educational, entertaining, promotional, UGC/community',
+      'Build content production workflow: batch creation, scheduling, community management playbook',
+      'Launch influencer/creator partnership program for authentic social proof',
+      'Implement social listening and trend monitoring for real-time content opportunities',
+    ],
+    timelineIdeas: 'Month 1: Platform audit, content strategy development, tool setup. Month 2-3: Launch content calendar, begin community engagement protocols. Month 4-6: Scale content production, launch influencer partnerships, optimize based on engagement data.',
+    dependencies: [
+      'Social platform account access and admin roles',
+      'Brand photography and video assets',
+      'Approved brand voice guidelines and content approval workflow',
+      'Influencer/creator budget allocation',
+    ],
+    successMetrics: [
+      'Engagement rate improvement: 2x current baseline within 90 days',
+      'Follower growth: 15-20% quarter-over-quarter on primary platforms',
+      'Social-referred website traffic: 10%+ increase month-over-month',
+      'UGC volume: establish consistent flow of customer content',
+    ],
+  }),
+
+  website_development: (req, ctx) => ({
+    objectives: `Optimize the website as a high-converting growth engine for ${ctx.primaryProducts || 'the business'}. Focus on conversion rate optimization, user experience, and performance to maximize ROI from all traffic sources.`,
+    keyInitiatives: [
+      'Conduct UX audit: heatmaps, session recordings, and user flow analysis on key conversion paths',
+      'Develop A/B testing roadmap: prioritize high-impact pages (homepage, product/service pages, checkout)',
+      'Optimize page speed: Core Web Vitals improvements targeting 90+ Lighthouse scores',
+      'Improve mobile experience: responsive design audit and mobile-specific CTA optimization',
+      `Address known bottlenecks: ${ctx.knownBottlenecks || 'conversion friction points identified in analytics'}`,
+    ],
+    timelineIdeas: 'Month 1: UX audit, analytics deep-dive, testing tool setup. Month 2-3: Launch first A/B tests, implement quick-win improvements. Month 4-6: Scale testing velocity, implement larger UX changes based on data.',
+    dependencies: [
+      'Website CMS/platform access with ability to edit templates',
+      'Analytics access (GA4, heatmap tools)',
+      'A/B testing platform (Optimizely, VWO, or native)',
+      'Development resources for implementing winning variations',
+    ],
+    successMetrics: [
+      'Conversion rate improvement: 20-30% within 6 months',
+      'Page load time: under 3 seconds on mobile',
+      'Bounce rate reduction on key landing pages',
+      'Revenue per session improvement across all traffic sources',
+    ],
+  }),
+
+  brand_strategy: (req, ctx) => ({
+    objectives: `Develop a cohesive brand positioning and messaging framework that differentiates ${ctx.primaryProducts || 'the brand'} in a competitive market. Create a strategic foundation that aligns all marketing communications and drives premium perception.`,
+    keyInitiatives: [
+      'Conduct brand perception audit: customer surveys, competitor analysis, internal stakeholder interviews',
+      `Define positioning framework: unique value proposition targeting ${ctx.coreCustomerSegments || 'core customer segments'}`,
+      'Develop messaging hierarchy: brand narrative, tagline options, channel-specific copy frameworks',
+      'Create visual identity system: updated guidelines for color, typography, imagery, and layout',
+      'Build brand playbook for consistent execution across all touchpoints',
+    ],
+    timelineIdeas: 'Month 1: Research and discovery phase — brand audit, competitive analysis, stakeholder workshops. Month 2: Strategy development — positioning, messaging, visual direction. Month 3: Deliverable production — brand guidelines, templates, launch plan.',
+    dependencies: [
+      'Access to customer research data and feedback',
+      'Stakeholder availability for brand workshops',
+      'Competitive brand audit materials',
+      'Current brand assets and historical creative',
+    ],
+    successMetrics: [
+      'Brand consistency score: alignment across all channels and touchpoints',
+      'Message recall: improved brand recognition in target audience surveys',
+      'Premium positioning: ability to maintain or increase pricing',
+      'Internal adoption: team alignment on brand voice and visual standards',
+    ],
+  }),
+};
 
 export async function fetchStrategyDraft(req: StrategyDraftRequest): Promise<StrategyDraftResult> {
   await delay(1500);
+
+  // Parse discovery context if provided
+  let ctx: any = {};
+  if (req.discoveryContext) {
+    try { ctx = JSON.parse(req.discoveryContext); } catch {}
+  }
+
+  // Use channel-specific draft if available
+  const channelDraft = CHANNEL_DRAFTS[req.channel];
+  if (channelDraft) {
+    return channelDraft(req, ctx);
+  }
+
+  // Fallback for channels without specific drafts (strategic_consulting, app_development)
   const channelLabel = req.channel.replace(/_/g, ' ');
   return {
-    objectives: `Establish a high-performing ${channelLabel} program that drives measurable growth in customer acquisition and revenue, aligned with the overall business goal of ${req.growthGoals || 'sustainable growth'}. Focus on efficiency, scalability, and clear attribution.`,
+    objectives: `Establish a high-performing ${channelLabel} program for ${ctx.primaryProducts || 'the business'} that drives measurable growth in customer acquisition and revenue, aligned with ${req.growthGoals || 'sustainable growth targets'}. Focus on efficiency, scalability, and clear attribution across all activities.`,
     keyInitiatives: [
       `Audit current ${channelLabel} performance and identify optimization opportunities`,
-      'Develop audience segmentation and targeting framework',
-      'Build creative testing and iteration process',
-      'Implement measurement and attribution infrastructure',
-      `Launch phased campaign structure optimized for ${req.businessModel || 'the business model'}`,
+      `Develop strategy framework aligned to ${ctx.coreCustomerSegments || 'target audience segments'}`,
+      'Build measurement infrastructure and reporting dashboards',
+      'Implement phased execution plan with clear milestones and KPIs',
+      `Address known challenges: ${ctx.knownBottlenecks || 'identified growth bottlenecks'}`,
     ],
-    timelineIdeas: 'Month 1: Audit and planning. Month 2–3: Foundation build and initial launch. Month 4–6: Optimization and scaling. Quarterly reviews thereafter.',
+    timelineIdeas: 'Month 1: Audit, research, and strategic planning. Month 2-3: Foundation build and initial execution. Month 4-6: Optimization, scaling, and performance review.',
     dependencies: [
-      'Access to analytics platforms and historical data',
-      'Creative assets and brand guidelines',
-      'Landing page development support',
-      'Alignment on KPIs and reporting cadence',
+      'Access to relevant platforms, tools, and historical data',
+      'Creative and content assets aligned to brand guidelines',
+      'Cross-functional alignment on priorities and resource allocation',
+      'Clear KPI targets and reporting cadence agreement',
     ],
     successMetrics: [
-      'Cost per acquisition within target range',
-      'Return on ad spend (ROAS) improvement over baseline',
-      'Conversion rate improvement quarter-over-quarter',
-      'Incremental revenue attributable to channel',
+      'Primary KPI improvement within target range',
+      'Efficiency gains quarter-over-quarter',
+      'Clear attribution of channel contribution to overall growth',
+      `Measurable progress against ${req.growthGoals || 'defined growth objectives'}`,
     ],
   };
 }

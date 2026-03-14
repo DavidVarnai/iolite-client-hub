@@ -1,9 +1,11 @@
-import { useState } from 'react';
+import { useState, useCallback } from 'react';
 import { ClientDiscovery, EMPTY_DISCOVERY, BusinessModel, GrowthGoal } from '@/types/onboarding';
 import { ServiceChannel, SERVICE_CHANNEL_LABELS } from '@/types';
-import { Check, ChevronLeft, ChevronRight, X } from 'lucide-react';
+import { Check, ChevronLeft, ChevronRight, X, Loader2, Sparkles } from 'lucide-react';
 import { AnimatePresence, motion } from 'framer-motion';
 import { useClientContext } from '@/contexts/ClientContext';
+import { runMarketResearch } from '@/lib/ai/aiActions';
+import type { AiActionStatus } from '@/types/ai';
 
 type WizardStep = 'setup' | 'discovery' | 'strategy' | 'growth_model' | 'proposal';
 
@@ -20,6 +22,22 @@ interface Props {
   onNavigateTab: (tab: string) => void;
   initialStep?: WizardStep;
 }
+
+// ── Marketing Stack options ──
+const STACK_OPTIONS: Record<string, string[]> = {
+  paidMediaPlatforms: ['Google Ads', 'Meta Ads', 'LinkedIn Ads', 'TikTok Ads', 'Microsoft Ads'],
+  crm: ['Salesforce', 'HubSpot', 'Pipedrive', 'Zoho', 'None'],
+  emailPlatform: ['Klaviyo', 'Mailchimp', 'ActiveCampaign', 'HubSpot', 'Constant Contact'],
+  analyticsStack: ['GA4', 'Adobe Analytics', 'Mixpanel', 'Triple Whale'],
+  websitePlatform: ['Shopify', 'WordPress', 'Webflow', 'Squarespace', 'Custom'],
+};
+
+// ── Sales process templates ──
+const SALES_TEMPLATES: { label: string; value: string }[] = [
+  { label: 'Ecommerce', value: 'Ad Click → Product Page → Add to Cart → Purchase' },
+  { label: 'Lead Gen', value: 'Ad/Content → Landing Page → Form Fill → Sales Call → Close' },
+  { label: 'Hybrid', value: 'Ad → Landing Page → Form/Call → Qualification → Proposal → Close' },
+];
 
 // ---------- STEP 1: Client Setup ----------
 function ClientSetupStep() {
@@ -67,7 +85,6 @@ function ClientSetupStep() {
           }} />
       </div>
 
-
       <div>
         <label className="text-xs font-medium text-muted-foreground uppercase tracking-wider mb-1.5 block">Notes</label>
         <textarea
@@ -83,9 +100,28 @@ function ClientSetupStep() {
 
 // ---------- STEP 2: Discovery ----------
 function DiscoveryStep() {
-  const { onboarding, updateOnboarding } = useClientContext();
+  const { client, onboarding, updateOnboarding } = useClientContext();
   const d = onboarding.discovery;
   const updateD = (patch: Partial<ClientDiscovery>) => updateOnboarding({ ...onboarding, discovery: { ...d, ...patch } });
+  const [aiStatus, setAiStatus] = useState<AiActionStatus>('idle');
+
+  const handleResearchCompetitors = async () => {
+    setAiStatus('loading');
+    try {
+      const result = await runMarketResearch({
+        industry: client.industry,
+        geography: onboarding.geography,
+        businessModel: d.businessModel,
+      });
+      updateD({
+        topCompetitors: result.topCompetitors.map(c => `${c.name}${c.notes ? ` — ${c.notes}` : ''}`).join('\n'),
+        positioningNotes: result.positioningThemes.join('\n'),
+      });
+      setAiStatus('success');
+    } catch {
+      setAiStatus('error');
+    }
+  };
 
   return (
     <div className="space-y-8">
@@ -103,47 +139,99 @@ function DiscoveryStep() {
             { value: 'other', label: 'Other' },
           ]}
           onChange={(v) => updateD({ businessModel: v as BusinessModel })} />
-        <Field label="Primary Products / Services" value={d.primaryProducts} onChange={(v) => updateD({ primaryProducts: v })} />
-        <Field label="Revenue Streams" value={d.revenueStreams} onChange={(v) => updateD({ revenueStreams: v })} />
+        <ExpandableField label="Primary Products / Services" value={d.primaryProducts} onChange={(v) => updateD({ primaryProducts: v })} />
+        <ExpandableField label="Revenue Streams" value={d.revenueStreams} onChange={(v) => updateD({ revenueStreams: v })} />
         <Field label="Avg Order Value / Deal Size" value={d.avgOrderValue} onChange={(v) => updateD({ avgOrderValue: v })} />
-        <Field label="Core Customer Segments" value={d.coreCustomerSegments} onChange={(v) => updateD({ coreCustomerSegments: v })} />
+        <ExpandableField label="Core Customer Segments" value={d.coreCustomerSegments} onChange={(v) => updateD({ coreCustomerSegments: v })} />
       </DiscoverySection>
 
       <DiscoverySection title="B. Growth Targets">
-        <Field label="Revenue Targets" value={d.revenueTargets} onChange={(v) => updateD({ revenueTargets: v })} />
-        <Field label="Customer / Lead Targets" value={d.customerLeadTargets} onChange={(v) => updateD({ customerLeadTargets: v })} />
+        <ExpandableField label="Revenue Targets" value={d.revenueTargets} onChange={(v) => updateD({ revenueTargets: v })} />
+        <ExpandableField label="Customer / Lead Targets" value={d.customerLeadTargets} onChange={(v) => updateD({ customerLeadTargets: v })} />
         <Field label="Time Horizon" value={d.timeHorizon} onChange={(v) => updateD({ timeHorizon: v })} />
-        <Field label="Major Growth Priorities" value={d.majorGrowthPriorities} onChange={(v) => updateD({ majorGrowthPriorities: v })} />
+        <ExpandableField label="Major Growth Priorities" value={d.majorGrowthPriorities} onChange={(v) => updateD({ majorGrowthPriorities: v })} />
       </DiscoverySection>
 
       <DiscoverySection title="C. Sales Process">
         <Field label="Funnel Type" value={d.funnelType} onChange={(v) => updateD({ funnelType: v })} />
-        <Field label="Lead → Qualification → Sale Structure" value={d.leadQualSaleStructure} onChange={(v) => updateD({ leadQualSaleStructure: v })} />
-        <Field label="Close Rate" value={d.closeRate} onChange={(v) => updateD({ closeRate: v })} />
-        <Field label="Sales Cycle Length" value={d.salesCycleLength} onChange={(v) => updateD({ salesCycleLength: v })} />
+        <div className="col-span-2">
+          <label className="text-xs font-medium text-muted-foreground uppercase tracking-wider mb-1.5 block">
+            Lead → Qualification → Sale Structure
+          </label>
+          <div className="flex flex-wrap gap-1.5 mb-2">
+            {SALES_TEMPLATES.map(t => (
+              <button key={t.label} onClick={() => updateD({ leadQualSaleStructure: t.value })}
+                className="px-2.5 py-1 text-[11px] font-medium rounded-md bg-muted hover:bg-primary/10 hover:text-primary transition-colors">
+                {t.label}
+              </button>
+            ))}
+          </div>
+          <textarea
+            value={d.leadQualSaleStructure}
+            onChange={(e) => updateD({ leadQualSaleStructure: e.target.value })}
+            placeholder="e.g. Ad Click → Product Page → Add to Cart → Purchase"
+            rows={2}
+            className="w-full rounded-md border bg-background px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-ring resize-y"
+          />
+          <p className="text-[10px] text-muted-foreground mt-1">Describe the steps from first touch to closed deal</p>
+        </div>
+        <Field label="Close Rate" value={d.closeRate} onChange={(v) => updateD({ closeRate: v })} placeholder="e.g. 15%" />
+        <Field label="Sales Cycle Length" value={d.salesCycleLength} onChange={(v) => updateD({ salesCycleLength: v })} placeholder="e.g. 30 days" />
       </DiscoverySection>
 
       <DiscoverySection title="D. Current Marketing Stack">
-        <Field label="Paid Media Platforms" value={d.paidMediaPlatforms} onChange={(v) => updateD({ paidMediaPlatforms: v })} />
-        <Field label="CRM" value={d.crm} onChange={(v) => updateD({ crm: v })} />
-        <Field label="Email Platform" value={d.emailPlatform} onChange={(v) => updateD({ emailPlatform: v })} />
-        <Field label="Analytics Stack" value={d.analyticsStack} onChange={(v) => updateD({ analyticsStack: v })} />
-        <Field label="Website Platform" value={d.websitePlatform} onChange={(v) => updateD({ websitePlatform: v })} />
+        <CheckboxGroup label="Paid Media Platforms" value={d.paidMediaPlatforms} options={STACK_OPTIONS.paidMediaPlatforms}
+          onChange={(v) => updateD({ paidMediaPlatforms: v })} />
+        <CheckboxGroup label="CRM" value={d.crm} options={STACK_OPTIONS.crm}
+          onChange={(v) => updateD({ crm: v })} />
+        <CheckboxGroup label="Email Platform" value={d.emailPlatform} options={STACK_OPTIONS.emailPlatform}
+          onChange={(v) => updateD({ emailPlatform: v })} />
+        <CheckboxGroup label="Analytics Stack" value={d.analyticsStack} options={STACK_OPTIONS.analyticsStack}
+          onChange={(v) => updateD({ analyticsStack: v })} />
+        <CheckboxGroup label="Website Platform" value={d.websitePlatform} options={STACK_OPTIONS.websitePlatform}
+          onChange={(v) => updateD({ websitePlatform: v })} />
       </DiscoverySection>
 
       <DiscoverySection title="E. Current Performance">
-        <Field label="Current Traffic" value={d.currentTraffic} onChange={(v) => updateD({ currentTraffic: v })} />
-        <Field label="Current Leads / Orders" value={d.currentLeadsOrders} onChange={(v) => updateD({ currentLeadsOrders: v })} />
-        <Field label="Current CPA / CAC" value={d.currentCpaCac} onChange={(v) => updateD({ currentCpaCac: v })} />
-        <Field label="Conversion Rates" value={d.conversionRates} onChange={(v) => updateD({ conversionRates: v })} />
-        <Field label="Known Bottlenecks" value={d.knownBottlenecks} onChange={(v) => updateD({ knownBottlenecks: v })} />
+        <Field label="Current Traffic" value={d.currentTraffic} onChange={(v) => updateD({ currentTraffic: v })}
+          placeholder="e.g., 25,000 monthly sessions" hint="Monthly website sessions from all sources" />
+        <Field label="Current Leads / Orders" value={d.currentLeadsOrders} onChange={(v) => updateD({ currentLeadsOrders: v })}
+          placeholder="e.g., 500 leads/month" hint="Monthly conversions (leads, orders, or calls)" />
+        <Field label="Current CPA / CAC" value={d.currentCpaCac} onChange={(v) => updateD({ currentCpaCac: v })}
+          placeholder="e.g., $45 CPA" hint="Average cost to acquire a customer or lead" />
+        <Field label="Conversion Rates" value={d.conversionRates} onChange={(v) => updateD({ conversionRates: v })}
+          placeholder="e.g., 2.5% site-wide" hint="Overall website conversion rate" />
+        <ExpandableField label="Known Bottlenecks" value={d.knownBottlenecks} onChange={(v) => updateD({ knownBottlenecks: v })}
+          placeholder="e.g., Low mobile conversion, high cart abandonment" hint="Key friction points limiting growth" />
       </DiscoverySection>
 
-      <DiscoverySection title="F. Competitive Landscape">
-        <Field label="Top Competitors" value={d.topCompetitors} onChange={(v) => updateD({ topCompetitors: v })} />
-        <Field label="Positioning Notes" value={d.positioningNotes} onChange={(v) => updateD({ positioningNotes: v })} />
-        <Field label="Differentiators" value={d.differentiators} onChange={(v) => updateD({ differentiators: v })} />
-      </DiscoverySection>
+      <div className="space-y-4">
+        <div className="flex items-center justify-between border-b pb-2">
+          <h4 className="text-sm font-semibold">F. Competitive Landscape</h4>
+          <button
+            onClick={handleResearchCompetitors}
+            disabled={aiStatus === 'loading'}
+            className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded-md bg-primary/10 text-primary hover:bg-primary/20 transition-colors disabled:opacity-50"
+          >
+            {aiStatus === 'loading' ? (
+              <><Loader2 className="h-3.5 w-3.5 animate-spin" /> Researching…</>
+            ) : (
+              <><Sparkles className="h-3.5 w-3.5" /> Research Competitors</>
+            )}
+          </button>
+        </div>
+        {aiStatus === 'success' && (
+          <p className="text-[10px] text-primary font-medium">✓ AI research applied — review and edit below</p>
+        )}
+        <div className="grid grid-cols-2 gap-4">
+          <ExpandableField label="Top Competitors" value={d.topCompetitors} onChange={(v) => updateD({ topCompetitors: v })}
+            placeholder="Competitor names and notes" />
+          <ExpandableField label="Positioning Notes" value={d.positioningNotes} onChange={(v) => updateD({ positioningNotes: v })}
+            placeholder="Key positioning themes in your market" />
+          <ExpandableField label="Differentiators" value={d.differentiators} onChange={(v) => updateD({ differentiators: v })}
+            placeholder="What sets this client apart from competitors?" hint="Unique value propositions, strengths, moats" />
+        </div>
+      </div>
     </div>
   );
 }
@@ -299,12 +387,89 @@ function ProposalReadyStep({ onNavigateTab }: { onNavigateTab: (tab: string) => 
 }
 
 // ---------- Shared helpers ----------
-function Field({ label, value, onChange }: { label: string; value: string; onChange: (v: string) => void }) {
+function Field({ label, value, onChange, placeholder, hint }: {
+  label: string; value: string; onChange: (v: string) => void; placeholder?: string; hint?: string;
+}) {
   return (
     <div>
       <label className="text-xs font-medium text-muted-foreground uppercase tracking-wider mb-1.5 block">{label}</label>
       <input type="text" value={value} onChange={(e) => onChange(e.target.value)}
-        className="w-full rounded-md border bg-background px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-ring" />
+        placeholder={placeholder}
+        className="w-full rounded-md border bg-background px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-ring placeholder:text-muted-foreground/50" />
+      {hint && <p className="text-[10px] text-muted-foreground mt-1">{hint}</p>}
+    </div>
+  );
+}
+
+function ExpandableField({ label, value, onChange, placeholder, hint }: {
+  label: string; value: string; onChange: (v: string) => void; placeholder?: string; hint?: string;
+}) {
+  return (
+    <div>
+      <label className="text-xs font-medium text-muted-foreground uppercase tracking-wider mb-1.5 block">{label}</label>
+      <textarea
+        value={value}
+        onChange={(e) => onChange(e.target.value)}
+        placeholder={placeholder}
+        rows={2}
+        className="w-full rounded-md border bg-background px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-ring resize-y min-h-[40px] placeholder:text-muted-foreground/50"
+      />
+      {hint && <p className="text-[10px] text-muted-foreground mt-1">{hint}</p>}
+    </div>
+  );
+}
+
+function CheckboxGroup({ label, value, options, onChange }: {
+  label: string; value: string; options: string[]; onChange: (v: string) => void;
+}) {
+  const selected = value.split(',').map(s => s.trim()).filter(Boolean);
+  const otherValues = selected.filter(s => !options.includes(s));
+  const hasOther = otherValues.length > 0;
+  const [showOther, setShowOther] = useState(hasOther);
+  const [otherText, setOtherText] = useState(otherValues.join(', '));
+
+  const toggle = (opt: string) => {
+    const next = selected.includes(opt)
+      ? selected.filter(s => s !== opt)
+      : [...selected, opt];
+    onChange(next.join(', '));
+  };
+
+  const handleOtherChange = (text: string) => {
+    setOtherText(text);
+    const knownSelected = selected.filter(s => options.includes(s));
+    const otherItems = text.split(',').map(s => s.trim()).filter(Boolean);
+    onChange([...knownSelected, ...otherItems].join(', '));
+  };
+
+  return (
+    <div className="col-span-2">
+      <label className="text-xs font-medium text-muted-foreground uppercase tracking-wider mb-2 block">{label}</label>
+      <div className="flex flex-wrap gap-1.5 mb-2">
+        {options.map(opt => (
+          <button key={opt} type="button" onClick={() => toggle(opt)}
+            className={`px-3 py-1.5 text-xs font-medium rounded-md border transition-colors ${
+              selected.includes(opt)
+                ? 'bg-primary text-primary-foreground border-primary'
+                : 'bg-background text-muted-foreground border-border hover:border-primary/50 hover:text-foreground'
+            }`}>
+            {opt}
+          </button>
+        ))}
+        <button type="button" onClick={() => setShowOther(!showOther)}
+          className={`px-3 py-1.5 text-xs font-medium rounded-md border transition-colors ${
+            showOther
+              ? 'bg-primary text-primary-foreground border-primary'
+              : 'bg-background text-muted-foreground border-border hover:border-primary/50 hover:text-foreground'
+          }`}>
+          Other
+        </button>
+      </div>
+      {showOther && (
+        <input type="text" value={otherText} onChange={(e) => handleOtherChange(e.target.value)}
+          placeholder="Enter other tools, comma-separated"
+          className="w-full rounded-md border bg-background px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-ring placeholder:text-muted-foreground/50" />
+      )}
     </div>
   );
 }
