@@ -100,28 +100,21 @@ export default function ClientOverview({ onNavigateTab, onOpenWizard, onActivate
         </div>
       </div>
 
-      {/* AI Market Research */}
+      {/* Market Intelligence */}
       <div className="panel p-5 space-y-3">
         <div className="flex items-center justify-between">
-          <h2 className="text-sm font-semibold">Market Research</h2>
-          <AiActionButton label="Research Market" status={researchStatus} onClick={handleResearch} variant="compact" />
+          <h2 className="text-sm font-semibold">Market Intelligence</h2>
+          <RunMIButton variant="compact" />
         </div>
-        {researchStatus !== 'idle' && (
-          <AiResultPanel
-            title="Competitive & Market Research"
-            status={researchStatus}
-            sections={researchResult ? [
-              { heading: 'Market Overview', body: researchResult.marketOverview },
-              { heading: 'Top Competitors', body: researchResult.topCompetitors.map(c => `${c.name} — ${c.notes}`) },
-              { heading: 'Common Acquisition Channels', body: researchResult.acquisitionChannels },
-              { heading: 'Positioning Themes', body: researchResult.positioningThemes },
-              { heading: 'Benchmark Notes', body: researchResult.benchmarkNotes.map(b => `${b.metric}: ${b.range} — ${b.notes}`) },
-            ] : []}
-            onApprove={handleApproveResearch}
-            onDiscard={() => { setResearchStatus('idle'); setResearchResult(null); }}
-            approveLabel="Save to Discovery"
-          />
-        )}
+        <p className="text-sm text-muted-foreground">
+          Run structured research to generate keyword themes, competitor profiles, audience models, and benchmark assumptions.
+        </p>
+        <button
+          onClick={() => onNavigateTab('intelligence')}
+          className="text-xs text-primary hover:underline"
+        >
+          View Intelligence History →
+        </button>
       </div>
 
       {/* Discovery Summary */}
