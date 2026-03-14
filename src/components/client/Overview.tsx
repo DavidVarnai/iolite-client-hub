@@ -4,10 +4,7 @@ import { LIFECYCLE_STAGES, getProposalChecklist } from '@/types/onboarding';
 import { format } from 'date-fns';
 import { Check, Circle, Rocket, Settings, ArrowRight, ChevronRight } from 'lucide-react';
 import ProposalReadinessChecklist from './ProposalReadinessChecklist';
-import AiActionButton from '@/components/ai/AiActionButton';
-import AiResultPanel from '@/components/ai/AiResultPanel';
-import { runMarketResearch } from '@/lib/ai/aiActions';
-import type { AiActionStatus, MarketResearchResult } from '@/types/ai';
+import RunMIButton from './marketIntelligence/RunMIButton';
 import { useClientContext } from '@/contexts/ClientContext';
 
 interface Props {
