@@ -103,6 +103,8 @@ export const c3Onboarding: OnboardingData = {
   lifecycleStage: 'discovery',
   website: 'https://pinnacleacademy.edu',
   geography: 'Metro area, US',
+  serviceArea: 'Metro Area, Phoenix AZ',
+  businessAddress: '4521 E Camelback Rd, Phoenix, AZ 85018',
   businessModelType: 'lead_generation',
   primaryGrowthGoal: 'lead_volume',
   stageProgress: [
