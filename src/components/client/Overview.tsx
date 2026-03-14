@@ -1,4 +1,3 @@
-import { useState } from 'react';
 import { SERVICE_CHANNEL_LABELS } from '@/types';
 import { LIFECYCLE_STAGES, getProposalChecklist } from '@/types/onboarding';
 import { format } from 'date-fns';
