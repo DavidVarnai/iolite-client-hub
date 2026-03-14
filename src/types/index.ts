@@ -10,7 +10,8 @@ export type ServiceChannel =
   | 'email_marketing'
   | 'website_development'
   | 'content_development'
-  | 'app_development';
+  | 'app_development'
+  | 'analytics_tracking';
 
 export const SERVICE_CHANNEL_LABELS: Record<ServiceChannel, string> = {
   strategic_consulting: 'Strategic Consulting / Fractional CMO',
@@ -21,6 +22,7 @@ export const SERVICE_CHANNEL_LABELS: Record<ServiceChannel, string> = {
   website_development: 'Website Development',
   content_development: 'Content Development',
   app_development: 'App / Platform Development',
+  analytics_tracking: 'Analytics & Tracking Implementation',
 };
 
 export type MeetingType = 'weekly' | 'biweekly' | 'monthly' | 'special';

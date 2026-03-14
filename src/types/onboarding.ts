@@ -107,6 +107,8 @@ export interface OnboardingData {
   discovery: ClientDiscovery;
   website?: string;
   geography?: string;
+  serviceArea?: string;
+  businessAddress?: string;
   businessModelType?: BusinessModel;
   primaryGrowthGoal?: GrowthGoal;
 }

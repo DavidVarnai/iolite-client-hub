@@ -15,7 +15,11 @@ export interface MarketResearchRequest {
   clientWebsite?: string;
   industry: string;
   geography?: string;
+  serviceArea?: string;
   businessModel?: string;
+  primaryProducts?: string;
+  coreCustomerSegments?: string;
+  keywords?: string[];
   knownCompetitors?: string[];
 }
 
