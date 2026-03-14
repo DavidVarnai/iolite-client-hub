@@ -57,6 +57,7 @@ export const c2Onboarding: OnboardingData = {
   proposalReadyAt: '2026-03-10T10:00:00Z',
   website: 'https://atlaslegal.com',
   geography: 'Northeast US',
+  serviceArea: 'Northeast US — Boston, NYC, Philadelphia',
   businessModelType: 'lead_generation',
   primaryGrowthGoal: 'lead_volume',
   stageProgress: [
