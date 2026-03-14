@@ -86,7 +86,7 @@ export function ClientProvider({ clientId, children }: ProviderProps) {
   );
 
   if (!client) {
-    return null;
+    return <div className="p-6"><p className="text-muted-foreground">Client not found.</p></div>;
   }
 
   const value: ClientContextValue = {
