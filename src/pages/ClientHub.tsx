@@ -19,9 +19,10 @@ import Campaigns from '@/components/client/Campaigns';
 import GrowthModelView from '@/components/client/GrowthModel';
 import UnitEconomics from '@/components/client/UnitEconomics';
 import ProposalView from '@/components/client/proposal/ProposalView';
+import MarketIntelligenceTab from '@/components/client/marketIntelligence/MarketIntelligenceTab';
 
 const TABS = [
-  'overview', 'strategy', 'growth-model', 'proposal', 'campaigns', 'performance', 'meetings',
+  'overview', 'intelligence', 'strategy', 'growth-model', 'proposal', 'campaigns', 'performance', 'meetings',
   'comments', 'tasks', 'communications', 'documents', 'unit-economics', 'settings',
 ] as const;
 
