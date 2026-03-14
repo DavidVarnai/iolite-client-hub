@@ -598,6 +598,11 @@ function ProposalConfigPanel({ clientId, onGenerate }: {
           <Layers className="h-4.5 w-4.5 text-primary" />
           <h3 className="font-semibold text-sm">Services & Packages</h3>
         </div>
+        {preSelectedSlIds.length > 0 && (
+          <p className="text-xs text-primary bg-primary/5 rounded-md px-3 py-2">
+            ✓ {preSelectedSlIds.length} service(s) pre-selected based on your strategy sections
+          </p>
+        )}
         <div className="space-y-3">
           {serviceLines.map(sl => {
             const isSelected = selectedSlIds.includes(sl.id);
