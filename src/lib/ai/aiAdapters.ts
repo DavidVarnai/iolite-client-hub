@@ -16,31 +16,35 @@ const delay = (ms: number) => new Promise(r => setTimeout(r, ms));
 
 export async function fetchMarketResearch(req: MarketResearchRequest): Promise<MarketResearchResult> {
   await delay(1800);
+  const area = req.serviceArea || req.geography || 'the US';
+  const products = req.primaryProducts || 'products/services';
+  const segments = req.coreCustomerSegments || 'target customers';
+
   return {
-    marketOverview: `The ${req.industry} market in ${req.geography || 'the US'} is experiencing steady growth driven by digital transformation and evolving consumer expectations. Key trends include mobile-first commerce, personalization at scale, and sustainability-driven purchasing. The competitive landscape is moderately concentrated with established incumbents facing pressure from digitally-native challengers.`,
+    marketOverview: `The ${req.industry} market in ${area} is experiencing steady growth. Businesses offering ${products} are competing for ${segments} through a mix of digital and traditional channels. Key trends include mobile-first experiences, local SEO dominance, and community-driven marketing. The competitive landscape in ${area} includes both established incumbents and emerging digital-first challengers.`,
     topCompetitors: [
-      { name: 'Industry Leader Co.', url: 'https://example.com', notes: 'Market leader with ~25% share. Strong brand, aggressive paid media, mature email program.' },
-      { name: 'Digital Challenger Inc.', notes: 'Fast-growing DTC brand. Heavy Meta/TikTok investment. Known for creative excellence.' },
-      { name: 'Legacy Brand Group', notes: 'Traditional player pivoting to digital. Large budget but slow execution.' },
-      { name: 'Niche Specialist Ltd.', notes: 'Focused on a premium segment. High AOV, lower volume, strong organic presence.' },
+      { name: `${req.industry} Leader — ${area}`, url: 'https://example.com', notes: `Dominant player in ${area} for ${products}. Strong local SEO, aggressive Google Ads presence, and established reputation with ${segments}.` },
+      { name: `Digital Challenger — ${area}`, notes: `Fast-growing competitor targeting ${segments} in ${area}. Heavy Meta/Instagram investment with strong social proof and review strategy.` },
+      { name: `Legacy Provider — ${area}`, notes: `Traditional ${req.industry} business in ${area} with loyal customer base. Large offline presence but weak digital footprint — opportunity to outpace.` },
+      { name: `Niche Specialist — ${area}`, notes: `Focused on a premium segment of ${products}. Higher price point, strong word-of-mouth, and targeted local advertising.` },
     ],
     acquisitionChannels: [
-      'Paid Search (Google Ads) — dominant for high-intent capture',
-      'Paid Social (Meta, TikTok) — primary for prospecting and awareness',
-      'Email/SMS — critical retention and lifecycle channel',
-      'Organic Search (SEO) — long-term authority play',
-      'Affiliate / Influencer — growing channel for social proof',
+      `Google Ads (Search + Local) — primary for high-intent capture in ${area}`,
+      `Meta Ads (Facebook + Instagram) — prospecting and awareness for ${segments}`,
+      `Local SEO / Google Business Profile — critical for visibility in ${area}`,
+      'Email/SMS — retention and lifecycle communication',
+      'Referral / Community — word-of-mouth and local partnerships',
     ],
     positioningThemes: [
-      'Quality and craftsmanship differentiation',
-      'Customer-centric experience and support',
-      'Sustainability and ethical sourcing',
-      'Community-driven brand advocacy',
+      `Local expertise and community presence in ${area}`,
+      `Specialized ${products} tailored for ${segments}`,
+      'Quality and trust-driven differentiation',
+      'Digital-first convenience with local service',
     ],
     benchmarkNotes: [
-      { metric: 'Customer Acquisition Cost', range: '$28 – $65', notes: `Typical for ${req.industry}. Lower end for branded search, higher for prospecting.` },
-      { metric: 'Average CPC', range: '$0.80 – $2.50', notes: 'Varies by platform. Google Search higher than Meta.' },
-      { metric: 'Conversion Rate', range: '1.8% – 4.2%', notes: 'Desktop typically 2x mobile. Depends heavily on landing page quality.' },
+      { metric: 'Customer Acquisition Cost', range: '$28 – $65', notes: `Typical for ${req.industry} in ${area}. Lower for branded search, higher for prospecting.` },
+      { metric: 'Average CPC', range: '$0.80 – $2.50', notes: `Varies by platform and competition level in ${area}.` },
+      { metric: 'Conversion Rate', range: '1.8% – 4.2%', notes: 'Desktop typically 2x mobile. Landing page quality is critical.' },
       { metric: 'Email Revenue Share', range: '20% – 35%', notes: 'Best-in-class programs with robust flows reach 30%+.' },
     ],
   };
