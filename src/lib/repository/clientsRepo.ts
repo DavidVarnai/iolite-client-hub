@@ -14,7 +14,9 @@ function seedOnboardingMap(): Record<string, OnboardingData> {
 }
 
 export function createClientRepo(): ClientRepository {
-  if (!localStorage.getItem(STORAGE_KEYS.clients)) persist(STORAGE_KEYS.clients, seedClients);
+  const existing = load<Client[]>(STORAGE_KEYS.clients) || [];
+  const missing = seedClients.filter(s => !existing.find(e => e.id === s.id));
+  if (missing.length || !existing.length) persist(STORAGE_KEYS.clients, [...existing, ...missing]);
   return {
     getAll: () => load<Client[]>(STORAGE_KEYS.clients) || [],
     getById(id) { return this.getAll().find(c => c.id === id) || null; },
