@@ -129,12 +129,13 @@ export default function ChannelAssumptions({ model, scenario, onUpdate }: Props)
   );
 }
 
-function ChannelCard({ ca, avgBudget, output, model, onAssumptionChange }: {
+function ChannelCard({ ca, avgBudget, output, model, onAssumptionChange, globalAov }: {
   ca: ChannelAssumption;
   avgBudget: number;
   output: ReturnType<typeof calcFunnelOutputs>;
   model: GrowthModel;
   onAssumptionChange: (channelId: string, field: keyof ChannelAssumption, value: number) => void;
+  globalAov: number;
 }) {
   const [benchmarkStatus, setBenchmarkStatus] = useState<AiActionStatus>('idle');
   const [benchmarks, setBenchmarks] = useState<BenchmarkResult | null>(null);
