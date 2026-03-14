@@ -1,13 +1,24 @@
+import { useState } from 'react';
 import { Settings } from 'lucide-react';
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Button } from '@/components/ui/button';
 import { defaultSystemSettings } from '@/data/adminSeed';
+import { useToast } from '@/hooks/use-toast';
 
 export default function AdminSystemSettings() {
-  const settings = defaultSystemSettings;
+  const { toast } = useToast();
+  const [settings, setSettings] = useState({ ...defaultSystemSettings });
+
+  const handleSave = () => {
+    // Persist would go through repository layer when backend is wired
+    toast({
+      title: 'Settings saved',
+      description: 'Your system settings have been updated successfully.',
+    });
+  };
 
   return (
     <div className="max-w-2xl space-y-6">
@@ -28,7 +39,8 @@ export default function AdminSystemSettings() {
         <CardContent className="space-y-4">
           <div className="space-y-2">
             <Label htmlFor="agency-name">Agency Name</Label>
-            <Input id="agency-name" defaultValue={settings.agencyName} />
+            <Input id="agency-name" value={settings.agencyName}
+              onChange={(e) => setSettings({ ...settings, agencyName: e.target.value })} />
           </div>
           <div className="space-y-2">
             <Label>Logo</Label>
@@ -48,7 +60,7 @@ export default function AdminSystemSettings() {
           <div className="grid grid-cols-2 gap-4">
             <div className="space-y-2">
               <Label>Timezone</Label>
-              <Select defaultValue={settings.defaultTimezone}>
+              <Select value={settings.defaultTimezone} onValueChange={(v) => setSettings({ ...settings, defaultTimezone: v })}>
                 <SelectTrigger><SelectValue /></SelectTrigger>
                 <SelectContent>
                   <SelectItem value="America/New_York">Eastern (ET)</SelectItem>
@@ -61,7 +73,7 @@ export default function AdminSystemSettings() {
             </div>
             <div className="space-y-2">
               <Label>Currency</Label>
-              <Select defaultValue={settings.defaultCurrency}>
+              <Select value={settings.defaultCurrency} onValueChange={(v) => setSettings({ ...settings, defaultCurrency: v })}>
                 <SelectTrigger><SelectValue /></SelectTrigger>
                 <SelectContent>
                   <SelectItem value="USD">USD ($)</SelectItem>
@@ -83,7 +95,8 @@ export default function AdminSystemSettings() {
         <CardContent className="space-y-4">
           <div className="space-y-2">
             <Label>Default Reporting Cadence</Label>
-            <Select defaultValue={settings.reportingDefaults.cadence}>
+            <Select value={settings.reportingDefaults.cadence}
+              onValueChange={(v) => setSettings({ ...settings, reportingDefaults: { ...settings.reportingDefaults, cadence: v as any } })}>
               <SelectTrigger><SelectValue /></SelectTrigger>
               <SelectContent>
                 <SelectItem value="weekly">Weekly</SelectItem>
@@ -94,13 +107,15 @@ export default function AdminSystemSettings() {
           </div>
           <div className="space-y-2">
             <Label htmlFor="naming">Internal Naming Conventions</Label>
-            <Input id="naming" placeholder="e.g. [Client]-[Channel]-[Year]" defaultValue={settings.internalNamingConventions} />
+            <Input id="naming" placeholder="e.g. [Client]-[Channel]-[Year]"
+              value={settings.internalNamingConventions}
+              onChange={(e) => setSettings({ ...settings, internalNamingConventions: e.target.value })} />
           </div>
         </CardContent>
       </Card>
 
       <div className="flex justify-end">
-        <Button>Save Settings</Button>
+        <Button onClick={handleSave}>Save Settings</Button>
       </div>
     </div>
   );

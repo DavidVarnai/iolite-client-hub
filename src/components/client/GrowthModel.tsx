@@ -151,7 +151,7 @@ export default function GrowthModelView() {
       <div className="flex-1 overflow-auto">
         {activeTab === 'investment' && scenario && <InvestmentPlan model={model} scenario={scenario} onUpdate={handleModelUpdate} />}
         {activeTab === 'assumptions' && scenario && <ChannelAssumptions model={model} scenario={scenario} onUpdate={handleModelUpdate} />}
-        {activeTab === 'revenue' && scenario && <RevenueModel model={model} scenario={scenario} />}
+        {activeTab === 'revenue' && scenario && <RevenueModel model={model} scenario={scenario} onUpdate={handleModelUpdate} />}
         {activeTab === 'forecast' && scenario && <ForecastVsActual model={model} scenario={scenario} onUpdate={handleModelUpdate} />}
         {activeTab === 'summary' && <ExecutiveSummary model={model} mode={mode} />}
       </div>

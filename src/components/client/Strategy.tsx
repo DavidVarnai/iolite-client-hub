@@ -1,5 +1,5 @@
 import { SERVICE_CHANNEL_LABELS, StrategySection, ServiceChannel } from '@/types';
-import { useState } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
 import AiActionButton from '@/components/ai/AiActionButton';
 import AiResultPanel from '@/components/ai/AiResultPanel';
@@ -87,7 +87,7 @@ function StrategySectionCard({ section, proposalMode }: { section: StrategySecti
   };
 
   return (
-    <div className="panel">
+    <div id={`strategy-section-${section.id}`} className="panel">
       <div className="p-5 border-b">
         <div className="flex items-center justify-between">
           <h3 className="text-sm font-semibold">{SERVICE_CHANNEL_LABELS[section.channel]}</h3>
@@ -254,13 +254,26 @@ const STRATEGY_CHANNELS: { channel: ServiceChannel; label: string }[] = [
 export default function ClientStrategy({ proposalMode }: { proposalMode: boolean }) {
   const { client, updateClient } = useClientContext();
   const [showAddSection, setShowAddSection] = useState(false);
+  const [newSectionId, setNewSectionId] = useState<string | null>(null);
 
   const existingChannels = new Set(client.strategySections.map(s => s.channel));
   const availableChannels = STRATEGY_CHANNELS.filter(c => !existingChannels.has(c.channel));
 
+  // Auto-scroll to newly added section
+  useEffect(() => {
+    if (newSectionId) {
+      const el = document.getElementById(`strategy-section-${newSectionId}`);
+      if (el) {
+        setTimeout(() => el.scrollIntoView({ behavior: 'smooth', block: 'start' }), 100);
+      }
+      setNewSectionId(null);
+    }
+  }, [newSectionId, client.strategySections]);
+
   const handleAddSection = (channel: ServiceChannel) => {
+    const sectionId = `s-${Date.now()}`;
     const newSection: StrategySection = {
-      id: `s-${Date.now()}`,
+      id: sectionId,
       channel,
       clientSummary: { objective: '', priorities: [], plan: '', expectedOutcomes: [] },
       internal: {
@@ -270,6 +283,7 @@ export default function ClientStrategy({ proposalMode }: { proposalMode: boolean
     };
     updateClient({ ...client, strategySections: [...client.strategySections, newSection] });
     setShowAddSection(false);
+    setNewSectionId(sectionId);
   };
 
   return (
