@@ -36,7 +36,6 @@ export function createOnboardingRepo(): OnboardingRepository {
   const merged = { ...seed, ...existing };
   if (Object.keys(merged).length !== Object.keys(existing).length) persist(STORAGE_KEYS.onboarding, merged);
   return {
-  return {
     get(clientId) { return (load<Record<string, OnboardingData>>(STORAGE_KEYS.onboarding) || {})[clientId] || { ...DEFAULT_ONBOARDING }; },
     save(clientId, data) { const map = load<Record<string, OnboardingData>>(STORAGE_KEYS.onboarding) || {}; map[clientId] = data; persist(STORAGE_KEYS.onboarding, map); },
     delete(clientId) { const map = load<Record<string, OnboardingData>>(STORAGE_KEYS.onboarding) || {}; delete map[clientId]; persist(STORAGE_KEYS.onboarding, map); },
