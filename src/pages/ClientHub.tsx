@@ -170,7 +170,7 @@ function ClientHubInner() {
               activeTab === t ? 'tab-active' : 'tab-inactive'
             }`}
           >
-            {t === 'growth-model' ? 'Growth Model' : t === 'unit-economics' ? 'Unit Economics' : t === 'proposal' ? 'Proposal' : t}
+            {t === 'growth-model' ? 'Growth Model' : t === 'unit-economics' ? 'Unit Economics' : t === 'proposal' ? 'Proposal' : t === 'intelligence' ? 'Intelligence' : t}
           </button>
         ))}
       </div>
