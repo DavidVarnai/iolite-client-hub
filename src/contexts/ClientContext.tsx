@@ -19,7 +19,7 @@ interface ClientContextValue {
   growthModel: GrowthModel | null;
   updateGrowthModel: (model: GrowthModel | null) => void;
   stageProgress: ClientLifecycleProgress[];
-  nextStep: { message: string; action: string; targetTab?: string } | null;
+  nextStep: { message: string; action: string; targetTab?: string; openWizard?: boolean } | null;
   hasGrowthModel: boolean;
   aiArtifacts: AiArtifact[];
   saveAiArtifact: (artifact: AiArtifact) => void;

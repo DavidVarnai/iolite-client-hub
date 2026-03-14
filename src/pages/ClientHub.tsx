@@ -150,7 +150,10 @@ function ClientHubInner() {
           <NextStepCard
             message={nextStep.message}
             action={nextStep.action}
-            onAction={() => nextStep.targetTab && setTab(nextStep.targetTab)}
+            onAction={() => {
+              if (nextStep.openWizard) setShowWizard(true);
+              else if (nextStep.targetTab) setTab(nextStep.targetTab);
+            }}
           />
         </div>
       )}
