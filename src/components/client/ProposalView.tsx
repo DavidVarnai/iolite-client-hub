@@ -434,15 +434,47 @@ function ProposalConfigPanel({ clientId, onGenerate }: {
   clientId: string;
   onGenerate: (config: GenerationConfig) => void;
 }) {
+  const { client } = useClientContext();
   const bundles = useMemo(() => repository.salesBundles.getAll().filter(b => b.active), []);
   const serviceLines = useMemo(() => repository.serviceLines.getAll().filter(sl => sl.status === 'active'), []);
   const allPackages = useMemo(() => repository.servicePackages.getAll().filter(p => p.active), []);
   const growthModel = useMemo(() => repository.growthModels.get(clientId) || null, [clientId]);
 
+  // Build strategy-to-service-line mapping for pre-selection
+  const strategyChannelToSlId = useMemo(() => {
+    const map: Record<string, string> = {};
+    for (const sl of serviceLines) {
+      // Match by name similarity to channel labels
+      const nameLower = sl.name.toLowerCase();
+      if (nameLower.includes('paid media') || nameLower.includes('paid search') || nameLower.includes('ppc')) map['paid_media'] = sl.id;
+      if (nameLower.includes('social media') || nameLower.includes('social')) map['social_media'] = sl.id;
+      if (nameLower.includes('email') || nameLower.includes('retention')) map['email_marketing'] = sl.id;
+      if (nameLower.includes('content') || nameLower.includes('seo')) map['content_development'] = sl.id;
+      if (nameLower.includes('website') || nameLower.includes('web dev')) map['website_development'] = sl.id;
+      if (nameLower.includes('brand') || nameLower.includes('creative')) map['brand_strategy'] = sl.id;
+      if (nameLower.includes('strategic') || nameLower.includes('cmo') || nameLower.includes('consulting')) map['strategic_consulting'] = sl.id;
+      if (nameLower.includes('analytics') || nameLower.includes('tracking')) map['analytics_tracking'] = sl.id;
+      if (nameLower.includes('app') || nameLower.includes('development') || nameLower.includes('platform')) map['app_development'] = sl.id;
+    }
+    return map;
+  }, [serviceLines]);
+
+  // Pre-select service lines based on strategy sections
+  const preSelectedSlIds = useMemo(() => {
+    const ids: string[] = [];
+    for (const section of client.strategySections) {
+      const slId = strategyChannelToSlId[section.channel];
+      if (slId && !ids.includes(slId)) ids.push(slId);
+    }
+    return ids;
+  }, [client.strategySections, strategyChannelToSlId]);
+
   const [selectedBundleId, setSelectedBundleId] = useState<string | undefined>();
-  const [selectedSlIds, setSelectedSlIds] = useState<string[]>([]);
+  const [selectedSlIds, setSelectedSlIds] = useState<string[]>(preSelectedSlIds);
   const [selectedPkgIds, setSelectedPkgIds] = useState<string[]>([]);
   const [selectedAddOnIds, setSelectedAddOnIds] = useState<string[]>([]);
+  const [cmoHoursPerMonth, setCmoHoursPerMonth] = useState<number>(0);
+  const [webDevPricingMode, setWebDevPricingMode] = useState<'hourly' | 'package'>('package');
 
   const selectedBundle = bundles.find(b => b.id === selectedBundleId);
 
