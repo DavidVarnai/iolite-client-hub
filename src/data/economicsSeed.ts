@@ -19,6 +19,9 @@ export const seedTeamMembers: TeamMember[] = [
   { id: 'tm5', name: 'Mike Reeves', role: 'Email Specialist', workerType: 'contractor', status: 'active', notes: 'Flat-fee email marketing contractor.' },
   { id: 'tm6', name: 'Seif Almadi', role: 'Campaign Manager', workerType: 'full_time', status: 'active', notes: 'Paid media account manager with base fee per client + threshold share on fees above base.' },
   { id: 'tm7', name: 'Michael Torres', role: 'Retention Lead', workerType: 'full_time', status: 'active', notes: 'Leads retention marketing with revenue share on fees.' },
+  { id: 'tm8', name: 'David Khalil', role: 'Fractional CMO / COO', workerType: 'contractor', status: 'active', notes: 'Strategic marketing and operational leadership. $200/hr. Leads HIBA, CIS, and Venturity engagements.' },
+  { id: 'tm9', name: 'Veronica Ruiz', role: 'Project Manager', workerType: 'contractor', status: 'active', notes: 'PM support for David\'s client portfolio.' },
+  { id: 'tm10', name: 'Mark Rivera', role: 'Social Media Specialist', workerType: 'contractor', status: 'active', notes: 'Social media content and community management.' },
 ];
 
 /* ── Compensation Components ── */
