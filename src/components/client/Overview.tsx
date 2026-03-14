@@ -15,47 +15,11 @@ interface Props {
 }
 
 export default function ClientOverview({ onNavigateTab, onOpenWizard, onActivateClient, onSetProposalMode }: Props) {
-  const { client, onboarding, stageProgress, hasGrowthModel, saveAiArtifact } = useClientContext();
+  const { client, onboarding, stageProgress, hasGrowthModel } = useClientContext();
   const primaryContact = client.contacts.find(c => c.isPrimary);
   const proposalChecklist = getProposalChecklist(onboarding, client, hasGrowthModel);
   const isActive = onboarding.lifecycleStage === 'active_client';
   const isProposalReady = onboarding.lifecycleStage === 'proposal_ready';
-
-  const [researchStatus, setResearchStatus] = useState<AiActionStatus>('idle');
-  const [researchResult, setResearchResult] = useState<MarketResearchResult | null>(null);
-
-  const handleResearch = async () => {
-    setResearchStatus('loading');
-    try {
-      const result = await runMarketResearch({
-        clientWebsite: onboarding.website,
-        industry: client.industry,
-        geography: onboarding.geography,
-        businessModel: onboarding.discovery.businessModel,
-        knownCompetitors: onboarding.discovery.topCompetitors ? onboarding.discovery.topCompetitors.split(',').map(s => s.trim()) : undefined,
-      });
-      setResearchResult(result);
-      setResearchStatus('success');
-    } catch {
-      setResearchStatus('error');
-    }
-  };
-
-  const handleApproveResearch = () => {
-    if (!researchResult) return;
-    saveAiArtifact({
-      id: `art-${Date.now()}`,
-      clientId: client.id,
-      type: 'market_research',
-      sourceModule: 'overview',
-      content: researchResult as unknown as Record<string, unknown>,
-      status: 'accepted',
-      createdAt: new Date().toISOString(),
-      acceptedAt: new Date().toISOString(),
-    });
-    setResearchStatus('idle');
-    setResearchResult(null);
-  };
 
   return (
     <div className="p-6 max-w-5xl space-y-6">
