@@ -183,7 +183,19 @@ function ChannelCard({ ca, avgBudget, output, model, onAssumptionChange, globalA
             <InputField label="CTR" value={ca.ctr} onChange={(v) => onAssumptionChange(ca.id, 'ctr', v)} suffix="%" />
             <InputField label="CPC" value={ca.cpc} onChange={(v) => onAssumptionChange(ca.id, 'cpc', v)} suffix="$" />
             <InputField label="LP Conv Rate" value={ca.lpConvRate} onChange={(v) => onAssumptionChange(ca.id, 'lpConvRate', v)} suffix="%" />
-            <InputField label="AOV / Deal" value={ca.aov} onChange={(v) => onAssumptionChange(ca.id, 'aov', v)} suffix="$" />
+            <div>
+              <label className="text-[10px] font-medium text-muted-foreground uppercase tracking-wider">AOV / Deal</label>
+              <div className="relative">
+                <Input
+                  type="number"
+                  value={globalAov || ca.aov || ''}
+                  readOnly
+                  className="h-8 text-xs tabular-nums pr-8 bg-muted/50 cursor-not-allowed"
+                />
+                <span className="absolute right-2 top-1/2 -translate-y-1/2 text-[10px] text-muted-foreground">$</span>
+              </div>
+              <p className="text-[9px] text-muted-foreground mt-0.5">From Discovery</p>
+            </div>
             {(model.funnelType === 'lead_gen' || model.funnelType === 'hybrid') && (
               <>
                 <InputField label="Lead Conv" value={ca.leadConvRate} onChange={(v) => onAssumptionChange(ca.id, 'leadConvRate', v)} suffix="%" />
