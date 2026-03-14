@@ -122,7 +122,10 @@ function DiscoveryStep() {
       const result = await runMarketResearch({
         industry: client.industry,
         geography: onboarding.geography,
+        serviceArea: onboarding.serviceArea,
         businessModel: d.businessModel,
+        primaryProducts: d.primaryProducts,
+        coreCustomerSegments: d.coreCustomerSegments,
       });
       updateD({
         topCompetitors: result.topCompetitors.map(c => `${c.name}${c.notes ? ` — ${c.notes}` : ''}`).join('\n'),
