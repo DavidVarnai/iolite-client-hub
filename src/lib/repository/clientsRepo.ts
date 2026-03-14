@@ -14,7 +14,9 @@ function seedOnboardingMap(): Record<string, OnboardingData> {
 }
 
 export function createClientRepo(): ClientRepository {
-  if (!localStorage.getItem(STORAGE_KEYS.clients)) persist(STORAGE_KEYS.clients, seedClients);
+  const existing = load<Client[]>(STORAGE_KEYS.clients) || [];
+  const missing = seedClients.filter(s => !existing.find(e => e.id === s.id));
+  if (missing.length || !existing.length) persist(STORAGE_KEYS.clients, [...existing, ...missing]);
   return {
     getAll: () => load<Client[]>(STORAGE_KEYS.clients) || [],
     getById(id) { return this.getAll().find(c => c.id === id) || null; },
@@ -29,7 +31,10 @@ export function createClientRepo(): ClientRepository {
 }
 
 export function createOnboardingRepo(): OnboardingRepository {
-  if (!localStorage.getItem(STORAGE_KEYS.onboarding)) persist(STORAGE_KEYS.onboarding, seedOnboardingMap());
+  const existing = load<Record<string, OnboardingData>>(STORAGE_KEYS.onboarding) || {};
+  const seed = seedOnboardingMap();
+  const merged = { ...seed, ...existing };
+  if (Object.keys(merged).length !== Object.keys(existing).length) persist(STORAGE_KEYS.onboarding, merged);
   return {
     get(clientId) { return (load<Record<string, OnboardingData>>(STORAGE_KEYS.onboarding) || {})[clientId] || { ...DEFAULT_ONBOARDING }; },
     save(clientId, data) { const map = load<Record<string, OnboardingData>>(STORAGE_KEYS.onboarding) || {}; map[clientId] = data; persist(STORAGE_KEYS.onboarding, map); },
