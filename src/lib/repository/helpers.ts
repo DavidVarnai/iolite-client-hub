@@ -15,7 +15,7 @@ export function persist<T>(key: string, data: T): void {
   localStorage.setItem(key, JSON.stringify(data));
 }
 
-export const SEED_VERSION = '2026-03-15-v2';
+export const SEED_VERSION = '2026-03-15-v3';
 
 export const STORAGE_KEYS = {
   clients: 'agencyos_clients',
