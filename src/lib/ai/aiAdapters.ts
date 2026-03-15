@@ -259,9 +259,9 @@ export async function fetchStrategyDraft(req: StrategyDraftRequest): Promise<Str
   await delay(1500);
 
   // Parse discovery context if provided
-  let ctx: any = {};
+  let ctx: DiscoveryContext = {};
   if (req.discoveryContext) {
-    try { ctx = JSON.parse(req.discoveryContext); } catch {}
+    try { ctx = JSON.parse(req.discoveryContext) as DiscoveryContext; } catch { /* ignore parse errors */ }
   }
 
   // Use channel-specific draft if available

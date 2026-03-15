@@ -32,7 +32,11 @@ export function createTeamMemberRepo(): TeamMemberRepository {
     save(member) {
       const all = this.getAll();
       const idx = all.findIndex(m => m.id === member.id);
-      idx >= 0 ? (all[idx] = member) : all.push(member);
+      if (idx >= 0) {
+        all[idx] = member;
+      } else {
+        all.push(member);
+      }
       persist(STORAGE_KEYS.teamMembers, all);
     },
     delete(id) { persist(STORAGE_KEYS.teamMembers, this.getAll().filter(m => m.id !== id)); },
@@ -47,7 +51,11 @@ export function createCompensationRepo(): CompensationRepository {
     save(comp) {
       const all = this.getAll();
       const idx = all.findIndex(c => c.id === comp.id);
-      idx >= 0 ? (all[idx] = comp) : all.push(comp);
+      if (idx >= 0) {
+        all[idx] = comp;
+      } else {
+        all.push(comp);
+      }
       persist(STORAGE_KEYS.compensation, all);
     },
     delete(id) { persist(STORAGE_KEYS.compensation, this.getAll().filter(c => c.id !== id)); },
@@ -63,7 +71,11 @@ export function createClientAssignmentRepo(): ClientAssignmentRepository {
     save(assignment) {
       const all = this.getAll();
       const idx = all.findIndex(a => a.id === assignment.id);
-      idx >= 0 ? (all[idx] = assignment) : all.push(assignment);
+      if (idx >= 0) {
+        all[idx] = assignment;
+      } else {
+        all.push(assignment);
+      }
       persist(STORAGE_KEYS.clientAssignments, all);
     },
     delete(id) { persist(STORAGE_KEYS.clientAssignments, this.getAll().filter(a => a.id !== id)); },
@@ -80,7 +92,11 @@ export function createClientEconomicsRepo(): ClientEconomicsRepository {
     save(economics) {
       const all = load<ClientEconomics[]>(STORAGE_KEYS.clientEconomics) || [];
       const idx = all.findIndex(e => e.clientId === economics.clientId);
-      idx >= 0 ? (all[idx] = economics) : all.push(economics);
+      if (idx >= 0) {
+        all[idx] = economics;
+      } else {
+        all.push(economics);
+      }
       persist(STORAGE_KEYS.clientEconomics, all);
     },
   };

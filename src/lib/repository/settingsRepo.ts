@@ -14,7 +14,11 @@ export function createGrowthModelRepo(): GrowthModelRepository {
     save(model) {
       const all = load<GrowthModel[]>(STORAGE_KEYS.growthModels) || [];
       const idx = all.findIndex(m => m.id === model.id);
-      idx >= 0 ? (all[idx] = model) : all.push(model);
+      if (idx >= 0) {
+        all[idx] = model;
+      } else {
+        all.push(model);
+      }
       persist(STORAGE_KEYS.growthModels, all);
     },
     delete(modelId) { persist(STORAGE_KEYS.growthModels, (load<GrowthModel[]>(STORAGE_KEYS.growthModels) || []).filter(m => m.id !== modelId)); },
@@ -30,7 +34,10 @@ export function createAiArtifactRepo(): AiArtifactRepository {
     update(id, patch) {
       const all = load<AiArtifact[]>(STORAGE_KEYS.aiArtifacts) || [];
       const idx = all.findIndex(a => a.id === id);
-      if (idx >= 0) { all[idx] = { ...all[idx], ...patch }; persist(STORAGE_KEYS.aiArtifacts, all); }
+      if (idx >= 0) {
+        all[idx] = { ...all[idx], ...patch };
+        persist(STORAGE_KEYS.aiArtifacts, all);
+      }
     },
   };
 }

@@ -20,7 +20,11 @@ export function createServiceLineRepo(): ServiceLineRepository {
     save(line) {
       const all = this.getAll();
       const idx = all.findIndex(s => s.id === line.id);
-      idx >= 0 ? (all[idx] = line) : all.push(line);
+      if (idx >= 0) {
+        all[idx] = line;
+      } else {
+        all.push(line);
+      }
       persist(STORAGE_KEYS.serviceLines, all);
     },
     delete(id) { persist(STORAGE_KEYS.serviceLines, this.getAll().filter(s => s.id !== id)); },
@@ -36,7 +40,11 @@ export function createServicePackageRepo(): ServicePackageRepository {
     save(pkg) {
       const all = this.getAll();
       const idx = all.findIndex(p => p.id === pkg.id);
-      idx >= 0 ? (all[idx] = pkg) : all.push(pkg);
+      if (idx >= 0) {
+        all[idx] = pkg;
+      } else {
+        all.push(pkg);
+      }
       persist(STORAGE_KEYS.servicePackages, all);
     },
     delete(id) { persist(STORAGE_KEYS.servicePackages, this.getAll().filter(p => p.id !== id)); },
@@ -51,7 +59,11 @@ export function createSalesBundleRepo(): SalesBundleRepository {
     save(bundle) {
       const all = this.getAll();
       const idx = all.findIndex(b => b.id === bundle.id);
-      idx >= 0 ? (all[idx] = bundle) : all.push(bundle);
+      if (idx >= 0) {
+        all[idx] = bundle;
+      } else {
+        all.push(bundle);
+      }
       persist(STORAGE_KEYS.salesBundles, all);
     },
     delete(id) { persist(STORAGE_KEYS.salesBundles, this.getAll().filter(b => b.id !== id)); },

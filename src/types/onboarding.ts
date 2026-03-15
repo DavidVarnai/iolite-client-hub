@@ -264,7 +264,7 @@ export function computeStageReadiness(
 
 export function getProposalChecklist(
   onboarding: OnboardingData,
-  client: { strategySections: any[]; activeChannels: any[] },
+  client: ClientReadinessInput,
   hasGrowthModel: boolean,
 ): ProposalChecklistItem[] {
   const d = onboarding.discovery;

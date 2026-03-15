@@ -66,7 +66,11 @@ export function createClientRepo(): ClientRepository {
     save(client) {
       const all = this.getAll();
       const idx = all.findIndex(c => c.id === client.id);
-      idx >= 0 ? (all[idx] = client) : all.push(client);
+      if (idx >= 0) {
+        all[idx] = client;
+      } else {
+        all.push(client);
+      }
       persist(STORAGE_KEYS.clients, all);
     },
     delete(id) { persist(STORAGE_KEYS.clients, this.getAll().filter(c => c.id !== id)); },
