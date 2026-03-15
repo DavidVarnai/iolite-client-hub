@@ -32,11 +32,17 @@ const STACK_OPTIONS: Record<string, string[]> = {
   websitePlatform: ['Shopify', 'WordPress', 'Webflow', 'Squarespace', 'Custom'],
 };
 
-// ── Sales process templates ──
-const SALES_TEMPLATES: { label: string; value: string }[] = [
-  { label: 'Ecommerce', value: 'Ad Click → Product Page → Add to Cart → Purchase' },
-  { label: 'Lead Gen', value: 'Ad/Content → Landing Page → Form Fill → Sales Call → Close' },
-  { label: 'Hybrid', value: 'Ad → Landing Page → Form/Call → Qualification → Proposal → Close' },
+// ── Sales funnel templates by type ──
+const FUNNEL_TEMPLATES: Record<string, string[]> = {
+  ecommerce: ['Ad Click', 'Landing Page Visit', 'Product View', 'Add to Cart', 'Purchase'],
+  lead_gen: ['Ad Click', 'Landing Page Visit', 'Form Submission', 'Qualification Call', 'Closed Deal'],
+  hybrid: ['Ad Click', 'Landing Page Visit', 'Form / Cart', 'Qualification', 'Proposal', 'Closed Deal'],
+};
+
+const FUNNEL_TYPE_OPTIONS = [
+  { value: 'ecommerce', label: 'Ecommerce' },
+  { value: 'lead_gen', label: 'Lead Gen' },
+  { value: 'hybrid', label: 'Hybrid' },
 ];
 
 // ---------- STEP 1: Client Setup ----------
