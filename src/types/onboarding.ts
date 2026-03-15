@@ -35,6 +35,12 @@ export interface DiscoveryCompetitor {
   url: string;
 }
 
+export interface AiDiscoveredCompetitor {
+  name: string;
+  url: string;
+  reason: string;
+}
+
 export type FunnelStageCategory = 'traffic' | 'page_interaction' | 'lead_capture' | 'qualification' | 'conversion';
 
 export interface FunnelStage {

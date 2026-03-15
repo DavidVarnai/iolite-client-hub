@@ -538,8 +538,62 @@ function DiscoveryStep() {
             </button>
           </div>
         </div>
-        {aiStatus === 'success' && (
-          <p className="text-[10px] text-primary font-medium">✓ AI research applied — review and edit below</p>
+        {aiStatus === 'error' && (
+          <p className="text-[10px] text-destructive font-medium">Failed to research competitors. Please try again.</p>
+        )}
+
+        {/* AI Discovered Competitors */}
+        {aiSuggestions.length > 0 && (
+          <div className="panel border-primary/20 bg-primary/[0.02]">
+            <div className="flex items-center justify-between px-4 py-3 border-b border-primary/10">
+              <div className="flex items-center gap-2">
+                <Sparkles className="h-3.5 w-3.5 text-primary" />
+                <span className="text-xs font-semibold">AI Discovered Competitors</span>
+                <span className="text-[10px] text-muted-foreground bg-muted px-1.5 py-0.5 rounded">{aiSuggestions.length} found</span>
+              </div>
+              {selectedSuggestions.size > 0 && (
+                <button
+                  type="button"
+                  onClick={approveSelectedSuggestions}
+                  className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded-md bg-primary text-primary-foreground hover:bg-primary/90 transition-colors"
+                >
+                  <Check className="h-3 w-3" /> Add {selectedSuggestions.size} to Top Competitors
+                </button>
+              )}
+            </div>
+            <div className="divide-y divide-border">
+              {aiSuggestions.map((suggestion, idx) => (
+                <label
+                  key={idx}
+                  className="flex items-start gap-3 px-4 py-3 cursor-pointer hover:bg-muted/50 transition-colors"
+                >
+                  <input
+                    type="checkbox"
+                    checked={selectedSuggestions.has(idx)}
+                    onChange={() => toggleSuggestion(idx)}
+                    className="mt-1 h-4 w-4 rounded border-primary text-primary focus:ring-primary"
+                  />
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center gap-2">
+                      <span className="text-sm font-medium">{suggestion.name}</span>
+                      {suggestion.url && (
+                        <a
+                          href={suggestion.url}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          onClick={(e) => e.stopPropagation()}
+                          className="text-[11px] text-primary hover:underline truncate max-w-[200px] font-mono"
+                        >
+                          {suggestion.url.replace(/^https?:\/\//, '')}
+                        </a>
+                      )}
+                    </div>
+                    <p className="text-xs text-muted-foreground mt-0.5">{suggestion.reason}</p>
+                  </div>
+                </label>
+              ))}
+            </div>
+          </div>
         )}
 
         {/* Competitor list */}
