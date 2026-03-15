@@ -15,6 +15,7 @@ import type {
   MarketIntelligenceRun,
   AudienceModel,
   BenchmarkAssumption,
+  CompetitorProfile,
   ChannelType,
   SourceType,
   SourceConfidence,
