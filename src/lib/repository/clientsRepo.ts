@@ -17,9 +17,20 @@ function seedOnboardingMap(): Record<string, OnboardingData> {
 }
 
 export function createClientRepo(): ClientRepository {
+  const stale = isSeedStale();
   const existing = load<Client[]>(STORAGE_KEYS.clients) || [];
-  const missing = seedClients.filter(s => !existing.find(e => e.id === s.id));
-  if (missing.length || !existing.length) persist(STORAGE_KEYS.clients, [...existing, ...missing]);
+  if (stale) {
+    // Re-merge: seed values override existing for seed clients
+    const merged = seedClients.map(s => {
+      const ex = existing.find(e => e.id === s.id);
+      return ex ? { ...ex, ...s } : s;
+    });
+    const custom = existing.filter(e => !seedClients.find(s => s.id === e.id));
+    persist(STORAGE_KEYS.clients, [...merged, ...custom]);
+  } else {
+    const missing = seedClients.filter(s => !existing.find(e => e.id === s.id));
+    if (missing.length || !existing.length) persist(STORAGE_KEYS.clients, [...existing, ...missing]);
+  }
   return {
     getAll: () => load<Client[]>(STORAGE_KEYS.clients) || [],
     getById(id) { return this.getAll().find(c => c.id === id) || null; },
