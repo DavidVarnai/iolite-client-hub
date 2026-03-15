@@ -163,9 +163,13 @@ function DiscoveryStep() {
   const d = onboarding.discovery;
   const updateD = (patch: Partial<ClientDiscovery>) => updateOnboarding({ ...onboarding, discovery: { ...d, ...patch } });
   const [aiStatus, setAiStatus] = useState<AiActionStatus>('idle');
+  const [aiSuggestions, setAiSuggestions] = useState<AiDiscoveredCompetitor[]>([]);
+  const [selectedSuggestions, setSelectedSuggestions] = useState<Set<number>>(new Set());
 
   const handleResearchCompetitors = async () => {
     setAiStatus('loading');
+    setAiSuggestions([]);
+    setSelectedSuggestions(new Set());
     try {
       const result = await runMarketResearch({
         industry: client.industry,
@@ -175,19 +179,46 @@ function DiscoveryStep() {
         primaryProducts: d.primaryProducts,
         coreCustomerSegments: d.coreCustomerSegments,
       });
-      const newCompetitors: DiscoveryCompetitor[] = result.topCompetitors.map(c => ({
-        name: c.name,
-        url: '',
-      }));
-      updateD({
-        competitors: newCompetitors,
-        topCompetitors: result.topCompetitors.map(c => `${c.name}${c.notes ? ` — ${c.notes}` : ''}`).join('\n'),
-        positioningNotes: result.positioningThemes.join('\n'),
-      });
+      // Filter out any AI suggestions that match existing manual entries
+      const existingNames = new Set((d.competitors || []).map(c => c.name.toLowerCase()));
+      const suggestions: AiDiscoveredCompetitor[] = result.topCompetitors
+        .filter(c => !existingNames.has(c.name.toLowerCase()))
+        .map(c => ({
+          name: c.name,
+          url: c.url || '',
+          reason: c.notes,
+        }));
+      setAiSuggestions(suggestions);
+      updateD({ positioningNotes: result.positioningThemes.join('\n') });
       setAiStatus('success');
     } catch {
       setAiStatus('error');
     }
+  };
+
+  const toggleSuggestion = (idx: number) => {
+    setSelectedSuggestions(prev => {
+      const next = new Set(prev);
+      next.has(idx) ? next.delete(idx) : next.add(idx);
+      return next;
+    });
+  };
+
+  const approveSelectedSuggestions = () => {
+    const toAdd: DiscoveryCompetitor[] = [];
+    const existingNames = new Set((d.competitors || []).map(c => c.name.toLowerCase()));
+    selectedSuggestions.forEach(idx => {
+      const s = aiSuggestions[idx];
+      if (s && !existingNames.has(s.name.toLowerCase())) {
+        toAdd.push({ name: s.name, url: s.url });
+      }
+    });
+    if (toAdd.length > 0) {
+      updateD({ competitors: [...(d.competitors || []), ...toAdd] });
+    }
+    // Remove approved from suggestions
+    setAiSuggestions(prev => prev.filter((_, i) => !selectedSuggestions.has(i)));
+    setSelectedSuggestions(new Set());
   };
 
   // Auto-calculated metrics
