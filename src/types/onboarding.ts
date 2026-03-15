@@ -33,6 +33,7 @@ export interface ClientDiscovery {
   // C. Sales Process
   funnelType: string;
   leadQualSaleStructure: string;
+  salesFunnelStages: string[];
   closeRate: string;
   salesCycleLength: string;
 
@@ -68,6 +69,7 @@ export const EMPTY_DISCOVERY: ClientDiscovery = {
   majorGrowthPriorities: '',
   funnelType: '',
   leadQualSaleStructure: '',
+  salesFunnelStages: [],
   closeRate: '',
   salesCycleLength: '',
   paidMediaPlatforms: '',
