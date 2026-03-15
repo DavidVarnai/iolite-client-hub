@@ -4,7 +4,7 @@
 import type { Client } from '@/types';
 import type { OnboardingData } from '@/types/onboarding';
 import type { ClientRepository, OnboardingRepository } from './types';
-import { load, persist, STORAGE_KEYS } from './helpers';
+import { load, persist, STORAGE_KEYS, isSeedStale, markSeedCurrent } from './helpers';
 import { DEFAULT_ONBOARDING } from '@/types/onboarding';
 import { seedClients } from '@/data/seed';
 import { c1Onboarding, c2Onboarding, c3Onboarding, c4Onboarding, c5Onboarding, c6Onboarding } from '@/data/onboardingSeed';

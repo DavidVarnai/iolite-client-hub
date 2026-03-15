@@ -15,6 +15,8 @@ export function persist<T>(key: string, data: T): void {
   localStorage.setItem(key, JSON.stringify(data));
 }
 
+export const SEED_VERSION = '2026-03-15-v1';
+
 export const STORAGE_KEYS = {
   clients: 'agencyos_clients',
   onboarding: 'agencyos_onboarding',
@@ -32,4 +34,13 @@ export const STORAGE_KEYS = {
   proposalDefaults: 'agencyos_proposal_defaults',
   marketIntelligence: 'agencyos_market_intelligence',
   marketIntelligenceDefaults: 'agencyos_market_intelligence_defaults',
+  seedVersion: 'agencyos_seed_version',
 } as const;
+
+export function isSeedStale(): boolean {
+  return load<string>(STORAGE_KEYS.seedVersion) !== SEED_VERSION;
+}
+
+export function markSeedCurrent(): void {
+  persist(STORAGE_KEYS.seedVersion, SEED_VERSION);
+}
