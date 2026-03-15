@@ -207,6 +207,7 @@ export const c5Onboarding: OnboardingData = {
     majorGrowthPriorities: 'New MSP client acquisition',
     funnelType: 'lead_gen',
     leadQualSaleStructure: '',
+    salesFunnelStages: [],
     closeRate: '',
     salesCycleLength: '',
     paidMediaPlatforms: '',
