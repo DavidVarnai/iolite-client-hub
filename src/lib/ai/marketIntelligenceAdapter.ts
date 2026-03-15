@@ -1,14 +1,17 @@
 /**
  * Channel-aware Market Intelligence adapter.
- * SERP-based competitor discovery: generates core keywords first,
- * then simulates Google SERP/Maps results to find real competitors.
+ * Uses modeled SERP-based competitor discovery: generates core keywords first,
+ * then matches against curated industry competitor pools.
  * All outputs carry source metadata (sourceType, sourceConfidence).
+ *
+ * NOTE: Competitor discovery uses modeled pools, not live Google search results.
  */
 import type {
   MarketIntelligenceInputs,
   MarketIntelligenceOutputs,
   KeywordTheme,
   CompetitorProfile,
+  CompetitorType,
   AudienceModel,
   ChannelRecommendation,
   BenchmarkAssumption,
@@ -21,6 +24,84 @@ const delay = (ms: number) => new Promise(r => setTimeout(r, ms));
 
 let _ts = 0;
 function uid(prefix: string) { return `${prefix}-${Date.now()}-${++_ts}`; }
+
+/* ═══════════════════════════════════════════════════════
+   INDUSTRY NORMALIZATION
+   ═══════════════════════════════════════════════════════ */
+
+const INDUSTRY_ALIASES: Record<string, string> = {
+  'private education': 'Education',
+  'bilingual school': 'Education',
+  'private school': 'Education',
+  'charter school': 'Education',
+  'tutoring': 'Education',
+  'online education': 'Education',
+  'k-12': 'Education',
+  'financial advisory': 'Professional Services',
+  'financial services': 'Professional Services',
+  'accounting': 'Professional Services',
+  'consulting': 'Professional Services',
+  'legal services': 'Professional Services',
+  'law firm': 'Professional Services',
+  'it services': 'IT Services',
+  'it services / msp': 'IT Services',
+  'iam / msp': 'IT Services',
+  'managed it services': 'IT Services',
+  'managed service provider': 'IT Services',
+  'msp': 'IT Services',
+  'cybersecurity': 'IT Services',
+  'cloud services': 'IT Services',
+  'healthcare': 'Healthcare',
+  'medical': 'Healthcare',
+  'dental': 'Healthcare',
+  'telehealth': 'Healthcare',
+  'real estate': 'Real Estate',
+  'property management': 'Real Estate',
+  'e-commerce': 'E-commerce',
+  'ecommerce': 'E-commerce',
+  'online retail': 'E-commerce',
+  'dtc': 'E-commerce',
+  'direct to consumer': 'E-commerce',
+};
+
+function normalizeIndustry(raw: string): string {
+  const lower = raw.toLowerCase().trim();
+  if (INDUSTRY_ALIASES[lower]) return INDUSTRY_ALIASES[lower];
+  // Partial match
+  for (const [alias, canonical] of Object.entries(INDUSTRY_ALIASES)) {
+    if (lower.includes(alias) || alias.includes(lower)) return canonical;
+  }
+  return raw; // Return original if no match
+}
+
+/* ═══════════════════════════════════════════════════════
+   EXCLUDED DOMAINS & DIRECTORY DETECTION
+   ═══════════════════════════════════════════════════════ */
+
+const EXCLUDED_DOMAINS = [
+  'yelp.com', 'wikipedia.org', 'niche.com', 'yellowpages.com', 'bbb.org',
+  'indeed.com', 'glassdoor.com', 'facebook.com', 'linkedin.com', 'twitter.com',
+  'instagram.com', 'tiktok.com', 'youtube.com', 'reddit.com', 'quora.com',
+  'amazon.com', 'ebay.com', 'craigslist.org', 'tripadvisor.com',
+];
+
+/** Domains that are directories/platforms, not direct competitors */
+const DIRECTORY_DOMAINS = [
+  'greatschools.org', 'zocdoc.com', 'realtor.com', 'zillow.com', 'etsy.com',
+  'legalzoom.com', 'thumbtack.com', 'angi.com', 'homeadvisor.com',
+  'khanacademy.org', 'capterra.com', 'g2.com', 'trustradius.com',
+  'clutch.co', 'goodfirms.co',
+];
+
+function classifyCompetitorType(url: string): CompetitorType {
+  const domain = url.toLowerCase().replace(/^https?:\/\//, '').replace(/^www\./, '').split('/')[0];
+  if (DIRECTORY_DOMAINS.some(d => domain.includes(d))) return 'directory_platform';
+  return 'direct';
+}
+
+/* ═══════════════════════════════════════════════════════
+   MAIN ENTRY
+   ═══════════════════════════════════════════════════════ */
 
 export async function generateMarketIntelligence(
   inputs: MarketIntelligenceInputs,
@@ -43,9 +124,9 @@ export async function generateMarketIntelligence(
   await delay(500);
   const keywordThemes = generateKeywordThemes(inputs, ctx);
 
-  onProgress?.(50, 'Simulating Google SERP analysis…');
+  onProgress?.(50, 'Running modeled SERP analysis…');
   await delay(600);
-  const competitorProfiles = generateCompetitorProfiles(inputs, ctx, coreSearchKeywords);
+  const competitorProfiles = generateCompetitorProfiles(inputs, ctx, coreSearchKeywords, keywordThemes);
 
   onProgress?.(65, 'Building audience models…');
   await delay(500);
@@ -53,11 +134,14 @@ export async function generateMarketIntelligence(
 
   onProgress?.(80, 'Computing benchmark assumptions…');
   await delay(500);
-  const benchmarkAssumptions = generateBenchmarks(inputs, ctx, channelRecommendations);
+  const benchmarkAssumptions = generateBenchmarks(inputs, ctx, channelRecommendations, keywordThemes, competitorProfiles);
 
   onProgress?.(92, 'Synthesizing research summary…');
   await delay(400);
-  const researchSummary = generateSummary(inputs, ctx, channelRecommendations, audienceModels);
+  const researchSummary = generateSummary(inputs, ctx, channelRecommendations, audienceModels, competitorProfiles);
+
+  // Wire evidenceRefs on channel recommendations
+  wireEvidenceRefs(channelRecommendations, keywordThemes, competitorProfiles, audienceModels);
 
   onProgress?.(100, 'Complete');
 
@@ -79,6 +163,7 @@ interface GenerationContext {
   localArea: string;
   product: string;
   audience: string;
+  normalizedIndustry: string;
   isB2B: boolean;
   isEcom: boolean;
   isLocal: boolean;
@@ -88,6 +173,7 @@ interface GenerationContext {
 
 function buildContext(inputs: MarketIntelligenceInputs): GenerationContext {
   const industry = inputs.industry.toLowerCase();
+  const normalizedIndustry = normalizeIndustry(inputs.industry);
   const localArea = inputs.primaryCity || inputs.serviceArea || inputs.geography || '';
   const radiusMiles = inputs.localRadius === 'custom'
     ? (inputs.customRadiusMiles || null)
@@ -98,7 +184,8 @@ function buildContext(inputs: MarketIntelligenceInputs): GenerationContext {
     localArea,
     product: inputs.productsOrServices || inputs.industry,
     audience: inputs.targetAudience || 'target customers',
-    isB2B: inputs.businessModel === 'lead_generation' || industry.includes('professional') || industry.includes('b2b'),
+    normalizedIndustry,
+    isB2B: inputs.businessModel === 'lead_generation' || industry.includes('professional') || industry.includes('b2b') || normalizedIndustry === 'IT Services',
     isEcom: inputs.businessModel === 'ecommerce' || industry.includes('e-commerce') || industry.includes('ecommerce'),
     isLocal: !!(inputs.primaryCity || inputs.serviceArea || (inputs.geography && !inputs.geography.toLowerCase().includes('national') && !inputs.geography.toLowerCase().includes('united states'))),
     radiusMiles,
@@ -117,7 +204,6 @@ function generateCoreKeywords(inputs: MarketIntelligenceInputs, ctx: GenerationC
 
   const keywords: string[] = [];
 
-  // High-intent commercial keywords
   keywords.push(`${product} ${loc}`.trim());
   keywords.push(`best ${product} ${loc}`.trim());
   keywords.push(`${industry} near me`);
@@ -139,12 +225,11 @@ function generateCoreKeywords(inputs: MarketIntelligenceInputs, ctx: GenerationC
     keywords.push(`${product} services ${loc}`.trim());
   }
 
-  // Deduplicate and clean
   return [...new Set(keywords.map(k => k.trim()).filter(Boolean))].slice(0, 10);
 }
 
 /* ═══════════════════════════════════════════════════════
-   KEYWORD THEMES — Top 10 with priority, local relevance, & source metadata
+   KEYWORD THEMES
    ═══════════════════════════════════════════════════════ */
 
 function generateKeywordThemes(inputs: MarketIntelligenceInputs, ctx: GenerationContext): KeywordTheme[] {
@@ -330,10 +415,10 @@ function buildSearchAudienceModel(channel: string, inputs: MarketIntelligenceInp
 }
 
 /* ═══════════════════════════════════════════════════════
-   COMPETITOR PROFILES — SERP-based discovery with source metadata
+   COMPETITOR PROFILES — Modeled SERP-based discovery
    ═══════════════════════════════════════════════════════ */
 
-/** Industry-specific SERP competitor pools — real businesses that would rank for core keywords */
+/** Industry-specific SERP competitor pools — real businesses */
 const SERP_COMPETITOR_POOLS: Record<string, {
   name: string;
   url: string;
@@ -348,62 +433,97 @@ const SERP_COMPETITOR_POOLS: Record<string, {
     { name: 'Kumon', url: 'https://www.kumon.com', geography: 'National (local centers)', positioning: 'Franchise tutoring chain, math and reading', rankingKeywords: ['tutoring near me', 'math tutoring'], paidAds: true, domainAuthority: 62 },
     { name: 'Sylvan Learning', url: 'https://www.sylvanlearning.com', geography: 'National (local centers)', positioning: 'Personalized tutoring and test prep', rankingKeywords: ['learning center near me', 'tutoring services'], paidAds: true, domainAuthority: 55 },
     { name: 'BASIS Independent Schools', url: 'https://www.basisindependent.com', geography: 'Multiple US metros', positioning: 'Rigorous college-prep curriculum', rankingKeywords: ['best private school', 'college prep school'], paidAds: false, domainAuthority: 38 },
-    { name: 'Khan Academy', url: 'https://www.khanacademy.org', geography: 'Online / National', positioning: 'Free online learning platform', rankingKeywords: ['free online school', 'learn math online'], paidAds: false, domainAuthority: 88 },
-    { name: 'Great Schools', url: 'https://www.greatschools.org', geography: 'National', positioning: 'School ratings and reviews platform', rankingKeywords: ['school ratings', 'best schools near me'], paidAds: false, domainAuthority: 78 },
     { name: 'Fusion Academy', url: 'https://www.fusionacademy.com', geography: 'Multiple US metros', positioning: 'One-to-one private school model', rankingKeywords: ['private school small class', 'alternative school'], paidAds: true, domainAuthority: 35 },
+    { name: 'Primrose Schools', url: 'https://www.primroseschools.com', geography: 'National (franchise)', positioning: 'Early education and childcare franchise', rankingKeywords: ['preschool near me', 'early childhood education'], paidAds: true, domainAuthority: 48 },
+  ],
+  'IT Services': [
+    { name: 'Dataprise', url: 'https://www.dataprise.com', geography: 'Mid-Atlantic / National', positioning: 'Managed IT services and cybersecurity for mid-market', rankingKeywords: ['managed it services', 'it support near me', 'msp provider'], paidAds: true, domainAuthority: 48 },
+    { name: 'Ntiva', url: 'https://www.ntiva.com', geography: 'Mid-Atlantic / National', positioning: 'IT services and strategic consulting for SMBs', rankingKeywords: ['managed service provider', 'it consulting firm', 'it help desk'], paidAds: true, domainAuthority: 42 },
+    { name: 'Corsica Technologies', url: 'https://www.corsicatech.com', geography: 'Eastern US', positioning: 'Unified IT services with cybersecurity focus', rankingKeywords: ['managed cybersecurity', 'it services company'], paidAds: true, domainAuthority: 35 },
+    { name: 'Electric', url: 'https://www.electric.ai', geography: 'US (Remote-first)', positioning: 'IT management platform for SMBs', rankingKeywords: ['it management platform', 'outsourced it department'], paidAds: true, domainAuthority: 50 },
+    { name: 'Kaseya', url: 'https://www.kaseya.com', geography: 'Global', positioning: 'IT management software for MSPs', rankingKeywords: ['rmm software', 'msp platform', 'it automation'], paidAds: true, domainAuthority: 65 },
+    { name: 'ConnectWise', url: 'https://www.connectwise.com', geography: 'Global', positioning: 'Business management platform for MSPs', rankingKeywords: ['psa software', 'msp business management'], paidAds: true, domainAuthority: 62 },
+    { name: 'Datto (Kaseya)', url: 'https://www.datto.com', geography: 'Global', positioning: 'Backup, networking, and business continuity', rankingKeywords: ['data backup solutions', 'business continuity msp'], paidAds: true, domainAuthority: 58 },
   ],
   'E-commerce': [
     { name: 'Parachute Home', url: 'https://www.parachutehome.com', geography: 'US (National)', positioning: 'Premium DTC home essentials', rankingKeywords: ['organic bedding', 'premium towels online'], paidAds: true, domainAuthority: 52 },
     { name: 'West Elm', url: 'https://www.westelm.com', geography: 'US + International', positioning: 'Modern furniture and home décor', rankingKeywords: ['modern home decor', 'furniture online'], paidAds: true, domainAuthority: 75 },
     { name: 'Crate & Barrel', url: 'https://www.crateandbarrel.com', geography: 'US + International', positioning: 'Contemporary home furnishings', rankingKeywords: ['home furnishings', 'kitchen accessories'], paidAds: true, domainAuthority: 78 },
     { name: 'Brooklinen', url: 'https://www.brooklinen.com', geography: 'US (DTC)', positioning: 'Luxury bedding and bath DTC', rankingKeywords: ['best sheets online', 'luxury bedding'], paidAds: true, domainAuthority: 48 },
-    { name: 'Etsy', url: 'https://www.etsy.com', geography: 'Global marketplace', positioning: 'Handmade and artisan marketplace', rankingKeywords: ['handmade home goods', 'artisan decor'], paidAds: true, domainAuthority: 92 },
   ],
   'Professional Services': [
     { name: 'Fisher Phillips', url: 'https://www.fisherphillips.com', geography: 'National', positioning: 'Labor & employment law leader', rankingKeywords: ['employment lawyer', 'labor law firm'], paidAds: true, domainAuthority: 58 },
     { name: 'Foley & Lardner', url: 'https://www.foley.com', geography: 'National', positioning: 'Full-service corporate law', rankingKeywords: ['corporate lawyer', 'M&A attorney'], paidAds: false, domainAuthority: 65 },
     { name: 'Cooley', url: 'https://www.cooley.com', geography: 'National', positioning: 'Tech and startup legal services', rankingKeywords: ['startup lawyer', 'venture capital attorney'], paidAds: false, domainAuthority: 62 },
     { name: 'Baker McKenzie', url: 'https://www.bakermckenzie.com', geography: 'Global', positioning: 'International corporate law', rankingKeywords: ['international law firm', 'global corporate counsel'], paidAds: false, domainAuthority: 72 },
-    { name: 'LegalZoom', url: 'https://www.legalzoom.com', geography: 'US (Online)', positioning: 'Self-service legal platform', rankingKeywords: ['legal services online', 'business formation'], paidAds: true, domainAuthority: 75 },
   ],
   'Healthcare': [
     { name: 'One Medical', url: 'https://www.onemedical.com', geography: 'Major US metros', positioning: 'Membership-based primary care', rankingKeywords: ['primary care near me', 'concierge doctor'], paidAds: true, domainAuthority: 55 },
     { name: 'Carbon Health', url: 'https://carbonhealth.com', geography: 'US metros', positioning: 'Tech-enabled urgent and primary care', rankingKeywords: ['urgent care near me', 'walk-in clinic'], paidAds: true, domainAuthority: 45 },
-    { name: 'ZocDoc', url: 'https://www.zocdoc.com', geography: 'US (Online)', positioning: 'Doctor booking platform', rankingKeywords: ['find a doctor near me', 'book doctor appointment'], paidAds: true, domainAuthority: 72 },
-    { name: 'MinuteClinic (CVS)', url: 'https://www.cvs.com/minuteclinic', geography: 'National (retail)', positioning: 'Retail clinic for basic care', rankingKeywords: ['walk-in clinic near me', 'quick medical visit'], paidAds: true, domainAuthority: 80 },
     { name: 'Teladoc', url: 'https://www.teladoc.com', geography: 'US (Telehealth)', positioning: 'Virtual care platform', rankingKeywords: ['online doctor', 'telehealth visit'], paidAds: true, domainAuthority: 60 },
+    { name: 'MinuteClinic (CVS)', url: 'https://www.cvs.com/minuteclinic', geography: 'National (retail)', positioning: 'Retail clinic for basic care', rankingKeywords: ['walk-in clinic near me', 'quick medical visit'], paidAds: true, domainAuthority: 80 },
   ],
   'Real Estate': [
     { name: 'Compass', url: 'https://www.compass.com', geography: 'Major US metros', positioning: 'Tech-forward luxury brokerage', rankingKeywords: ['real estate agent near me', 'luxury homes'], paidAds: true, domainAuthority: 68 },
     { name: 'Redfin', url: 'https://www.redfin.com', geography: 'US (National)', positioning: 'Discount brokerage with listing portal', rankingKeywords: ['homes for sale', 'real estate listings'], paidAds: true, domainAuthority: 82 },
     { name: 'Keller Williams', url: 'https://www.kw.com', geography: 'US (National franchise)', positioning: 'Large agent network', rankingKeywords: ['real estate broker', 'buy a home'], paidAds: true, domainAuthority: 65 },
-    { name: 'Zillow', url: 'https://www.zillow.com', geography: 'US (Online)', positioning: 'Dominant home search platform', rankingKeywords: ['homes for sale near me', 'home values'], paidAds: true, domainAuthority: 92 },
-    { name: 'Realtor.com', url: 'https://www.realtor.com', geography: 'US (Online)', positioning: 'MLS-based listing portal', rankingKeywords: ['houses for sale', 'real estate market'], paidAds: true, domainAuthority: 85 },
   ],
 };
 
-/** Excluded domains — directories, aggregators, etc. */
-const EXCLUDED_DOMAINS = ['yelp.com', 'wikipedia.org', 'niche.com', 'yellowpages.com', 'bbb.org', 'indeed.com', 'glassdoor.com'];
+/** Directories/platforms — classified separately from direct competitors */
+const DIRECTORY_POOL: Record<string, {
+  name: string;
+  url: string;
+  geography: string;
+  positioning: string;
+  rankingKeywords: string[];
+  domainAuthority: number;
+}[]> = {
+  'Education': [
+    { name: 'Great Schools', url: 'https://www.greatschools.org', geography: 'National', positioning: 'School ratings and reviews platform', rankingKeywords: ['school ratings', 'best schools near me'], domainAuthority: 78 },
+    { name: 'Niche', url: 'https://www.niche.com', geography: 'National', positioning: 'School search and rankings directory', rankingKeywords: ['best schools', 'school rankings'], domainAuthority: 75 },
+  ],
+  'Healthcare': [
+    { name: 'ZocDoc', url: 'https://www.zocdoc.com', geography: 'US (Online)', positioning: 'Doctor booking platform', rankingKeywords: ['find a doctor near me', 'book doctor appointment'], domainAuthority: 72 },
+    { name: 'Healthgrades', url: 'https://www.healthgrades.com', geography: 'National', positioning: 'Doctor ratings and reviews platform', rankingKeywords: ['doctor reviews', 'best doctor near me'], domainAuthority: 70 },
+  ],
+  'Real Estate': [
+    { name: 'Zillow', url: 'https://www.zillow.com', geography: 'US (Online)', positioning: 'Dominant home search platform', rankingKeywords: ['homes for sale near me', 'home values'], domainAuthority: 92 },
+    { name: 'Realtor.com', url: 'https://www.realtor.com', geography: 'US (Online)', positioning: 'MLS-based listing portal', rankingKeywords: ['houses for sale', 'real estate market'], domainAuthority: 85 },
+  ],
+  'E-commerce': [
+    { name: 'Etsy', url: 'https://www.etsy.com', geography: 'Global marketplace', positioning: 'Handmade and artisan marketplace', rankingKeywords: ['handmade home goods', 'artisan decor'], domainAuthority: 92 },
+  ],
+  'Professional Services': [
+    { name: 'LegalZoom', url: 'https://www.legalzoom.com', geography: 'US (Online)', positioning: 'Self-service legal platform', rankingKeywords: ['legal services online', 'business formation'], domainAuthority: 75 },
+  ],
+  'IT Services': [
+    { name: 'Capterra', url: 'https://www.capterra.com', geography: 'Global', positioning: 'Software reviews and comparison platform', rankingKeywords: ['it software reviews', 'msp software comparison'], domainAuthority: 80 },
+    { name: 'G2', url: 'https://www.g2.com', geography: 'Global', positioning: 'Business software reviews', rankingKeywords: ['rmm reviews', 'it management software reviews'], domainAuthority: 82 },
+  ],
+};
 
 function generateCompetitorProfiles(
   inputs: MarketIntelligenceInputs,
   ctx: GenerationContext,
   coreKeywords: string[],
+  keywordThemes: KeywordTheme[],
 ): CompetitorProfile[] {
-  const { area, localArea, isLocal } = ctx;
+  const { area, localArea, isLocal, normalizedIndustry } = ctx;
   const loc = isLocal ? localArea : area;
   const profiles: CompetitorProfile[] = [];
 
-  // 1. Add known competitors as manual/high-trust entries
+  // 1. Manual competitors — highest trust, never overwritten
   const known = inputs.knownCompetitors?.filter(Boolean) || [];
   for (const name of known.slice(0, 5)) {
     profiles.push({
       id: uid('cp'), name, geography: loc,
       positioning: `Known competitor in the ${inputs.industry.toLowerCase()} space`,
       channelObservations: 'Monitor creative and messaging closely.',
+      competitorType: 'direct',
       relevance: 'high',
       localRelevance: isLocal ? 'high' : 'medium',
-      notes: 'User-provided competitor.',
+      notes: 'User-provided competitor — authoritative.',
       sourceType: 'manual',
       sourceConfidence: 'high',
       manuallyAdded: true,
@@ -411,38 +531,37 @@ function generateCompetitorProfiles(
     });
   }
 
-  // 2. Pull from SERP pool — simulates Google organic + Maps results
-  const serpPool = SERP_COMPETITOR_POOLS[inputs.industry] || [];
+  // 2. Pull from SERP pool using normalized industry
+  const serpPool = SERP_COMPETITOR_POOLS[normalizedIndustry] || [];
   const knownNames = new Set(known.map(n => n.toLowerCase()));
 
-  // Score by keyword overlap and geography match
   const scored = serpPool
     .filter(c => !knownNames.has(c.name.toLowerCase()))
     .filter(c => !EXCLUDED_DOMAINS.some(d => c.url.includes(d)))
     .map(c => {
       let score = 0;
-      // Keyword overlap score
       const matchingKeywords = coreKeywords.filter(kw =>
         c.rankingKeywords.some(rk => rk.toLowerCase().includes(kw.split(' ')[0]?.toLowerCase() || ''))
       );
       score += matchingKeywords.length * 3;
-      // Geography proximity
       if (isLocal && c.geography.toLowerCase().includes(localArea.toLowerCase().split(',')[0] || '')) score += 5;
       if (c.geography.toLowerCase().includes('national') || c.geography.toLowerCase().includes('us')) score += 1;
-      // Domain authority bonus
       score += Math.floor(c.domainAuthority / 20);
-      // Paid ads presence
       if (c.paidAds) score += 2;
       return { ...c, score, matchingKeywords };
     })
     .sort((a, b) => b.score - a.score);
 
-  // Take top results to fill up to 10 total
-  const slotsRemaining = 10 - profiles.length;
-  for (const comp of scored.slice(0, slotsRemaining)) {
-    // Determine source type: if geography matches local area, it's google_maps; otherwise google_serp
+  // Take top direct competitors
+  const slotsRemaining = 8 - profiles.length;
+  for (const comp of scored.slice(0, Math.max(slotsRemaining, 0))) {
     const isMapResult = isLocal && comp.geography.toLowerCase().includes(localArea.toLowerCase().split(',')[0] || '');
     const sourceType: SourceType = isMapResult ? 'google_maps' : 'google_serp';
+
+    // Gather evidence refs from matching keyword theme IDs
+    const matchingThemeIds = keywordThemes
+      .filter(kt => comp.matchingKeywords.some(mk => kt.keywordExamples.some(ke => ke.toLowerCase().includes(mk.split(' ')[0]?.toLowerCase() || ''))))
+      .map(kt => kt.id);
 
     profiles.push({
       id: uid('cp'),
@@ -451,6 +570,7 @@ function generateCompetitorProfiles(
       positioning: comp.positioning,
       channelObservations: `${comp.paidAds ? 'Active Google Ads presence. ' : ''}DA ~${comp.domainAuthority}. Ranks for: ${comp.rankingKeywords.slice(0, 3).join(', ')}.`,
       websiteUrl: comp.url,
+      competitorType: 'direct',
       relevance: comp.score >= 8 ? 'high' : comp.score >= 4 ? 'medium' : 'low',
       localRelevance: isMapResult ? 'high' : isLocal ? 'medium' : 'low',
       rankingKeywords: comp.rankingKeywords,
@@ -459,33 +579,88 @@ function generateCompetitorProfiles(
       sourceType,
       sourceConfidence: comp.score >= 6 ? 'high' : 'medium',
       sourceKeyword: comp.matchingKeywords[0] || coreKeywords[0],
+      evidenceRefs: matchingThemeIds.length > 0 ? matchingThemeIds : undefined,
     });
   }
 
-  // 3. If still under 10, fill with ai_inference (low confidence) — but use contextual names not archetypes
-  if (profiles.length < 8) {
-    const fillerNames = [
-      `${localArea} ${inputs.industry} Group`,
-      `Premier ${inputs.industry} ${isLocal ? localArea : 'Services'}`,
-      `${inputs.industry} Partners ${isLocal ? `of ${localArea}` : 'Network'}`,
-    ];
-    for (const name of fillerNames) {
-      if (profiles.length >= 10) break;
-      if (profiles.find(p => p.name === name)) continue;
-      profiles.push({
-        id: uid('cp'), name, geography: loc,
-        positioning: `Likely competitor based on industry and geography analysis`,
-        channelObservations: 'Requires validation — inferred from market patterns.',
-        relevance: 'low',
-        localRelevance: isLocal ? 'medium' : 'low',
-        sourceType: 'ai_inference',
-        sourceConfidence: 'low',
-        notes: 'AI-inferred competitor. Validate with actual SERP data.',
-      });
-    }
+  // 3. Add directory/platform competitors as indirect (clearly labeled, shown separately)
+  const directoryPool = DIRECTORY_POOL[normalizedIndustry] || [];
+  for (const dir of directoryPool.slice(0, 3)) {
+    if (knownNames.has(dir.name.toLowerCase())) continue;
+    if (profiles.find(p => p.name === dir.name)) continue;
+    profiles.push({
+      id: uid('cp'),
+      name: dir.name,
+      geography: dir.geography,
+      positioning: dir.positioning,
+      channelObservations: `High-DA directory (DA ~${dir.domainAuthority}) capturing organic traffic. Monitor for competitive listings.`,
+      websiteUrl: dir.url,
+      competitorType: 'directory_platform',
+      relevance: 'medium',
+      localRelevance: 'medium',
+      rankingKeywords: dir.rankingKeywords,
+      estimatedDomainAuthority: dir.domainAuthority,
+      paidAdsPresence: false,
+      sourceType: 'google_serp',
+      sourceConfidence: 'high',
+      sourceKeyword: coreKeywords[0],
+      notes: 'Directory/platform — not a direct competitor but captures search traffic.',
+    });
   }
 
-  return profiles.slice(0, 10);
+  // 4. If insufficient verified competitors, return gap state instead of fabricating
+  if (profiles.filter(p => p.competitorType === 'direct' && p.sourceType !== 'manual').length < 3) {
+    profiles.push({
+      id: uid('cp'),
+      name: '⚠ Insufficient verified competitors',
+      geography: loc,
+      positioning: `The modeled competitor pool for "${normalizedIndustry}" in ${loc} returned fewer than 3 verified direct competitors.`,
+      channelObservations: 'Consider: refining keywords, widening geographic radius, or adding known competitors manually.',
+      competitorType: 'direct',
+      relevance: 'low',
+      localRelevance: 'low',
+      sourceType: 'ai_inference',
+      sourceConfidence: 'low',
+      notes: 'Gap indicator — not a real competitor. Expand search parameters for better results.',
+    });
+  }
+
+  return profiles;
+}
+
+/* ═══════════════════════════════════════════════════════
+   EVIDENCE REFS WIRING
+   ═══════════════════════════════════════════════════════ */
+
+function wireEvidenceRefs(
+  recs: ChannelRecommendation[],
+  keywords: KeywordTheme[],
+  competitors: CompetitorProfile[],
+  audiences: AudienceModel[],
+) {
+  for (const rec of recs) {
+    const refs: string[] = [];
+
+    // Link keywords that match this channel's type
+    const relatedKeywords = keywords.filter(kt => {
+      if (rec.channelType === 'search') return kt.intentType === 'transactional' || kt.intentType === 'commercial';
+      if (rec.channelType === 'content') return kt.intentType === 'informational' || kt.intentType === 'navigational';
+      return kt.priority === 'high';
+    });
+    refs.push(...relatedKeywords.slice(0, 3).map(k => k.id));
+
+    // Link relevant competitors (direct only)
+    const directCompetitors = competitors.filter(c => c.competitorType === 'direct' && c.sourceType !== 'ai_inference');
+    refs.push(...directCompetitors.slice(0, 2).map(c => c.id));
+
+    // Link relevant audience models
+    const channelAudiences = audiences.filter(a => a.channel === rec.channel);
+    refs.push(...channelAudiences.map(a => a.id));
+
+    if (refs.length > 0) {
+      rec.evidenceRefs = refs;
+    }
+  }
 }
 
 /* ═══════════════════════════════════════════════════════
@@ -535,16 +710,31 @@ function generateChannelRecs(inputs: MarketIntelligenceInputs, ctx: GenerationCo
 }
 
 /* ═══════════════════════════════════════════════════════
-   BENCHMARK ASSUMPTIONS — with source metadata
+   BENCHMARK ASSUMPTIONS — with source metadata & evidence refs
    ═══════════════════════════════════════════════════════ */
 
-function generateBenchmarks(inputs: MarketIntelligenceInputs, ctx: GenerationContext, recs: ChannelRecommendation[]): BenchmarkAssumption[] {
+function generateBenchmarks(
+  inputs: MarketIntelligenceInputs,
+  ctx: GenerationContext,
+  recs: ChannelRecommendation[],
+  keywords: KeywordTheme[],
+  competitors: CompetitorProfile[],
+): BenchmarkAssumption[] {
   const benchmarks: BenchmarkAssumption[] = [];
   const { isB2B, isEcom, isLocal, area, localArea } = ctx;
   const loc = isLocal ? localArea : area;
 
+  // Gather IDs for evidence refs
+  const highPriorityKeywordIds = keywords.filter(k => k.priority === 'high').map(k => k.id).slice(0, 3);
+  const directCompetitorIds = competitors.filter(c => c.competitorType === 'direct' && c.sourceType !== 'ai_inference').map(c => c.id).slice(0, 3);
+  const baseEvidence = [...highPriorityKeywordIds, ...directCompetitorIds];
+
   for (const rec of recs) {
-    const baseMeta = { sourceType: 'internal_benchmark' as SourceType, sourceConfidence: 'medium' as const };
+    const baseMeta = {
+      sourceType: 'internal_benchmark' as SourceType,
+      sourceConfidence: 'medium' as const,
+      evidenceRefs: baseEvidence.length > 0 ? baseEvidence : undefined,
+    };
     switch (rec.channel) {
       case 'Google Ads':
         benchmarks.push(
@@ -604,12 +794,20 @@ function generateBenchmarks(inputs: MarketIntelligenceInputs, ctx: GenerationCon
    RESEARCH SUMMARY
    ═══════════════════════════════════════════════════════ */
 
-function generateSummary(inputs: MarketIntelligenceInputs, ctx: GenerationContext, recs: ChannelRecommendation[], audiences: AudienceModel[]): string {
+function generateSummary(
+  inputs: MarketIntelligenceInputs,
+  ctx: GenerationContext,
+  recs: ChannelRecommendation[],
+  audiences: AudienceModel[],
+  competitors: CompetitorProfile[],
+): string {
   const searchChannels = recs.filter(r => r.channelType === 'search');
   const audienceChannels = recs.filter(r => r.channelType === 'audience');
   const highPriority = recs.filter(r => r.priority === 'high').map(r => r.channel).join(', ');
+  const directCount = competitors.filter(c => c.competitorType === 'direct' && !c.name.startsWith('⚠')).length;
+  const directoryCount = competitors.filter(c => c.competitorType === 'directory_platform').length;
 
-  let summary = `${inputs.industry} in ${ctx.isLocal ? ctx.localArea : ctx.area} `;
+  let summary = `${inputs.industry} (normalized: ${ctx.normalizedIndustry}) in ${ctx.isLocal ? ctx.localArea : ctx.area} `;
   if (searchChannels.length > 0 && audienceChannels.length > 0) {
     summary += `benefits from a dual approach: search-based demand capture via ${searchChannels.map(s => s.channel).join(', ')} and audience-based prospecting via ${audienceChannels.map(a => a.channel).join(', ')}. `;
   } else if (searchChannels.length > 0) {
@@ -619,6 +817,7 @@ function generateSummary(inputs: MarketIntelligenceInputs, ctx: GenerationContex
   }
 
   summary += `High-priority channels: ${highPriority}. `;
+  summary += `Identified ${directCount} direct competitor${directCount !== 1 ? 's' : ''} and ${directoryCount} directory/platform${directoryCount !== 1 ? 's' : ''} via modeled SERP analysis. `;
 
   if (ctx.isLocal && ctx.radiusMiles) {
     summary += `Research is localized to a ${ctx.radiusMiles}-mile radius around ${ctx.localArea}. `;
@@ -630,6 +829,6 @@ function generateSummary(inputs: MarketIntelligenceInputs, ctx: GenerationContex
     summary += `Refinement applied: "${ctx.refinement}". `;
   }
 
-  summary += `Competitor discovery is based on simulated Google SERP analysis across core keywords. All benchmarks are modeled assumptions and should be validated within 30-60 days.`;
+  summary += `Note: Competitor discovery uses modeled SERP-based pools, not live Google search results. All benchmarks are modeled assumptions and should be validated within 30-60 days.`;
   return summary;
 }
