@@ -4,7 +4,7 @@
 import type { Client } from '@/types';
 import type { OnboardingData } from '@/types/onboarding';
 import type { ClientRepository, OnboardingRepository } from './types';
-import { load, persist, STORAGE_KEYS } from './helpers';
+import { load, persist, STORAGE_KEYS, isSeedStale, markSeedCurrent } from './helpers';
 import { DEFAULT_ONBOARDING } from '@/types/onboarding';
 import { seedClients } from '@/data/seed';
 import { c1Onboarding, c2Onboarding, c3Onboarding, c4Onboarding, c5Onboarding, c6Onboarding } from '@/data/onboardingSeed';
@@ -17,9 +17,20 @@ function seedOnboardingMap(): Record<string, OnboardingData> {
 }
 
 export function createClientRepo(): ClientRepository {
+  const stale = isSeedStale();
   const existing = load<Client[]>(STORAGE_KEYS.clients) || [];
-  const missing = seedClients.filter(s => !existing.find(e => e.id === s.id));
-  if (missing.length || !existing.length) persist(STORAGE_KEYS.clients, [...existing, ...missing]);
+  if (stale) {
+    // Re-merge: seed values override existing for seed clients
+    const merged = seedClients.map(s => {
+      const ex = existing.find(e => e.id === s.id);
+      return ex ? { ...ex, ...s } : s;
+    });
+    const custom = existing.filter(e => !seedClients.find(s => s.id === e.id));
+    persist(STORAGE_KEYS.clients, [...merged, ...custom]);
+  } else {
+    const missing = seedClients.filter(s => !existing.find(e => e.id === s.id));
+    if (missing.length || !existing.length) persist(STORAGE_KEYS.clients, [...existing, ...missing]);
+  }
   return {
     getAll: () => load<Client[]>(STORAGE_KEYS.clients) || [],
     getById(id) { return this.getAll().find(c => c.id === id) || null; },
@@ -34,10 +45,21 @@ export function createClientRepo(): ClientRepository {
 }
 
 export function createOnboardingRepo(): OnboardingRepository {
+  const stale = isSeedStale();
   const existing = load<Record<string, OnboardingData>>(STORAGE_KEYS.onboarding) || {};
   const seed = seedOnboardingMap();
-  const merged = { ...seed, ...existing };
-  if (Object.keys(merged).length !== Object.keys(existing).length) persist(STORAGE_KEYS.onboarding, merged);
+  if (stale) {
+    // Seed values override existing for seed clients
+    const merged: Record<string, OnboardingData> = { ...existing };
+    for (const [id, seedData] of Object.entries(seed)) {
+      merged[id] = existing[id] ? { ...existing[id], ...seedData } : seedData;
+    }
+    persist(STORAGE_KEYS.onboarding, merged);
+    markSeedCurrent();
+  } else {
+    const merged = { ...seed, ...existing };
+    if (Object.keys(merged).length !== Object.keys(existing).length) persist(STORAGE_KEYS.onboarding, merged);
+  }
   return {
     get(clientId) { return (load<Record<string, OnboardingData>>(STORAGE_KEYS.onboarding) || {})[clientId] || { ...DEFAULT_ONBOARDING }; },
     save(clientId, data) { const map = load<Record<string, OnboardingData>>(STORAGE_KEYS.onboarding) || {}; map[clientId] = data; persist(STORAGE_KEYS.onboarding, map); },
