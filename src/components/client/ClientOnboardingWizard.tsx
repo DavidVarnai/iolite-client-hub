@@ -173,27 +173,63 @@ function DiscoveryStep() {
       </DiscoverySection>
 
       <DiscoverySection title="C. Sales Process">
-        <Field label="Funnel Type" value={d.funnelType} onChange={(v) => updateD({ funnelType: v })} />
+        <div>
+          <label className="text-xs font-medium text-muted-foreground uppercase tracking-wider mb-1.5 block">Funnel Type</label>
+          <select
+            value={d.funnelType}
+            onChange={(e) => {
+              const ft = e.target.value;
+              const template = FUNNEL_TEMPLATES[ft] || [];
+              updateD({
+                funnelType: ft,
+                salesFunnelStages: template,
+                leadQualSaleStructure: template.join('\n'),
+              });
+            }}
+            className="w-full rounded-md border bg-background px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-ring"
+          >
+            <option value="">Select type…</option>
+            {FUNNEL_TYPE_OPTIONS.map(o => <option key={o.value} value={o.value}>{o.label}</option>)}
+          </select>
+        </div>
+        <div /> {/* grid spacer */}
         <div className="col-span-2">
           <label className="text-xs font-medium text-muted-foreground uppercase tracking-wider mb-1.5 block">
-            Lead → Qualification → Sale Structure
+            Funnel Steps
           </label>
-          <div className="flex flex-wrap gap-1.5 mb-2">
-            {SALES_TEMPLATES.map(t => (
-              <button key={t.label} onClick={() => updateD({ leadQualSaleStructure: t.value })}
-                className="px-2.5 py-1 text-[11px] font-medium rounded-md bg-muted hover:bg-primary/10 hover:text-primary transition-colors">
-                {t.label}
-              </button>
-            ))}
-          </div>
+          <p className="text-[10px] text-muted-foreground mb-2">One step per line. Select a funnel type above to auto-populate a template.</p>
           <textarea
-            value={d.leadQualSaleStructure}
-            onChange={(e) => updateD({ leadQualSaleStructure: e.target.value })}
-            placeholder="e.g. Ad Click → Product Page → Add to Cart → Purchase"
-            rows={2}
-            className="w-full rounded-md border bg-background px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-ring resize-y"
+            value={d.salesFunnelStages.length > 0 ? d.salesFunnelStages.join('\n') : d.leadQualSaleStructure}
+            onChange={(e) => {
+              const text = e.target.value;
+              const stages = text.split('\n').map(s => s.trim()).filter(Boolean);
+              updateD({
+                leadQualSaleStructure: text,
+                salesFunnelStages: stages,
+              });
+            }}
+            placeholder={"Ad Click\nLanding Page Visit\nForm Submission\nQualification Call\nClosed Deal"}
+            rows={5}
+            className="w-full rounded-md border bg-background px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-ring resize-y font-mono leading-relaxed"
           />
-          <p className="text-[10px] text-muted-foreground mt-1">Describe the steps from first touch to closed deal</p>
+          {/* Visual funnel rendering */}
+          {d.salesFunnelStages.length > 0 && (
+            <div className="mt-3 p-3 rounded-md bg-muted/50 border">
+              <p className="text-[10px] font-medium text-muted-foreground uppercase tracking-wider mb-2">Funnel Preview</p>
+              <div className="flex flex-wrap items-center gap-1">
+                {d.salesFunnelStages.map((stage, idx) => (
+                  <span key={idx} className="flex items-center gap-1">
+                    <span className="px-2.5 py-1 text-xs font-medium rounded-md bg-primary/10 text-primary border border-primary/20">
+                      {stage}
+                    </span>
+                    {idx < d.salesFunnelStages.length - 1 && (
+                      <span className="text-muted-foreground text-xs">→</span>
+                    )}
+                  </span>
+                ))}
+              </div>
+            </div>
+          )}
         </div>
         <Field label="Close Rate" value={d.closeRate} onChange={(v) => updateD({ closeRate: v })} placeholder="e.g. 15%" />
         <Field label="Sales Cycle Length" value={d.salesCycleLength} onChange={(v) => updateD({ salesCycleLength: v })} placeholder="e.g. 30 days" />
