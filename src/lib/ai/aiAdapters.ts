@@ -79,7 +79,13 @@ export async function fetchMarketResearch(req: MarketResearchRequest): Promise<M
 
 // ─── Mock: Strategy Draft (channel-specific) ───
 
-const CHANNEL_DRAFTS: Record<string, (req: StrategyDraftRequest, ctx: any) => StrategyDraftResult> = {
+interface DiscoveryContext {
+  primaryProducts?: string;
+  coreCustomerSegments?: string;
+  knownBottlenecks?: string;
+}
+
+const CHANNEL_DRAFTS: Record<string, (req: StrategyDraftRequest, ctx: DiscoveryContext) => StrategyDraftResult> = {
   paid_media: (req, ctx) => ({
     objectives: `Build a scalable paid media engine for ${ctx.primaryProducts || 'the product line'} that drives efficient customer acquisition. Target a blended ROAS of 4:1+ within 6 months through structured campaign architecture, audience segmentation, and creative testing across Google and Meta platforms.`,
     keyInitiatives: [
