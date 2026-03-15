@@ -1,7 +1,7 @@
 import { useParams, useNavigate } from 'react-router-dom';
 import { useState, useMemo } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
-import { ClientProvider, useClientContext } from '@/contexts/ClientContext';
+import { ClientProvider, useOptionalClientContext } from '@/contexts/ClientContext';
 import { LIFECYCLE_STAGES } from '@/types/onboarding';
 import ClientLifecycleBar from '@/components/client/ClientLifecycleBar';
 import NextStepCard from '@/components/client/NextStepCard';

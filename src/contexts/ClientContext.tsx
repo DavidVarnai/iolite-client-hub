@@ -33,6 +33,10 @@ export function useClientContext(): ClientContextValue {
   return ctx;
 }
 
+export function useOptionalClientContext(): ClientContextValue | null {
+  return useContext(ClientContext);
+}
+
 interface ProviderProps {
   clientId: string;
   children: ReactNode;
