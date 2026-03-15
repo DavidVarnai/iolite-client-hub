@@ -351,6 +351,64 @@ export default function MIResultsView({ outputs, run, onRerun, onRefine, onAppro
 
 /* ── Sub-components ── */
 
+function CompetitorTable({ competitors }: { competitors: CompetitorProfile[] }) {
+  return (
+    <div className="overflow-x-auto">
+      <table className="w-full text-sm">
+        <thead>
+          <tr className="border-b text-left">
+            <th className="py-2 pr-3 text-xs font-medium text-muted-foreground">Business</th>
+            <th className="py-2 pr-3 text-xs font-medium text-muted-foreground">Website</th>
+            <th className="py-2 pr-3 text-xs font-medium text-muted-foreground">Source</th>
+            <th className="py-2 pr-3 text-xs font-medium text-muted-foreground">Relevance</th>
+            <th className="py-2 text-xs font-medium text-muted-foreground">Details</th>
+          </tr>
+        </thead>
+        <tbody>
+          {competitors.map(cp => (
+            <tr key={cp.id} className="border-b last:border-0">
+              <td className="py-2 pr-3">
+                <div className="font-medium text-xs">{cp.name}</div>
+                <div className="text-[10px] text-muted-foreground">{cp.geography}</div>
+              </td>
+              <td className="py-2 pr-3">
+                {cp.websiteUrl ? (
+                  <a href={cp.websiteUrl} target="_blank" rel="noopener noreferrer" className="text-[11px] text-primary hover:underline flex items-center gap-1">
+                    <Globe className="h-3 w-3" />
+                    {cp.websiteUrl.replace(/^https?:\/\//, '').replace(/\/$/, '')}
+                  </a>
+                ) : (
+                  <span className="text-[11px] text-muted-foreground">—</span>
+                )}
+              </td>
+              <td className="py-2 pr-3">
+                <SourceBadge type={cp.sourceType} confidence={cp.sourceConfidence} />
+              </td>
+              <td className="py-2 pr-3"><RelevanceBadge value={cp.relevance || 'medium'} /></td>
+              <td className="py-2 text-[11px] text-muted-foreground max-w-[250px]">
+                <div>{cp.positioning}</div>
+                {cp.rankingKeywords && cp.rankingKeywords.length > 0 && (
+                  <div className="flex flex-wrap gap-1 mt-1">
+                    {cp.rankingKeywords.slice(0, 3).map((kw, i) => (
+                      <span key={i} className="text-[10px] bg-muted px-1.5 py-0.5 rounded">{kw}</span>
+                    ))}
+                  </div>
+                )}
+                {cp.estimatedDomainAuthority != null && (
+                  <span className="text-[10px] text-muted-foreground">DA ~{cp.estimatedDomainAuthority}</span>
+                )}
+                {cp.paidAdsPresence && (
+                  <span className="text-[10px] text-primary ml-1">• Paid Ads</span>
+                )}
+              </td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    </div>
+  );
+}
+
 function AudienceModelCard({ model }: { model: AudienceModel }) {
   const [expanded, setExpanded] = useState(false);
   return (
