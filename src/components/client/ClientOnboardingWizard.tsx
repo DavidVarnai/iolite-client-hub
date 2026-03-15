@@ -1,10 +1,11 @@
-import { useState, useCallback } from 'react';
-import { ClientDiscovery, EMPTY_DISCOVERY, BusinessModel, GrowthGoal } from '@/types/onboarding';
+import { useState, useCallback, useMemo } from 'react';
+import { ClientDiscovery, EMPTY_DISCOVERY, BusinessModel, GrowthGoal, PerformanceConfidence, BOTTLENECK_OPTIONS, DiscoveryCompetitor } from '@/types/onboarding';
 import { ServiceChannel, SERVICE_CHANNEL_LABELS } from '@/types';
-import { Check, ChevronLeft, ChevronRight, X, Loader2, Sparkles } from 'lucide-react';
+import { Check, ChevronLeft, ChevronRight, X, Loader2, Sparkles, Plus, Trash2, ArrowRight, Download } from 'lucide-react';
 import { AnimatePresence, motion } from 'framer-motion';
 import { useClientContext } from '@/contexts/ClientContext';
 import { runMarketResearch } from '@/lib/ai/aiActions';
+import { repository } from '@/lib/repository';
 import type { AiActionStatus } from '@/types/ai';
 
 type WizardStep = 'setup' | 'discovery' | 'strategy' | 'growth_model' | 'proposal';
@@ -44,6 +45,29 @@ const FUNNEL_TYPE_OPTIONS = [
   { value: 'lead_gen', label: 'Lead Gen' },
   { value: 'hybrid', label: 'Hybrid' },
 ];
+
+const CONFIDENCE_OPTIONS: { value: PerformanceConfidence; label: string; color: string }[] = [
+  { value: 'high', label: 'High', color: 'bg-emerald-500/10 text-emerald-700 border-emerald-500/20' },
+  { value: 'medium', label: 'Medium', color: 'bg-amber-500/10 text-amber-700 border-amber-500/20' },
+  { value: 'estimated', label: 'Estimated', color: 'bg-blue-500/10 text-blue-700 border-blue-500/20' },
+  { value: 'unknown', label: 'Unknown', color: 'bg-muted text-muted-foreground border-border' },
+];
+
+// ── Helpers ──
+function parseNum(s: string): number {
+  const n = parseFloat(s.replace(/[^0-9.]/g, ''));
+  return isNaN(n) ? 0 : n;
+}
+
+function fmtPct(n: number): string {
+  if (!isFinite(n) || isNaN(n)) return '—';
+  return n < 1 ? `${n.toFixed(2)}%` : `${n.toFixed(1)}%`;
+}
+
+function fmtCurrency(n: number): string {
+  if (!isFinite(n) || isNaN(n)) return '—';
+  return `$${n.toLocaleString('en-US', { minimumFractionDigits: 0, maximumFractionDigits: 0 })}`;
+}
 
 // ---------- STEP 1: Client Setup ----------
 function ClientSetupStep() {
@@ -133,7 +157,12 @@ function DiscoveryStep() {
         primaryProducts: d.primaryProducts,
         coreCustomerSegments: d.coreCustomerSegments,
       });
+      const newCompetitors: DiscoveryCompetitor[] = result.topCompetitors.map(c => ({
+        name: c.name,
+        url: '',
+      }));
       updateD({
+        competitors: newCompetitors,
         topCompetitors: result.topCompetitors.map(c => `${c.name}${c.notes ? ` — ${c.notes}` : ''}`).join('\n'),
         positioningNotes: result.positioningThemes.join('\n'),
       });
@@ -141,6 +170,52 @@ function DiscoveryStep() {
     } catch {
       setAiStatus('error');
     }
+  };
+
+  // Auto-calculated metrics
+  const visitors = parseNum(d.monthlyVisitors);
+  const leads = parseNum(d.monthlyLeads);
+  const customers = parseNum(d.monthlyCustomers);
+  const budget = parseNum(d.monthlyMarketingBudget);
+
+  const visitorToLeadRate = visitors > 0 && leads > 0 ? (leads / visitors) * 100 : 0;
+  const leadToCustomerRate = leads > 0 && customers > 0 ? (customers / leads) * 100 : 0;
+  const visitorToCustomerRate = visitors > 0 && customers > 0 ? (customers / visitors) * 100 : 0;
+  const cpa = budget > 0 && leads > 0 ? budget / leads : 0;
+  const cac = budget > 0 && customers > 0 ? budget / customers : 0;
+
+  const hasMetrics = visitors > 0 || leads > 0 || customers > 0;
+
+  // Import MI approved competitors
+  const handleImportMI = () => {
+    const runs = repository.marketIntelligence.getByClient(client.id);
+    const approvedRun = runs.find(r => r.status === 'approved' && r.approved?.approvedCompetitors?.length);
+    if (!approvedRun?.approved?.approvedCompetitors?.length) return;
+    const imported: DiscoveryCompetitor[] = approvedRun.approved.approvedCompetitors.map(c => ({
+      name: c.name,
+      url: c.websiteUrl || '',
+    }));
+    // Merge: add only new names
+    const existing = d.competitors || [];
+    const existingNames = new Set(existing.map(c => c.name.toLowerCase()));
+    const toAdd = imported.filter(c => !existingNames.has(c.name.toLowerCase()));
+    updateD({ competitors: [...existing, ...toAdd] });
+  };
+
+  const hasMIApproved = useMemo(() => {
+    const runs = repository.marketIntelligence.getByClient(client.id);
+    return runs.some(r => r.status === 'approved' && r.approved?.approvedCompetitors?.length);
+  }, [client.id]);
+
+  // Competitor helpers
+  const addCompetitor = () => updateD({ competitors: [...(d.competitors || []), { name: '', url: '' }] });
+  const updateCompetitor = (idx: number, patch: Partial<DiscoveryCompetitor>) => {
+    const next = [...(d.competitors || [])];
+    next[idx] = { ...next[idx], ...patch };
+    updateD({ competitors: next });
+  };
+  const removeCompetitor = (idx: number) => {
+    updateD({ competitors: (d.competitors || []).filter((_, i) => i !== idx) });
   };
 
   return (
@@ -212,7 +287,6 @@ function DiscoveryStep() {
             rows={5}
             className="w-full rounded-md border bg-background px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-ring resize-y font-mono leading-relaxed"
           />
-          {/* Visual funnel rendering */}
           {d.salesFunnelStages.length > 0 && (
             <div className="mt-3 p-3 rounded-md bg-muted/50 border">
               <p className="text-[10px] font-medium text-muted-foreground uppercase tracking-wider mb-2">Funnel Preview</p>
@@ -248,40 +322,172 @@ function DiscoveryStep() {
           onChange={(v) => updateD({ websitePlatform: v })} />
       </DiscoverySection>
 
-      <DiscoverySection title="E. Current Performance">
-        <Field label="Current Traffic" value={d.currentTraffic} onChange={(v) => updateD({ currentTraffic: v })}
-          placeholder="e.g., 25,000 monthly sessions" hint="Monthly website sessions from all sources" />
-        <Field label="Current Leads / Orders" value={d.currentLeadsOrders} onChange={(v) => updateD({ currentLeadsOrders: v })}
-          placeholder="e.g., 500 leads/month" hint="Monthly conversions (leads, orders, or calls)" />
-        <Field label="Current CPA / CAC" value={d.currentCpaCac} onChange={(v) => updateD({ currentCpaCac: v })}
-          placeholder="e.g., $45 CPA" hint="Average cost to acquire a customer or lead" />
-        <Field label="Conversion Rates" value={d.conversionRates} onChange={(v) => updateD({ conversionRates: v })}
-          placeholder="e.g., 2.5% site-wide" hint="Overall website conversion rate" />
-        <ExpandableField label="Known Bottlenecks" value={d.knownBottlenecks} onChange={(v) => updateD({ knownBottlenecks: v })}
-          placeholder="e.g., Low mobile conversion, high cart abandonment" hint="Key friction points limiting growth" />
-      </DiscoverySection>
+      {/* ── E. Current Performance (structured) ── */}
+      <div className="space-y-4">
+        <div className="flex items-center justify-between border-b pb-2">
+          <h4 className="text-sm font-semibold">E. Current Performance</h4>
+          <div className="flex items-center gap-1.5">
+            <span className="text-[10px] text-muted-foreground uppercase tracking-wider">Confidence:</span>
+            <div className="flex gap-1">
+              {CONFIDENCE_OPTIONS.map(opt => (
+                <button
+                  key={opt.value}
+                  type="button"
+                  onClick={() => updateD({ performanceConfidence: opt.value })}
+                  className={`px-2 py-0.5 text-[10px] font-medium rounded border transition-colors ${
+                    d.performanceConfidence === opt.value ? opt.color : 'bg-background text-muted-foreground border-border hover:border-primary/30'
+                  }`}
+                >
+                  {opt.label}
+                </button>
+              ))}
+            </div>
+          </div>
+        </div>
 
+        {/* Input groups */}
+        <div className="grid grid-cols-3 gap-4">
+          <div className="space-y-3">
+            <p className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider">Traffic</p>
+            <NumericField label="Monthly Website Visitors" value={d.monthlyVisitors}
+              onChange={(v) => updateD({ monthlyVisitors: v })} placeholder="e.g. 25000" />
+          </div>
+          <div className="space-y-3">
+            <p className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider">Conversion</p>
+            <NumericField label="Monthly Leads" value={d.monthlyLeads}
+              onChange={(v) => updateD({ monthlyLeads: v })} placeholder="e.g. 500" />
+            <NumericField label="Monthly Customers" value={d.monthlyCustomers}
+              onChange={(v) => updateD({ monthlyCustomers: v })} placeholder="e.g. 50" />
+          </div>
+          <div className="space-y-3">
+            <p className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider">Marketing Spend</p>
+            <NumericField label="Monthly Marketing Budget" value={d.monthlyMarketingBudget}
+              onChange={(v) => updateD({ monthlyMarketingBudget: v })} placeholder="e.g. 15000" prefix="$" />
+          </div>
+        </div>
+
+        {/* Auto-calculated metrics */}
+        {hasMetrics && (
+          <div className="p-3 rounded-md bg-muted/50 border">
+            <p className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider mb-2.5">Calculated Metrics</p>
+            <div className="grid grid-cols-5 gap-3">
+              <MetricCard label="Visitor → Lead" value={visitorToLeadRate > 0 ? fmtPct(visitorToLeadRate) : '—'} />
+              <MetricCard label="Lead → Customer" value={leadToCustomerRate > 0 ? fmtPct(leadToCustomerRate) : '—'} />
+              <MetricCard label="Visitor → Customer" value={visitorToCustomerRate > 0 ? fmtPct(visitorToCustomerRate) : '—'} />
+              <MetricCard label="CPA (per Lead)" value={cpa > 0 ? fmtCurrency(cpa) : '—'} />
+              <MetricCard label="CAC (per Customer)" value={cac > 0 ? fmtCurrency(cac) : '—'} />
+            </div>
+          </div>
+        )}
+
+        {/* Bottleneck selector */}
+        <div>
+          <label className="text-xs font-medium text-muted-foreground uppercase tracking-wider mb-2 block">Known Constraints</label>
+          <div className="flex flex-wrap gap-1.5 mb-2">
+            {BOTTLENECK_OPTIONS.map(tag => {
+              const active = (d.bottleneckTags || []).includes(tag);
+              return (
+                <button
+                  key={tag}
+                  type="button"
+                  onClick={() => {
+                    const tags = d.bottleneckTags || [];
+                    updateD({
+                      bottleneckTags: active ? tags.filter(t => t !== tag) : [...tags, tag],
+                    });
+                  }}
+                  className={`px-3 py-1.5 text-xs font-medium rounded-md border transition-colors ${
+                    active
+                      ? 'bg-destructive/10 text-destructive border-destructive/20'
+                      : 'bg-background text-muted-foreground border-border hover:border-primary/50 hover:text-foreground'
+                  }`}
+                >
+                  {tag}
+                </button>
+              );
+            })}
+          </div>
+          <textarea
+            value={d.bottleneckNotes || ''}
+            onChange={(e) => updateD({ bottleneckNotes: e.target.value })}
+            placeholder="Additional notes about constraints or bottlenecks…"
+            rows={2}
+            className="w-full rounded-md border bg-background px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-ring resize-y placeholder:text-muted-foreground/50"
+          />
+        </div>
+      </div>
+
+      {/* ── F. Competitive Landscape (structured) ── */}
       <div className="space-y-4">
         <div className="flex items-center justify-between border-b pb-2">
           <h4 className="text-sm font-semibold">F. Competitive Landscape</h4>
-          <button
-            onClick={handleResearchCompetitors}
-            disabled={aiStatus === 'loading'}
-            className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded-md bg-primary/10 text-primary hover:bg-primary/20 transition-colors disabled:opacity-50"
-          >
-            {aiStatus === 'loading' ? (
-              <><Loader2 className="h-3.5 w-3.5 animate-spin" /> Researching…</>
-            ) : (
-              <><Sparkles className="h-3.5 w-3.5" /> Research Competitors</>
+          <div className="flex items-center gap-2">
+            {hasMIApproved && (
+              <button
+                type="button"
+                onClick={handleImportMI}
+                className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded-md bg-accent text-accent-foreground hover:bg-accent/80 transition-colors"
+              >
+                <Download className="h-3.5 w-3.5" /> Import from MI
+              </button>
             )}
-          </button>
+            <button
+              onClick={handleResearchCompetitors}
+              disabled={aiStatus === 'loading'}
+              className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded-md bg-primary/10 text-primary hover:bg-primary/20 transition-colors disabled:opacity-50"
+            >
+              {aiStatus === 'loading' ? (
+                <><Loader2 className="h-3.5 w-3.5 animate-spin" /> Researching…</>
+              ) : (
+                <><Sparkles className="h-3.5 w-3.5" /> Research Competitors</>
+              )}
+            </button>
+          </div>
         </div>
         {aiStatus === 'success' && (
           <p className="text-[10px] text-primary font-medium">✓ AI research applied — review and edit below</p>
         )}
+
+        {/* Competitor list */}
+        <div>
+          <label className="text-xs font-medium text-muted-foreground uppercase tracking-wider mb-2 block">Top Competitors</label>
+          <div className="space-y-2">
+            {(d.competitors || []).map((comp, idx) => (
+              <div key={idx} className="flex items-center gap-2">
+                <input
+                  type="text"
+                  value={comp.name}
+                  onChange={(e) => updateCompetitor(idx, { name: e.target.value })}
+                  placeholder="Competitor name"
+                  className="flex-1 rounded-md border bg-background px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-ring placeholder:text-muted-foreground/50"
+                />
+                <input
+                  type="text"
+                  value={comp.url}
+                  onChange={(e) => updateCompetitor(idx, { url: e.target.value })}
+                  placeholder="https://…"
+                  className="flex-1 rounded-md border bg-background px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-ring placeholder:text-muted-foreground/50 font-mono text-xs"
+                />
+                <button
+                  type="button"
+                  onClick={() => removeCompetitor(idx)}
+                  className="p-2 text-muted-foreground hover:text-destructive transition-colors"
+                >
+                  <Trash2 className="h-3.5 w-3.5" />
+                </button>
+              </div>
+            ))}
+            <button
+              type="button"
+              onClick={addCompetitor}
+              className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-muted-foreground hover:text-foreground transition-colors"
+            >
+              <Plus className="h-3.5 w-3.5" /> Add Competitor
+            </button>
+          </div>
+        </div>
+
         <div className="grid grid-cols-2 gap-4">
-          <ExpandableField label="Top Competitors" value={d.topCompetitors} onChange={(v) => updateD({ topCompetitors: v })}
-            placeholder="Competitor names and notes" />
           <ExpandableField label="Positioning Notes" value={d.positioningNotes} onChange={(v) => updateD({ positioningNotes: v })}
             placeholder="Key positioning themes in your market" />
           <ExpandableField label="Differentiators" value={d.differentiators} onChange={(v) => updateD({ differentiators: v })}
@@ -454,6 +660,36 @@ function Field({ label, value, onChange, placeholder, hint }: {
         placeholder={placeholder}
         className="w-full rounded-md border bg-background px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-ring placeholder:text-muted-foreground/50" />
       {hint && <p className="text-[10px] text-muted-foreground mt-1">{hint}</p>}
+    </div>
+  );
+}
+
+function NumericField({ label, value, onChange, placeholder, prefix }: {
+  label: string; value: string; onChange: (v: string) => void; placeholder?: string; prefix?: string;
+}) {
+  return (
+    <div>
+      <label className="text-[10px] font-medium text-muted-foreground uppercase tracking-wider mb-1 block">{label}</label>
+      <div className="relative">
+        {prefix && <span className="absolute left-3 top-1/2 -translate-y-1/2 text-sm text-muted-foreground">{prefix}</span>}
+        <input
+          type="text"
+          inputMode="numeric"
+          value={value}
+          onChange={(e) => onChange(e.target.value)}
+          placeholder={placeholder}
+          className={`w-full rounded-md border bg-background py-2 text-sm focus:outline-none focus:ring-2 focus:ring-ring placeholder:text-muted-foreground/50 tabular-nums ${prefix ? 'pl-7 pr-3' : 'px-3'}`}
+        />
+      </div>
+    </div>
+  );
+}
+
+function MetricCard({ label, value }: { label: string; value: string }) {
+  return (
+    <div className="text-center p-2 rounded-md bg-background border">
+      <p className="text-[10px] text-muted-foreground mb-0.5">{label}</p>
+      <p className="text-sm font-semibold text-foreground tabular-nums">{value}</p>
     </div>
   );
 }

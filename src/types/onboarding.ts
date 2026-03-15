@@ -15,6 +15,25 @@ export const LIFECYCLE_STAGES: { key: LifecycleStage; label: string; tabMapping?
 
 export type BusinessModel = 'ecommerce' | 'lead_generation' | 'hybrid' | 'other';
 export type GrowthGoal = 'revenue_growth' | 'lead_volume' | 'market_expansion' | 'brand_awareness';
+export type PerformanceConfidence = 'high' | 'medium' | 'estimated' | 'unknown';
+
+export const BOTTLENECK_OPTIONS = [
+  'Low website conversion',
+  'Weak traffic volume',
+  'Poor lead quality',
+  'Long sales cycle',
+  'Low brand awareness',
+  'Tracking issues',
+  'Weak email nurture',
+  'Sales capacity constraints',
+] as const;
+
+export type BottleneckTag = typeof BOTTLENECK_OPTIONS[number];
+
+export interface DiscoveryCompetitor {
+  name: string;
+  url: string;
+}
 
 export interface ClientDiscovery {
   // A. Business Overview
@@ -44,17 +63,33 @@ export interface ClientDiscovery {
   analyticsStack: string;
   websitePlatform: string;
 
-  // E. Current Performance
+  // E. Current Performance (structured)
+  monthlyVisitors: string;
+  monthlyLeads: string;
+  monthlyCustomers: string;
+  monthlyMarketingBudget: string;
+  performanceConfidence: PerformanceConfidence;
+  bottleneckTags: string[];
+  bottleneckNotes: string;
+
+  /** @deprecated use monthlyVisitors */
   currentTraffic: string;
+  /** @deprecated use monthlyLeads */
   currentLeadsOrders: string;
+  /** @deprecated use structured calc */
   currentCpaCac: string;
+  /** @deprecated use structured calc */
   conversionRates: string;
+  /** @deprecated use bottleneckTags + bottleneckNotes */
   knownBottlenecks: string;
 
-  // F. Competitive Landscape
-  topCompetitors: string;
+  // F. Competitive Landscape (structured)
+  competitors: DiscoveryCompetitor[];
   positioningNotes: string;
   differentiators: string;
+
+  /** @deprecated use competitors[] */
+  topCompetitors: string;
 }
 
 export const EMPTY_DISCOVERY: ClientDiscovery = {
@@ -77,14 +112,22 @@ export const EMPTY_DISCOVERY: ClientDiscovery = {
   emailPlatform: '',
   analyticsStack: '',
   websitePlatform: '',
+  monthlyVisitors: '',
+  monthlyLeads: '',
+  monthlyCustomers: '',
+  monthlyMarketingBudget: '',
+  performanceConfidence: 'unknown',
+  bottleneckTags: [],
+  bottleneckNotes: '',
   currentTraffic: '',
   currentLeadsOrders: '',
   currentCpaCac: '',
   conversionRates: '',
   knownBottlenecks: '',
-  topCompetitors: '',
+  competitors: [],
   positioningNotes: '',
   differentiators: '',
+  topCompetitors: '',
 };
 
 export interface ClientLifecycleProgress {
@@ -142,7 +185,7 @@ export function computeStageReadiness(
     d.primaryProducts, d.revenueStreams, d.avgOrderValue, d.coreCustomerSegments,
     d.revenueTargets, d.customerLeadTargets, d.timeHorizon,
     d.funnelType, d.closeRate, d.salesCycleLength,
-    d.currentTraffic, d.currentLeadsOrders,
+    d.monthlyVisitors || d.currentTraffic, d.monthlyLeads || d.currentLeadsOrders,
   ];
   const discoveryFilled = discoveryFields.filter(f => f && f.trim().length > 0).length;
   const discoveryPct = Math.round((discoveryFilled / discoveryFields.length) * 100);
