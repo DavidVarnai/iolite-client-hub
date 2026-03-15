@@ -168,6 +168,7 @@ export const c4Onboarding: OnboardingData = {
     majorGrowthPriorities: 'Enrollment growth and brand awareness prior to school opening',
     funnelType: 'lead_gen',
     leadQualSaleStructure: '',
+    salesFunnelStages: [],
     closeRate: '',
     salesCycleLength: '',
     paidMediaPlatforms: '',
