@@ -70,7 +70,7 @@ export interface ClientDiscovery {
   // C. Sales Process
   funnelType: string;
   leadQualSaleStructure: string;
-  salesFunnelStages: string[];
+  salesFunnelStages: FunnelStage[];
   closeRate: string;
   salesCycleLength: string;
 
