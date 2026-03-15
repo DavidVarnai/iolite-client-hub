@@ -101,7 +101,12 @@ export const c2Onboarding: OnboardingData = {
     majorGrowthPriorities: 'Digital thought leadership, website modernization, content pipeline',
     funnelType: 'lead_gen',
     leadQualSaleStructure: 'Content → Consultation request → Qualified call → Engagement',
-    salesFunnelStages: ['Content', 'Consultation Request', 'Qualified Call', 'Engagement'],
+    salesFunnelStages: [
+      { name: 'Content Page', category: 'page_interaction' },
+      { name: 'Consultation', category: 'qualification' },
+      { name: 'Discovery Call', category: 'qualification' },
+      { name: 'Closed Deal', category: 'conversion' },
+    ],
     closeRate: '18% from qualified lead to engagement',
     salesCycleLength: '45-90 days',
     paidMediaPlatforms: 'None currently',
