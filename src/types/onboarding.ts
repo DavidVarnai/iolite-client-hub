@@ -69,6 +69,7 @@ export const EMPTY_DISCOVERY: ClientDiscovery = {
   majorGrowthPriorities: '',
   funnelType: '',
   leadQualSaleStructure: '',
+  salesFunnelStages: [],
   closeRate: '',
   salesCycleLength: '',
   paidMediaPlatforms: '',
