@@ -88,7 +88,7 @@ export default function ClientOverview({ onNavigateTab, onOpenWizard, onActivate
                 <ArrowRight className="h-3.5 w-3.5" />
               </button>
             )}
-            <RunMIButton />
+            
             <button
               onClick={onSetProposalMode}
               className="w-full flex items-center justify-between px-3 py-2 rounded-md bg-muted text-sm hover:bg-muted/80 transition-colors"
