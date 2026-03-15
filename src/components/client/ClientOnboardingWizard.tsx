@@ -189,9 +189,9 @@ function DiscoveryStep() {
   // Import MI approved competitors
   const handleImportMI = () => {
     const runs = repository.marketIntelligence.getByClient(client.id);
-    const approved = runs.find(r => r.status === 'approved');
-    if (!approved?.approvedCompetitors?.length) return;
-    const imported: DiscoveryCompetitor[] = approved.approvedCompetitors.map(c => ({
+    const approvedRun = runs.find(r => r.status === 'approved' && r.approved?.approvedCompetitors?.length);
+    if (!approvedRun?.approved?.approvedCompetitors?.length) return;
+    const imported: DiscoveryCompetitor[] = approvedRun.approved.approvedCompetitors.map(c => ({
       name: c.name,
       url: c.websiteUrl || '',
     }));
