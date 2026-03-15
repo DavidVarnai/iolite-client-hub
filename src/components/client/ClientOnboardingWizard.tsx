@@ -1,5 +1,5 @@
 import { useState, useCallback, useMemo } from 'react';
-import { ClientDiscovery, EMPTY_DISCOVERY, BusinessModel, GrowthGoal, PerformanceConfidence, BOTTLENECK_OPTIONS, DiscoveryCompetitor, FunnelStage, FunnelStageCategory, FUNNEL_STAGE_OPTIONS, FUNNEL_CATEGORY_ORDER } from '@/types/onboarding';
+import { ClientDiscovery, EMPTY_DISCOVERY, BusinessModel, GrowthGoal, PerformanceConfidence, BOTTLENECK_OPTIONS, DiscoveryCompetitor, AiDiscoveredCompetitor, FunnelStage, FunnelStageCategory, FUNNEL_STAGE_OPTIONS, FUNNEL_CATEGORY_ORDER } from '@/types/onboarding';
 import { ServiceChannel, SERVICE_CHANNEL_LABELS } from '@/types';
 import { Check, ChevronLeft, ChevronRight, X, Loader2, Sparkles, Plus, Trash2, ArrowRight, Download } from 'lucide-react';
 import { AnimatePresence, motion } from 'framer-motion';
@@ -163,9 +163,13 @@ function DiscoveryStep() {
   const d = onboarding.discovery;
   const updateD = (patch: Partial<ClientDiscovery>) => updateOnboarding({ ...onboarding, discovery: { ...d, ...patch } });
   const [aiStatus, setAiStatus] = useState<AiActionStatus>('idle');
+  const [aiSuggestions, setAiSuggestions] = useState<AiDiscoveredCompetitor[]>([]);
+  const [selectedSuggestions, setSelectedSuggestions] = useState<Set<number>>(new Set());
 
   const handleResearchCompetitors = async () => {
     setAiStatus('loading');
+    setAiSuggestions([]);
+    setSelectedSuggestions(new Set());
     try {
       const result = await runMarketResearch({
         industry: client.industry,
@@ -175,19 +179,46 @@ function DiscoveryStep() {
         primaryProducts: d.primaryProducts,
         coreCustomerSegments: d.coreCustomerSegments,
       });
-      const newCompetitors: DiscoveryCompetitor[] = result.topCompetitors.map(c => ({
-        name: c.name,
-        url: '',
-      }));
-      updateD({
-        competitors: newCompetitors,
-        topCompetitors: result.topCompetitors.map(c => `${c.name}${c.notes ? ` — ${c.notes}` : ''}`).join('\n'),
-        positioningNotes: result.positioningThemes.join('\n'),
-      });
+      // Filter out any AI suggestions that match existing manual entries
+      const existingNames = new Set((d.competitors || []).map(c => c.name.toLowerCase()));
+      const suggestions: AiDiscoveredCompetitor[] = result.topCompetitors
+        .filter(c => !existingNames.has(c.name.toLowerCase()))
+        .map(c => ({
+          name: c.name,
+          url: c.url || '',
+          reason: c.notes,
+        }));
+      setAiSuggestions(suggestions);
+      updateD({ positioningNotes: result.positioningThemes.join('\n') });
       setAiStatus('success');
     } catch {
       setAiStatus('error');
     }
+  };
+
+  const toggleSuggestion = (idx: number) => {
+    setSelectedSuggestions(prev => {
+      const next = new Set(prev);
+      next.has(idx) ? next.delete(idx) : next.add(idx);
+      return next;
+    });
+  };
+
+  const approveSelectedSuggestions = () => {
+    const toAdd: DiscoveryCompetitor[] = [];
+    const existingNames = new Set((d.competitors || []).map(c => c.name.toLowerCase()));
+    selectedSuggestions.forEach(idx => {
+      const s = aiSuggestions[idx];
+      if (s && !existingNames.has(s.name.toLowerCase())) {
+        toAdd.push({ name: s.name, url: s.url });
+      }
+    });
+    if (toAdd.length > 0) {
+      updateD({ competitors: [...(d.competitors || []), ...toAdd] });
+    }
+    // Remove approved from suggestions
+    setAiSuggestions(prev => prev.filter((_, i) => !selectedSuggestions.has(i)));
+    setSelectedSuggestions(new Set());
   };
 
   // Auto-calculated metrics
@@ -507,8 +538,62 @@ function DiscoveryStep() {
             </button>
           </div>
         </div>
-        {aiStatus === 'success' && (
-          <p className="text-[10px] text-primary font-medium">✓ AI research applied — review and edit below</p>
+        {aiStatus === 'error' && (
+          <p className="text-[10px] text-destructive font-medium">Failed to research competitors. Please try again.</p>
+        )}
+
+        {/* AI Discovered Competitors */}
+        {aiSuggestions.length > 0 && (
+          <div className="panel border-primary/20 bg-primary/[0.02]">
+            <div className="flex items-center justify-between px-4 py-3 border-b border-primary/10">
+              <div className="flex items-center gap-2">
+                <Sparkles className="h-3.5 w-3.5 text-primary" />
+                <span className="text-xs font-semibold">AI Discovered Competitors</span>
+                <span className="text-[10px] text-muted-foreground bg-muted px-1.5 py-0.5 rounded">{aiSuggestions.length} found</span>
+              </div>
+              {selectedSuggestions.size > 0 && (
+                <button
+                  type="button"
+                  onClick={approveSelectedSuggestions}
+                  className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded-md bg-primary text-primary-foreground hover:bg-primary/90 transition-colors"
+                >
+                  <Check className="h-3 w-3" /> Add {selectedSuggestions.size} to Top Competitors
+                </button>
+              )}
+            </div>
+            <div className="divide-y divide-border">
+              {aiSuggestions.map((suggestion, idx) => (
+                <label
+                  key={idx}
+                  className="flex items-start gap-3 px-4 py-3 cursor-pointer hover:bg-muted/50 transition-colors"
+                >
+                  <input
+                    type="checkbox"
+                    checked={selectedSuggestions.has(idx)}
+                    onChange={() => toggleSuggestion(idx)}
+                    className="mt-1 h-4 w-4 rounded border-primary text-primary focus:ring-primary"
+                  />
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center gap-2">
+                      <span className="text-sm font-medium">{suggestion.name}</span>
+                      {suggestion.url && (
+                        <a
+                          href={suggestion.url}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          onClick={(e) => e.stopPropagation()}
+                          className="text-[11px] text-primary hover:underline truncate max-w-[200px] font-mono"
+                        >
+                          {suggestion.url.replace(/^https?:\/\//, '')}
+                        </a>
+                      )}
+                    </div>
+                    <p className="text-xs text-muted-foreground mt-0.5">{suggestion.reason}</p>
+                  </div>
+                </label>
+              ))}
+            </div>
+          </div>
         )}
 
         {/* Competitor list */}
