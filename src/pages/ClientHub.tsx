@@ -199,6 +199,25 @@ function ClientHubContent({ clientId, tab }: { clientId: string; tab?: string })
   );
 }
 
+function ClientHubInner() {
+  const { clientId, tab } = useParams();
+  const clientContext = useOptionalClientContext();
+
+  if (!clientId) {
+    return <div className="p-6"><p className="text-muted-foreground">Client not found.</p></div>;
+  }
+
+  if (!clientContext) {
+    return (
+      <ClientProvider clientId={clientId}>
+        <ClientHubContent clientId={clientId} tab={tab} />
+      </ClientProvider>
+    );
+  }
+
+  return <ClientHubContent clientId={clientId} tab={tab} />;
+}
+
 export default function ClientHub() {
   const { clientId } = useParams();
 
