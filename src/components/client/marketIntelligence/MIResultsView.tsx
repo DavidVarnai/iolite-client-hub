@@ -2,21 +2,24 @@
  * MIResultsView — structured display with Top 10 Keywords, Top 10 Competitors,
  * channel recommendations, summary, refinement input, and approval actions.
  * Benchmark assumptions are gated behind approved keyword + competitor research.
+ * Competitors are classified as direct, indirect, or directory/platform.
  */
 import { useState } from 'react';
 import {
   Check, RotateCcw, Search, Shield, Target, BarChart3,
   FileText, Radio, Users, Send, CheckCircle2, Lock, Globe,
-  Zap, MapPin,
+  Zap, MapPin, AlertTriangle, Building2, Layers,
 } from 'lucide-react';
 import type {
   MarketIntelligenceOutputs,
   MarketIntelligenceRun,
   AudienceModel,
   BenchmarkAssumption,
+  CompetitorProfile,
   ChannelType,
   SourceType,
   SourceConfidence,
+  CompetitorType,
 } from '@/types/marketIntelligence';
 import { Textarea } from '@/components/ui/textarea';
 import { format } from 'date-fns';
@@ -36,6 +39,11 @@ export default function MIResultsView({ outputs, run, onRerun, onRefine, onAppro
   const hasKeywords = outputs.keywordThemes.length > 0;
   const hasCompetitors = outputs.competitorProfiles.length > 0;
   const benchmarksReady = isApproved && hasKeywords && hasCompetitors;
+
+  const directCompetitors = outputs.competitorProfiles.filter(c => c.competitorType === 'direct' || !c.competitorType);
+  const directoryCompetitors = outputs.competitorProfiles.filter(c => c.competitorType === 'directory_platform');
+  const gapIndicator = directCompetitors.find(c => c.name.startsWith('⚠'));
+  const realDirectCompetitors = directCompetitors.filter(c => !c.name.startsWith('⚠'));
 
   const benchmarksByChannel = outputs.benchmarkAssumptions.reduce<Record<string, BenchmarkAssumption[]>>((acc, ba) => {
     (acc[ba.channel] ??= []).push(ba);
@@ -146,66 +154,41 @@ export default function MIResultsView({ outputs, run, onRerun, onRefine, onAppro
         </div>
       )}
 
-      {/* ─── TOP 10 COMPETITORS ─── */}
-      {hasCompetitors && (
+      {/* ─── DIRECT COMPETITORS ─── */}
+      {realDirectCompetitors.length > 0 && (
         <div className="panel p-5 space-y-3">
           <div className="flex items-center gap-2">
-            <Shield className="h-4 w-4 text-primary" />
-            <h4 className="text-sm font-semibold">Top {outputs.competitorProfiles.length} Competitors</h4>
+            <Building2 className="h-4 w-4 text-primary" />
+            <h4 className="text-sm font-semibold">Direct Competitors ({realDirectCompetitors.length})</h4>
+            <span className="text-[10px] text-muted-foreground bg-muted px-1.5 py-0.5 rounded">Modeled SERP-based discovery</span>
           </div>
-          <div className="overflow-x-auto">
-            <table className="w-full text-sm">
-              <thead>
-                <tr className="border-b text-left">
-                  <th className="py-2 pr-3 text-xs font-medium text-muted-foreground">Business</th>
-                  <th className="py-2 pr-3 text-xs font-medium text-muted-foreground">Website</th>
-                  <th className="py-2 pr-3 text-xs font-medium text-muted-foreground">Source</th>
-                  <th className="py-2 pr-3 text-xs font-medium text-muted-foreground">Relevance</th>
-                  <th className="py-2 text-xs font-medium text-muted-foreground">Details</th>
-                </tr>
-              </thead>
-              <tbody>
-                {outputs.competitorProfiles.map(cp => (
-                  <tr key={cp.id} className="border-b last:border-0">
-                    <td className="py-2 pr-3">
-                      <div className="font-medium text-xs">{cp.name}</div>
-                      <div className="text-[10px] text-muted-foreground">{cp.geography}</div>
-                    </td>
-                    <td className="py-2 pr-3">
-                      {cp.websiteUrl ? (
-                        <a href={cp.websiteUrl} target="_blank" rel="noopener noreferrer" className="text-[11px] text-primary hover:underline flex items-center gap-1">
-                          <Globe className="h-3 w-3" />
-                          {cp.websiteUrl.replace(/^https?:\/\//, '').replace(/\/$/, '')}
-                        </a>
-                      ) : (
-                        <span className="text-[11px] text-muted-foreground">—</span>
-                      )}
-                    </td>
-                    <td className="py-2 pr-3">
-                      <SourceBadge type={cp.sourceType} confidence={cp.sourceConfidence} />
-                    </td>
-                    <td className="py-2 pr-3"><RelevanceBadge value={cp.relevance || 'medium'} /></td>
-                    <td className="py-2 text-[11px] text-muted-foreground max-w-[250px]">
-                      <div>{cp.positioning}</div>
-                      {cp.rankingKeywords && cp.rankingKeywords.length > 0 && (
-                        <div className="flex flex-wrap gap-1 mt-1">
-                          {cp.rankingKeywords.slice(0, 3).map((kw, i) => (
-                            <span key={i} className="text-[10px] bg-muted px-1.5 py-0.5 rounded">{kw}</span>
-                          ))}
-                        </div>
-                      )}
-                      {cp.estimatedDomainAuthority != null && (
-                        <span className="text-[10px] text-muted-foreground">DA ~{cp.estimatedDomainAuthority}</span>
-                      )}
-                      {cp.paidAdsPresence && (
-                        <span className="text-[10px] text-primary ml-1">• Paid Ads</span>
-                      )}
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
+          <CompetitorTable competitors={realDirectCompetitors} />
+        </div>
+      )}
+
+      {/* ─── GAP INDICATOR ─── */}
+      {gapIndicator && (
+        <div className="panel border-amber-200 dark:border-amber-800 bg-amber-50 dark:bg-amber-900/10 p-4">
+          <div className="flex items-start gap-3">
+            <AlertTriangle className="h-4 w-4 text-amber-600 dark:text-amber-400 mt-0.5 shrink-0" />
+            <div>
+              <h4 className="text-xs font-semibold text-amber-700 dark:text-amber-400">Insufficient Verified Competitors</h4>
+              <p className="text-xs text-amber-600/80 dark:text-amber-400/70 mt-1">{gapIndicator.positioning}</p>
+              <p className="text-xs text-amber-600/80 dark:text-amber-400/70 mt-0.5">{gapIndicator.channelObservations}</p>
+            </div>
           </div>
+        </div>
+      )}
+
+      {/* ─── DIRECTORIES & PLATFORMS ─── */}
+      {directoryCompetitors.length > 0 && (
+        <div className="panel p-5 space-y-3">
+          <div className="flex items-center gap-2">
+            <Layers className="h-4 w-4 text-muted-foreground" />
+            <h4 className="text-sm font-semibold text-muted-foreground">Directories & Platforms ({directoryCompetitors.length})</h4>
+            <span className="text-[10px] text-muted-foreground bg-muted px-1.5 py-0.5 rounded">Not direct competitors — capture search traffic</span>
+          </div>
+          <CompetitorTable competitors={directoryCompetitors} />
         </div>
       )}
 
@@ -368,6 +351,64 @@ export default function MIResultsView({ outputs, run, onRerun, onRefine, onAppro
 }
 
 /* ── Sub-components ── */
+
+function CompetitorTable({ competitors }: { competitors: CompetitorProfile[] }) {
+  return (
+    <div className="overflow-x-auto">
+      <table className="w-full text-sm">
+        <thead>
+          <tr className="border-b text-left">
+            <th className="py-2 pr-3 text-xs font-medium text-muted-foreground">Business</th>
+            <th className="py-2 pr-3 text-xs font-medium text-muted-foreground">Website</th>
+            <th className="py-2 pr-3 text-xs font-medium text-muted-foreground">Source</th>
+            <th className="py-2 pr-3 text-xs font-medium text-muted-foreground">Relevance</th>
+            <th className="py-2 text-xs font-medium text-muted-foreground">Details</th>
+          </tr>
+        </thead>
+        <tbody>
+          {competitors.map(cp => (
+            <tr key={cp.id} className="border-b last:border-0">
+              <td className="py-2 pr-3">
+                <div className="font-medium text-xs">{cp.name}</div>
+                <div className="text-[10px] text-muted-foreground">{cp.geography}</div>
+              </td>
+              <td className="py-2 pr-3">
+                {cp.websiteUrl ? (
+                  <a href={cp.websiteUrl} target="_blank" rel="noopener noreferrer" className="text-[11px] text-primary hover:underline flex items-center gap-1">
+                    <Globe className="h-3 w-3" />
+                    {cp.websiteUrl.replace(/^https?:\/\//, '').replace(/\/$/, '')}
+                  </a>
+                ) : (
+                  <span className="text-[11px] text-muted-foreground">—</span>
+                )}
+              </td>
+              <td className="py-2 pr-3">
+                <SourceBadge type={cp.sourceType} confidence={cp.sourceConfidence} />
+              </td>
+              <td className="py-2 pr-3"><RelevanceBadge value={cp.relevance || 'medium'} /></td>
+              <td className="py-2 text-[11px] text-muted-foreground max-w-[250px]">
+                <div>{cp.positioning}</div>
+                {cp.rankingKeywords && cp.rankingKeywords.length > 0 && (
+                  <div className="flex flex-wrap gap-1 mt-1">
+                    {cp.rankingKeywords.slice(0, 3).map((kw, i) => (
+                      <span key={i} className="text-[10px] bg-muted px-1.5 py-0.5 rounded">{kw}</span>
+                    ))}
+                  </div>
+                )}
+                {cp.estimatedDomainAuthority != null && (
+                  <span className="text-[10px] text-muted-foreground">DA ~{cp.estimatedDomainAuthority}</span>
+                )}
+                {cp.paidAdsPresence && (
+                  <span className="text-[10px] text-primary ml-1">• Paid Ads</span>
+                )}
+              </td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    </div>
+  );
+}
 
 function AudienceModelCard({ model }: { model: AudienceModel }) {
   const [expanded, setExpanded] = useState(false);
