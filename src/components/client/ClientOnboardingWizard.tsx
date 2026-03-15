@@ -365,27 +365,8 @@ function DiscoveryStep() {
             <Plus className="h-3.5 w-3.5" /> Add Step
           </button>
 
-          {/* Funnel preview */}
-          {d.salesFunnelStages.length > 0 && d.salesFunnelStages.some(s => s.name) && (
-            <div className="mt-3 p-3 rounded-md bg-muted/50 border">
-              <p className="text-[10px] font-medium text-muted-foreground uppercase tracking-wider mb-2">Funnel Preview</p>
-              <div className="flex flex-wrap items-center gap-1">
-                {d.salesFunnelStages.filter(s => s.name).map((stage, idx, arr) => (
-                  <span key={idx} className="flex items-center gap-1">
-                    <span className="px-2.5 py-1 text-xs font-medium rounded-md bg-primary/10 text-primary border border-primary/20">
-                      {stage.name}
-                      <span className="ml-1 text-[9px] text-muted-foreground">
-                        ({FUNNEL_STAGE_OPTIONS[stage.category]?.label || stage.category})
-                      </span>
-                    </span>
-                    {idx < arr.length - 1 && (
-                      <ArrowRight className="h-3 w-3 text-muted-foreground" />
-                    )}
-                  </span>
-                ))}
-              </div>
-            </div>
-          )}
+          {/* Visual funnel diagram */}
+          <FunnelVisualPreview stages={d.salesFunnelStages} />
         </div>
         <Field label="Close Rate" value={d.closeRate} onChange={(v) => updateD({ closeRate: v })} placeholder="e.g. 15%" />
         <Field label="Sales Cycle Length" value={d.salesCycleLength} onChange={(v) => updateD({ salesCycleLength: v })} placeholder="e.g. 30 days" />
