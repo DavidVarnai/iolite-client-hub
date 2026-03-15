@@ -129,6 +129,7 @@ export const c3Onboarding: OnboardingData = {
     majorGrowthPriorities: 'Digital enrollment funnel, social proof, community engagement',
     funnelType: 'lead_gen',
     leadQualSaleStructure: '',
+    salesFunnelStages: [],
     closeRate: '',
     salesCycleLength: '',
     paidMediaPlatforms: 'Facebook Ads (minimal)',
