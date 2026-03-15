@@ -101,6 +101,7 @@ export default function MIResultsView({ outputs, run, onRerun, onRefine, onAppro
         </div>
       )}
 
+      {/* ─── TOP 10 KEYWORDS ─── */}
       {hasKeywords && (
         <div className="panel p-5 space-y-3">
           <div className="flex items-center gap-2">
@@ -114,7 +115,7 @@ export default function MIResultsView({ outputs, run, onRerun, onRefine, onAppro
                   <th className="py-2 pr-3 text-xs font-medium text-muted-foreground">Keyword / Theme</th>
                   <th className="py-2 pr-3 text-xs font-medium text-muted-foreground">Intent</th>
                   <th className="py-2 pr-3 text-xs font-medium text-muted-foreground">Priority</th>
-                  <th className="py-2 pr-3 text-xs font-medium text-muted-foreground">Local</th>
+                  <th className="py-2 pr-3 text-xs font-medium text-muted-foreground">Source</th>
                   <th className="py-2 text-xs font-medium text-muted-foreground">Notes</th>
                 </tr>
               </thead>
@@ -132,7 +133,7 @@ export default function MIResultsView({ outputs, run, onRerun, onRefine, onAppro
                     <td className="py-2 pr-3"><IntentBadge intent={kt.intentType} /></td>
                     <td className="py-2 pr-3"><PriorityBadge priority={kt.priority || 'medium'} /></td>
                     <td className="py-2 pr-3">
-                      <RelevanceBadge value={kt.localRelevance || 'n/a'} />
+                      <SourceBadge type={kt.sourceType} confidence={kt.sourceConfidence} />
                     </td>
                     <td className="py-2 text-[11px] text-muted-foreground max-w-[200px]">
                       {kt.demandCaptureRationale || kt.notes || '—'}
