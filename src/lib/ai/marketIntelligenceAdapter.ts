@@ -1,7 +1,9 @@
 /**
  * Channel-aware Market Intelligence adapter.
- * Generates search-based outputs for Google/Bing, audience-based outputs for Meta/LinkedIn/Spotify.
- * All outputs are context-aware: industry, geography, audience, budget.
+ * Generates Top 10 keywords, Top 10 competitors with URLs,
+ * audience models, channel recommendations, and benchmarks.
+ * Locality-aware: uses primaryCity, localRadius for local businesses.
+ * Supports refinementNote for iterative research passes.
  */
 import type {
   MarketIntelligenceInputs,
@@ -33,7 +35,7 @@ export async function generateMarketIntelligence(
   await delay(400);
   const channelRecommendations = generateChannelRecs(inputs, ctx);
 
-  onProgress?.(30, 'Researching keyword themes…');
+  onProgress?.(30, 'Researching top keywords…');
   await delay(500);
   const keywordThemes = generateKeywordThemes(inputs, ctx);
 
@@ -62,27 +64,38 @@ export async function generateMarketIntelligence(
 
 interface GenerationContext {
   area: string;
+  localArea: string;
   product: string;
   audience: string;
   isB2B: boolean;
   isEcom: boolean;
   isLocal: boolean;
+  radiusMiles: number | null;
+  refinement: string | null;
 }
 
 function buildContext(inputs: MarketIntelligenceInputs): GenerationContext {
   const industry = inputs.industry.toLowerCase();
+  const localArea = inputs.primaryCity || inputs.serviceArea || inputs.geography || '';
+  const radiusMiles = inputs.localRadius === 'custom'
+    ? (inputs.customRadiusMiles || null)
+    : typeof inputs.localRadius === 'number' ? inputs.localRadius : null;
+
   return {
     area: inputs.geography || inputs.serviceArea || 'target market',
+    localArea,
     product: inputs.productsOrServices || inputs.industry,
     audience: inputs.targetAudience || 'target customers',
     isB2B: inputs.businessModel === 'lead_generation' || industry.includes('professional') || industry.includes('b2b'),
     isEcom: inputs.businessModel === 'ecommerce' || industry.includes('e-commerce') || industry.includes('ecommerce'),
-    isLocal: !!(inputs.serviceArea || (inputs.geography && !inputs.geography.toLowerCase().includes('national') && !inputs.geography.toLowerCase().includes('united states'))),
+    isLocal: !!(inputs.primaryCity || inputs.serviceArea || (inputs.geography && !inputs.geography.toLowerCase().includes('national') && !inputs.geography.toLowerCase().includes('united states'))),
+    radiusMiles,
+    refinement: inputs.refinementNote || null,
   };
 }
 
 /* ═══════════════════════════════════════════════════════
-   KEYWORD THEMES — only for search channels
+   KEYWORD THEMES — Top 10 with priority & local relevance
    ═══════════════════════════════════════════════════════ */
 
 function generateKeywordThemes(inputs: MarketIntelligenceInputs, ctx: GenerationContext): KeywordTheme[] {
@@ -91,65 +104,79 @@ function generateKeywordThemes(inputs: MarketIntelligenceInputs, ctx: Generation
   if (!hasSearch && !hasSEO) return [];
 
   const themes: KeywordTheme[] = [];
-  const { area, product, isLocal, isB2B } = ctx;
+  const { area, localArea, product, isLocal, isB2B } = ctx;
+  const loc = isLocal ? localArea : area;
 
   themes.push({
-    id: uid('kt'),
-    theme: isB2B ? `${inputs.industry} professional services` : `${inputs.industry} solutions`,
-    intentType: 'commercial',
-    keywordExamples: [
-      `best ${product.toLowerCase()} ${isLocal ? area : ''}`.trim(),
-      `${inputs.industry.toLowerCase()} ${isB2B ? 'firm' : 'company'} near me`,
-      `top ${product.toLowerCase()} provider`,
-    ],
-    demandCaptureRationale: `High-intent queries from prospects actively evaluating ${inputs.industry.toLowerCase()} options. These drive the highest conversion rates in search campaigns.`,
-    notes: `Strong conversion potential. Expect competitive CPCs in ${area}.`,
+    id: uid('kt'), theme: isB2B ? `${inputs.industry} professional services` : `${inputs.industry} solutions`,
+    intentType: 'commercial', priority: 'high', localRelevance: isLocal ? 'high' : 'medium',
+    keywordExamples: [`best ${product.toLowerCase()} ${isLocal ? loc : ''}`.trim(), `${inputs.industry.toLowerCase()} ${isB2B ? 'firm' : 'company'} near me`, `top ${product.toLowerCase()} provider`],
+    demandCaptureRationale: `High-intent queries from prospects actively evaluating ${inputs.industry.toLowerCase()} options.`,
+    notes: `Strong conversion potential. Expect competitive CPCs in ${loc}.`,
   });
 
   themes.push({
-    id: uid('kt'),
-    theme: `${product} pricing and comparison`,
-    intentType: 'transactional',
-    keywordExamples: [
-      `${product.toLowerCase()} cost`,
-      `${product.toLowerCase()} pricing ${new Date().getFullYear()}`,
-      `${product.toLowerCase()} quote`,
-    ],
-    demandCaptureRationale: 'Bottom-of-funnel queries indicating purchase readiness. Essential for capturing demand before competitors.',
+    id: uid('kt'), theme: `${product} pricing and comparison`, intentType: 'transactional', priority: 'high', localRelevance: isLocal ? 'medium' : 'low',
+    keywordExamples: [`${product.toLowerCase()} cost`, `${product.toLowerCase()} pricing ${new Date().getFullYear()}`, `${product.toLowerCase()} quote`],
+    demandCaptureRationale: 'Bottom-of-funnel queries indicating purchase readiness.',
   });
 
   themes.push({
-    id: uid('kt'),
-    theme: `${inputs.industry} guidance and education`,
-    intentType: 'informational',
-    keywordExamples: [
-      `how to choose ${product.toLowerCase()}`,
-      `${inputs.industry.toLowerCase()} guide ${new Date().getFullYear()}`,
-      `${product.toLowerCase()} vs alternatives`,
-    ],
-    demandCaptureRationale: 'Top-of-funnel content. Drives organic authority and email list growth. Supports SEO strategy.',
-    notes: 'Best suited for Content/SEO channel. Lower intent but high volume.',
+    id: uid('kt'), theme: `${inputs.industry} guidance and education`, intentType: 'informational', priority: 'medium', localRelevance: 'low',
+    keywordExamples: [`how to choose ${product.toLowerCase()}`, `${inputs.industry.toLowerCase()} guide ${new Date().getFullYear()}`, `${product.toLowerCase()} vs alternatives`],
+    demandCaptureRationale: 'Top-of-funnel content. Drives organic authority and email list growth.',
+    notes: 'Best suited for Content/SEO channel.',
   });
 
   if (isLocal) {
     themes.push({
-      id: uid('kt'),
-      theme: `Local ${inputs.industry.toLowerCase()} in ${area}`,
-      intentType: 'navigational',
-      keywordExamples: [
-        `${inputs.industry.toLowerCase()} ${area}`,
-        `${product.toLowerCase()} ${area} reviews`,
-        `${area} ${inputs.industry.toLowerCase()}`,
-      ],
-      demandCaptureRationale: `Local search queries dominate mobile results. Google Business Profile optimization is critical for capturing ${area} traffic.`,
+      id: uid('kt'), theme: `Local ${inputs.industry.toLowerCase()} in ${loc}`, intentType: 'navigational', priority: 'high', localRelevance: 'high',
+      keywordExamples: [`${inputs.industry.toLowerCase()} ${loc}`, `${product.toLowerCase()} ${loc} reviews`, `${loc} ${inputs.industry.toLowerCase()}`],
+      demandCaptureRationale: `Local search queries dominate mobile results. Google Business Profile optimization is critical for capturing ${loc} traffic.`,
+    });
+    themes.push({
+      id: uid('kt'), theme: `${product.toLowerCase()} near me`, intentType: 'transactional', priority: 'high', localRelevance: 'high',
+      keywordExamples: [`${product.toLowerCase()} near me`, `best ${inputs.industry.toLowerCase()} nearby`, `${product.toLowerCase()} open now`],
+      demandCaptureRationale: `"Near me" queries have high purchase intent and strong local conversion rates${ctx.radiusMiles ? ` within ${ctx.radiusMiles}-mile radius` : ''}.`,
     });
   }
 
-  return themes;
+  themes.push({
+    id: uid('kt'), theme: `${inputs.industry} reviews and ratings`, intentType: 'commercial', priority: 'medium', localRelevance: isLocal ? 'high' : 'medium',
+    keywordExamples: [`${product.toLowerCase()} reviews`, `best ${inputs.industry.toLowerCase()} rated`, `${product.toLowerCase()} testimonials`],
+    demandCaptureRationale: 'Review-intent queries signal late-stage decision making.',
+  });
+
+  themes.push({
+    id: uid('kt'), theme: `${inputs.industry} alternatives`, intentType: 'commercial', priority: 'medium', localRelevance: 'low',
+    keywordExamples: [`${product.toLowerCase()} alternatives`, `companies like ${product.toLowerCase()}`, `${product.toLowerCase()} competitors`],
+    demandCaptureRationale: 'Competitor comparison queries capture users evaluating options.',
+  });
+
+  themes.push({
+    id: uid('kt'), theme: `${isB2B ? 'B2B' : ''} ${inputs.industry} trends ${new Date().getFullYear()}`, intentType: 'informational', priority: 'low', localRelevance: 'low',
+    keywordExamples: [`${inputs.industry.toLowerCase()} trends`, `${inputs.industry.toLowerCase()} statistics ${new Date().getFullYear()}`, `future of ${inputs.industry.toLowerCase()}`],
+    demandCaptureRationale: 'Trend queries build thought leadership and attract early-stage prospects.',
+  });
+
+  themes.push({
+    id: uid('kt'), theme: `${product} for ${ctx.audience.toLowerCase().split(',')[0]?.trim() || 'specific segments'}`,
+    intentType: 'commercial', priority: 'medium', localRelevance: isLocal ? 'medium' : 'low',
+    keywordExamples: [`${product.toLowerCase()} for ${ctx.audience.toLowerCase().split(',')[0]?.trim() || 'businesses'}`, `${inputs.industry.toLowerCase()} tailored solutions`, `custom ${product.toLowerCase()}`],
+    demandCaptureRationale: 'Segment-specific queries indicate qualified prospects with defined needs.',
+  });
+
+  themes.push({
+    id: uid('kt'), theme: `How much does ${product.toLowerCase()} cost`, intentType: 'transactional', priority: 'high', localRelevance: isLocal ? 'medium' : 'low',
+    keywordExamples: [`how much does ${product.toLowerCase()} cost`, `${product.toLowerCase()} fee structure`, `affordable ${product.toLowerCase()}`],
+    demandCaptureRationale: 'Direct cost queries indicate budget-ready prospects.',
+  });
+
+  return themes.slice(0, 10);
 }
 
 /* ═══════════════════════════════════════════════════════
-   AUDIENCE MODELS — per channel, with channel-specific logic
+   AUDIENCE MODELS
    ═══════════════════════════════════════════════════════ */
 
 function generateAudienceModels(inputs: MarketIntelligenceInputs, ctx: GenerationContext): AudienceModel[] {
@@ -164,236 +191,132 @@ function generateAudienceModels(inputs: MarketIntelligenceInputs, ctx: Generatio
       models.push(buildSearchAudienceModel(ch, inputs, ctx));
     }
   }
-
   return models;
 }
 
 function buildAudienceChannelModels(channel: string, inputs: MarketIntelligenceInputs, ctx: GenerationContext): AudienceModel[] {
-  const { area, audience, isB2B, isEcom, isLocal } = ctx;
-
-  if (channel === 'Meta Ads' || channel === 'Facebook Ads' || channel === 'Instagram Ads') {
-    return buildMetaAudiences(inputs, ctx);
-  }
-
-  if (channel === 'LinkedIn') {
-    return buildLinkedInAudiences(inputs, ctx);
-  }
-
-  if (channel === 'Spotify') {
-    return buildSpotifyAudiences(inputs, ctx);
-  }
-
+  if (channel === 'Meta Ads' || channel === 'Facebook Ads' || channel === 'Instagram Ads') return buildMetaAudiences(inputs, ctx);
+  if (channel === 'LinkedIn') return buildLinkedInAudiences(inputs, ctx);
+  if (channel === 'Spotify') return buildSpotifyAudiences(inputs, ctx);
   if (channel === 'TikTok') {
     return [{
-      id: uid('am'),
-      channel: 'TikTok',
-      channelType: 'audience',
-      audienceDefinition: `${audience} — discovery-oriented content consumers on TikTok`,
-      targetingCriteria: [
-        `Interest categories: ${inputs.industry}`,
-        isLocal ? `Location: ${area}` : 'National targeting',
-        isEcom ? 'Shopping behaviors, product discovery' : 'Educational / how-to content consumers',
-      ],
-      funnelStage: 'awareness',
-      estimatedReachMin: isLocal ? 100_000 : 1_000_000,
-      estimatedReachMax: isLocal ? 400_000 : 5_000_000,
-      recommendedCPM: isLocal ? 5 : 4,
-      recommendedCTR: 0.8,
-      reasoning: `TikTok provides low-CPM awareness reach for ${inputs.industry}. Best used for brand storytelling and viral content potential. Not a primary conversion channel.`,
+      id: uid('am'), channel: 'TikTok', channelType: 'audience',
+      audienceDefinition: `${ctx.audience} — discovery-oriented content consumers on TikTok`,
+      targetingCriteria: [`Interest categories: ${inputs.industry}`, ctx.isLocal ? `Location: ${ctx.localArea}` : 'National targeting', ctx.isEcom ? 'Shopping behaviors' : 'Educational / how-to content consumers'],
+      funnelStage: 'awareness', estimatedReachMin: ctx.isLocal ? 100_000 : 1_000_000, estimatedReachMax: ctx.isLocal ? 400_000 : 5_000_000,
+      recommendedCPM: ctx.isLocal ? 5 : 4, recommendedCTR: 0.8,
+      reasoning: `TikTok provides low-CPM awareness reach for ${inputs.industry}. Best used for brand storytelling.`,
     }];
   }
-
-  // YouTube or other audience channels
   return [{
-    id: uid('am'),
-    channel,
-    channelType: 'audience',
-    audienceDefinition: `${audience} — reached through ${channel} targeting`,
-    targetingCriteria: [`Industry: ${inputs.industry}`, isLocal ? `Geo: ${area}` : 'National'],
-    funnelStage: 'awareness',
-    estimatedReachMin: 200_000,
-    estimatedReachMax: 1_000_000,
+    id: uid('am'), channel, channelType: 'audience',
+    audienceDefinition: `${ctx.audience} — reached through ${channel} targeting`,
+    targetingCriteria: [`Industry: ${inputs.industry}`, ctx.isLocal ? `Geo: ${ctx.localArea}` : 'National'],
+    funnelStage: 'awareness', estimatedReachMin: 200_000, estimatedReachMax: 1_000_000,
     reasoning: `${channel} provides additional reach for ${inputs.industry} audiences.`,
   }];
 }
 
 function buildMetaAudiences(inputs: MarketIntelligenceInputs, ctx: GenerationContext): AudienceModel[] {
-  const { area, audience, isB2B, isEcom, isLocal } = ctx;
-  const models: AudienceModel[] = [];
-
-  // Prospecting audience
-  const prospectingAudience = isEcom
-    ? `Online shoppers interested in ${inputs.productsOrServices || inputs.industry}`
-    : isB2B
-      ? `Business decision-makers in ${inputs.industry.toLowerCase()}-adjacent industries`
-      : isLocal
-        ? `${audience} within ${area} metropolitan area`
-        : `${audience} — broad interest-based targeting`;
-
-  const prospectingTargeting = isEcom
-    ? ['Interest: Online shopping, DTC brands', `Category: ${inputs.industry}`, 'Behavior: Engaged shoppers']
-    : isB2B
-      ? [`Job titles: Business owners, C-suite in ${area}`, `Industry: ${inputs.industry}`, 'Behavior: Professional page engagement']
-      : isLocal
-        ? [`Location: ${area} (15-25 mi radius)`, `Interest: ${inputs.industry}`, `Demographics: ${audience}`]
-        : [`Interest: ${inputs.industry}`, `Demographics: ${audience}`, 'Lookalike: 1-3% from customer list'];
-
-  models.push({
-    id: uid('am'),
-    channel: 'Meta Ads',
-    channelType: 'audience',
-    audienceDefinition: prospectingAudience,
-    targetingCriteria: prospectingTargeting,
-    funnelStage: 'awareness',
-    estimatedReachMin: isLocal ? 150_000 : isB2B ? 500_000 : 2_000_000,
-    estimatedReachMax: isLocal ? 600_000 : isB2B ? 2_000_000 : 8_000_000,
-    recommendedCPM: isLocal ? 10 : isB2B ? 14 : isEcom ? 11 : 12,
-    recommendedCTR: isB2B ? 0.7 : isEcom ? 1.2 : 0.9,
-    recommendedCVR: isB2B ? 2.0 : isEcom ? 1.8 : 1.5,
-    reasoning: `Meta prospecting reaches ${prospectingAudience.toLowerCase()} through interest and behavior targeting. ${isLocal ? `Geo-fenced to ${area} for local relevance.` : 'Lookalike audiences from customer data will improve efficiency over time.'} CPM modeled for ${inputs.industry.toLowerCase()} vertical in ${area}.`,
-  });
-
-  // Retargeting audience
-  models.push({
-    id: uid('am'),
-    channel: 'Meta Ads',
-    channelType: 'audience',
+  const { localArea, audience, isB2B, isEcom, isLocal } = ctx;
+  const geoLabel = isLocal && ctx.radiusMiles ? `${localArea} (${ctx.radiusMiles}-mi radius)` : isLocal ? `${localArea} metropolitan area` : 'National';
+  const prospecting: AudienceModel = {
+    id: uid('am'), channel: 'Meta Ads', channelType: 'audience',
+    audienceDefinition: isEcom ? `Online shoppers interested in ${inputs.productsOrServices || inputs.industry}` : isB2B ? `Business decision-makers in ${inputs.industry.toLowerCase()}-adjacent industries` : isLocal ? `${audience} within ${geoLabel}` : `${audience} — broad interest-based`,
+    targetingCriteria: isEcom ? ['Interest: Online shopping, DTC brands', `Category: ${inputs.industry}`, 'Behavior: Engaged shoppers'] : isB2B ? [`Job titles: Business owners, C-suite in ${localArea}`, `Industry: ${inputs.industry}`] : [`Location: ${geoLabel}`, `Interest: ${inputs.industry}`, `Demographics: ${audience}`],
+    funnelStage: 'awareness', estimatedReachMin: isLocal ? 150_000 : isB2B ? 500_000 : 2_000_000, estimatedReachMax: isLocal ? 600_000 : isB2B ? 2_000_000 : 8_000_000,
+    recommendedCPM: isLocal ? 10 : isB2B ? 14 : isEcom ? 11 : 12, recommendedCTR: isB2B ? 0.7 : isEcom ? 1.2 : 0.9, recommendedCVR: isB2B ? 2.0 : isEcom ? 1.8 : 1.5,
+    reasoning: `Meta prospecting reaches target audience through interest and behavior targeting. ${isLocal ? `Geo-fenced to ${geoLabel} for local relevance.` : 'Lookalike audiences improve efficiency over time.'}`,
+  };
+  const retargeting: AudienceModel = {
+    id: uid('am'), channel: 'Meta Ads', channelType: 'audience',
     audienceDefinition: `Retargeting: website visitors, engaged users, and ${isEcom ? 'cart abandoners' : 'form starters'}`,
-    targetingCriteria: [
-      'Website visitors (7/14/30-day windows)',
-      'Social engagers (video viewers, page interactions)',
-      isEcom ? 'Cart / checkout abandoners' : 'Lead form openers',
-      'Email list match (exclusion + upsell)',
-    ],
-    funnelStage: 'conversion',
-    estimatedReachMin: 5_000,
-    estimatedReachMax: 50_000,
-    recommendedCPM: isB2B ? 18 : isEcom ? 15 : 16,
-    recommendedCTR: isB2B ? 1.2 : isEcom ? 2.0 : 1.5,
-    recommendedCVR: isB2B ? 5.0 : isEcom ? 4.0 : 3.5,
-    reasoning: `Retargeting converts warm audiences at 2-4x the rate of prospecting. Higher CPMs are offset by significantly higher conversion rates. Size depends on traffic volume.`,
-  });
-
-  return models;
+    targetingCriteria: ['Website visitors (7/14/30-day windows)', 'Social engagers', isEcom ? 'Cart / checkout abandoners' : 'Lead form openers', 'Email list match'],
+    funnelStage: 'conversion', estimatedReachMin: 5_000, estimatedReachMax: 50_000,
+    recommendedCPM: isB2B ? 18 : isEcom ? 15 : 16, recommendedCTR: isB2B ? 1.2 : isEcom ? 2.0 : 1.5, recommendedCVR: isB2B ? 5.0 : isEcom ? 4.0 : 3.5,
+    reasoning: `Retargeting converts warm audiences at 2-4x prospecting rate.`,
+  };
+  return [prospecting, retargeting];
 }
 
 function buildLinkedInAudiences(inputs: MarketIntelligenceInputs, ctx: GenerationContext): AudienceModel[] {
-  const { area, audience, isLocal } = ctx;
   return [
-    {
-      id: uid('am'),
-      channel: 'LinkedIn',
-      channelType: 'audience',
-      audienceDefinition: `Decision-makers and influencers in ${inputs.industry}-relevant industries`,
-      targetingCriteria: [
-        `Job titles: CEO, CFO, VP Marketing, Director, General Counsel`,
-        `Company size: 50-5,000 employees`,
-        `Industries: ${inputs.industry} and adjacent verticals`,
-        isLocal ? `Geography: ${area}` : 'National / regional targeting',
-        'Seniority: Senior, Director, VP, C-Suite',
-      ],
-      funnelStage: 'consideration',
-      estimatedReachMin: isLocal ? 20_000 : 100_000,
-      estimatedReachMax: isLocal ? 80_000 : 400_000,
-      recommendedCPM: 35,
-      recommendedCTR: 0.5,
-      recommendedCVR: 2.5,
-      reasoning: `LinkedIn provides the highest-quality B2B targeting by job title, company, and seniority. Higher CPMs are justified by audience precision and lead quality. Best for thought leadership content and gated asset promotion.`,
-    },
-    {
-      id: uid('am'),
-      channel: 'LinkedIn',
-      channelType: 'audience',
-      audienceDefinition: `Retargeting: LinkedIn page visitors and content engagers`,
-      targetingCriteria: [
-        'Website visitors via LinkedIn Insight Tag',
-        'Company page followers',
-        'Video viewers (50%+ completion)',
-        'Lead gen form openers',
-      ],
-      funnelStage: 'conversion',
-      estimatedReachMin: 2_000,
-      estimatedReachMax: 15_000,
-      recommendedCPM: 45,
-      recommendedCTR: 0.8,
-      recommendedCVR: 6.0,
-      reasoning: `LinkedIn retargeting audiences are small but high-intent. The elevated CPM is offset by strong conversion rates among engaged professional audiences.`,
-    },
+    { id: uid('am'), channel: 'LinkedIn', channelType: 'audience', audienceDefinition: `Decision-makers in ${inputs.industry}-relevant industries`, targetingCriteria: ['Job titles: CEO, CFO, VP, Director', 'Company size: 50-5,000', `Industries: ${inputs.industry}`, ctx.isLocal ? `Geography: ${ctx.localArea}` : 'National'], funnelStage: 'consideration', estimatedReachMin: ctx.isLocal ? 20_000 : 100_000, estimatedReachMax: ctx.isLocal ? 80_000 : 400_000, recommendedCPM: 35, recommendedCTR: 0.5, recommendedCVR: 2.5, reasoning: 'LinkedIn provides highest-quality B2B targeting.' },
+    { id: uid('am'), channel: 'LinkedIn', channelType: 'audience', audienceDefinition: 'Retargeting: LinkedIn page visitors and content engagers', targetingCriteria: ['Website visitors via Insight Tag', 'Company page followers', 'Video viewers', 'Lead gen form openers'], funnelStage: 'conversion', estimatedReachMin: 2_000, estimatedReachMax: 15_000, recommendedCPM: 45, recommendedCTR: 0.8, recommendedCVR: 6.0, reasoning: 'Small but high-intent professional audiences.' },
   ];
 }
 
 function buildSpotifyAudiences(inputs: MarketIntelligenceInputs, ctx: GenerationContext): AudienceModel[] {
-  const { area, audience, isLocal } = ctx;
   return [{
-    id: uid('am'),
-    channel: 'Spotify',
-    channelType: 'audience',
-    audienceDefinition: `${audience} — audio ad listeners matched by demographics, geography, and topical fit`,
-    targetingCriteria: [
-      `Demographics: aligned to ${audience}`,
-      isLocal ? `Geography: ${area}` : 'National targeting',
-      `Genre/Mood: contextual fit for ${inputs.industry}`,
-      'Device: mobile + desktop streaming sessions',
-      'Daypart: commute, workout, or focus listening sessions',
-    ],
-    funnelStage: 'awareness',
-    estimatedReachMin: isLocal ? 50_000 : 500_000,
-    estimatedReachMax: isLocal ? 200_000 : 2_000_000,
-    recommendedCPM: 18,
-    recommendedCTR: 0.3,
-    reasoning: `Spotify audio ads reach audiences during high-attention listening moments. Best for brand awareness and frequency building. Limited direct-response capability but strong recall metrics. CPM modeled for ${inputs.industry.toLowerCase()} in ${area}.`,
+    id: uid('am'), channel: 'Spotify', channelType: 'audience',
+    audienceDefinition: `${ctx.audience} — audio ad listeners matched by demographics and geography`,
+    targetingCriteria: [`Demographics: ${ctx.audience}`, ctx.isLocal ? `Geography: ${ctx.localArea}` : 'National', `Genre/Mood: ${inputs.industry}`, 'Device: mobile + desktop'],
+    funnelStage: 'awareness', estimatedReachMin: ctx.isLocal ? 50_000 : 500_000, estimatedReachMax: ctx.isLocal ? 200_000 : 2_000_000,
+    recommendedCPM: 18, recommendedCTR: 0.3,
+    reasoning: `Spotify audio ads reach audiences during high-attention moments.`,
   }];
 }
 
 function buildSearchAudienceModel(channel: string, inputs: MarketIntelligenceInputs, ctx: GenerationContext): AudienceModel {
-  const { area, isLocal, isB2B } = ctx;
   return {
-    id: uid('am'),
-    channel,
-    channelType: 'search',
-    audienceDefinition: `High-intent searchers actively looking for ${inputs.productsOrServices || inputs.industry} solutions`,
-    targetingCriteria: [
-      'Keyword-driven intent targeting',
-      isLocal ? `Geo-targeted: ${area}` : 'National with bid adjustments by region',
-      isB2B ? 'In-market audiences: Business services' : `In-market audiences: ${inputs.industry}`,
-    ],
-    funnelStage: 'conversion',
-    estimatedReachMin: isLocal ? 5_000 : 50_000,
-    estimatedReachMax: isLocal ? 30_000 : 300_000,
-    reasoning: `Search audiences are intent-defined, not demographic. Reach is determined by keyword volume and match types. ${channel} captures demand at the moment of highest purchase intent.`,
+    id: uid('am'), channel, channelType: 'search',
+    audienceDefinition: `High-intent searchers for ${inputs.productsOrServices || inputs.industry} solutions`,
+    targetingCriteria: ['Keyword-driven intent targeting', ctx.isLocal ? `Geo-targeted: ${ctx.localArea}` : 'National with bid adjustments', ctx.isB2B ? 'In-market: Business services' : `In-market: ${inputs.industry}`],
+    funnelStage: 'conversion', estimatedReachMin: ctx.isLocal ? 5_000 : 50_000, estimatedReachMax: ctx.isLocal ? 30_000 : 300_000,
+    reasoning: `Search captures demand at the moment of highest purchase intent.`,
   };
 }
 
 /* ═══════════════════════════════════════════════════════
-   COMPETITOR PROFILES
+   COMPETITOR PROFILES — Top 10 with URLs and relevance
    ═══════════════════════════════════════════════════════ */
 
 function generateCompetitorProfiles(inputs: MarketIntelligenceInputs, ctx: GenerationContext): CompetitorProfile[] {
-  const { area, isLocal, isB2B } = ctx;
-  const names = inputs.knownCompetitors?.length
-    ? inputs.knownCompetitors
-    : [
-        `${inputs.industry} Market Leader${isLocal ? ` — ${area}` : ''}`,
-        `Digital-First ${inputs.industry} Challenger`,
-        `${isB2B ? 'Established' : 'Legacy'} ${inputs.industry} Provider`,
-      ];
+  const { area, localArea, isLocal, isB2B } = ctx;
+  const loc = isLocal ? localArea : area;
 
-  return names.slice(0, 4).map((name, i) => ({
-    id: uid('cp'),
-    name,
-    geography: area,
-    positioning: i === 0
-      ? `Established market leader with broad ${inputs.industry.toLowerCase()} offering${isLocal ? ` and strong local presence in ${area}` : ''}`
-      : i === 1
-        ? `Digital-native competitor with aggressive online acquisition strategy`
-        : `Traditional provider with loyal customer base and referral-driven growth`,
-    channelObservations: i === 0
-      ? `Strong Google Ads presence, well-established SEO.${isB2B ? ' Active LinkedIn thought leadership.' : ' Growing social media following.'}`
-      : i === 1
-        ? `Heavy Meta/Instagram spend, strong social proof strategy.${isB2B ? ' LinkedIn Sponsored Content campaigns.' : ' Emerging TikTok presence.'}`
-        : 'Minimal digital footprint. Primarily referral and offline marketing. Opportunity to outpace digitally.',
-    notes: i === 0 ? 'Closest positioning overlap — monitor creative and messaging closely.' : undefined,
-  }));
+  // Use known competitors as base, fill to 10
+  const known = inputs.knownCompetitors?.length ? inputs.knownCompetitors : [];
+  const generated = [
+    { name: `${inputs.industry} Market Leader${isLocal ? ` — ${loc}` : ''}`, url: `https://${inputs.industry.toLowerCase().replace(/\s+/g, '')}-leader.com`, rel: 'high' as const, localRel: isLocal ? 'high' as const : 'medium' as const },
+    { name: `Digital-First ${inputs.industry} Challenger`, url: `https://digital${inputs.industry.toLowerCase().replace(/\s+/g, '')}.com`, rel: 'high' as const, localRel: isLocal ? 'medium' as const : 'low' as const },
+    { name: `${isB2B ? 'Established' : 'Legacy'} ${inputs.industry} Provider`, url: undefined, rel: 'medium' as const, localRel: isLocal ? 'high' as const : 'medium' as const },
+    { name: `${loc} ${inputs.industry} Specialist`, url: undefined, rel: 'medium' as const, localRel: 'high' as const },
+    { name: `National ${inputs.industry} Chain`, url: `https://national${inputs.industry.toLowerCase().replace(/\s+/g, '')}.com`, rel: 'low' as const, localRel: 'low' as const },
+    { name: `Boutique ${inputs.industry} Agency`, url: undefined, rel: 'medium' as const, localRel: isLocal ? 'high' as const : 'medium' as const },
+    { name: `${inputs.industry} Marketplace Platform`, url: `https://${inputs.industry.toLowerCase().replace(/\s+/g, '')}hub.com`, rel: 'medium' as const, localRel: 'low' as const },
+  ];
+
+  const profiles: CompetitorProfile[] = [];
+
+  // Add known competitors first
+  for (const name of known.slice(0, 5)) {
+    profiles.push({
+      id: uid('cp'), name, geography: loc,
+      positioning: `Known competitor in the ${inputs.industry.toLowerCase()} space`,
+      channelObservations: 'Monitor creative and messaging closely.',
+      websiteUrl: undefined,
+      relevance: 'high',
+      localRelevance: isLocal ? 'high' : 'medium',
+      notes: 'User-provided competitor.',
+    });
+  }
+
+  // Fill remaining slots from generated
+  for (const g of generated) {
+    if (profiles.length >= 10) break;
+    if (profiles.find(p => p.name === g.name)) continue;
+    profiles.push({
+      id: uid('cp'), name: g.name, geography: loc,
+      positioning: `${g.rel === 'high' ? 'Strong' : 'Moderate'} positioning in ${inputs.industry.toLowerCase()}${isLocal ? ` serving ${loc}` : ''}`,
+      channelObservations: g.rel === 'high' ? 'Active digital presence with established SEO.' : 'Limited digital footprint. Opportunity to outpace.',
+      websiteUrl: g.url,
+      relevance: g.rel,
+      localRelevance: g.localRel,
+    });
+  }
+
+  return profiles.slice(0, 10);
 }
 
 /* ═══════════════════════════════════════════════════════
@@ -404,42 +327,37 @@ function generateChannelRecs(inputs: MarketIntelligenceInputs, ctx: GenerationCo
   const { isB2B, isEcom, isLocal } = ctx;
   const recs: ChannelRecommendation[] = [];
 
-  // Google is nearly always recommended
   recs.push({
-    channel: 'Google Ads',
-    channelType: 'search',
+    channel: 'Google Ads', channelType: 'search',
     role: 'Demand capture and high-intent conversion',
-    rationale: `Captures searchers actively looking for ${inputs.industry.toLowerCase()} solutions. ${isLocal ? `Local search modifiers drive highly qualified traffic from ${ctx.area}.` : 'Foundation of any performance marketing mix.'}`,
+    rationale: `Captures searchers actively looking for ${inputs.industry.toLowerCase()} solutions. ${isLocal ? `Local search modifiers drive qualified traffic from ${ctx.localArea}.` : 'Foundation of performance marketing.'}`,
     priority: 'high',
   });
 
   if (isB2B) {
     recs.push(
-      { channel: 'LinkedIn', channelType: 'audience', role: 'Authority building and lead generation', rationale: `Best B2B platform for reaching decision-makers by job title and company. Ideal for thought leadership and gated content promotion for ${inputs.industry}.`, priority: 'high' },
-      { channel: 'Content/SEO', channelType: 'content', role: 'Organic authority and lead capture', rationale: 'Long-form content builds domain authority and captures informational queries that feed the sales pipeline.', priority: 'high' },
-      { channel: 'Meta Ads', channelType: 'audience', role: 'Retargeting and awareness', rationale: `Meta retargeting recaptures website visitors. Prospecting can work for B2B with careful audience selection and thought leadership creative.`, priority: 'medium' },
-      { channel: 'Email', channelType: 'email', role: 'Lead nurture and retention', rationale: 'Automated drip sequences convert MQLs to SQLs. Critical for long sales cycles.', priority: 'medium' },
+      { channel: 'LinkedIn', channelType: 'audience', role: 'Authority building & lead generation', rationale: `Best B2B platform for decision-makers by job title.`, priority: 'high' },
+      { channel: 'Content/SEO', channelType: 'content', role: 'Organic authority & lead capture', rationale: 'Long-form content builds trust and captures informational queries.', priority: 'high' },
+      { channel: 'Meta Ads', channelType: 'audience', role: 'Retargeting & awareness', rationale: 'Meta retargeting recaptures website visitors.', priority: 'medium' },
+      { channel: 'Email', channelType: 'email', role: 'Lead nurture & retention', rationale: 'Automated drip sequences convert MQLs to SQLs.', priority: 'medium' },
     );
   } else if (isEcom) {
     recs.push(
-      { channel: 'Meta Ads', channelType: 'audience', role: 'Primary prospecting and retargeting engine', rationale: `Largest addressable audience for DTC with proven creative formats. Audience-based targeting reaches ${ctx.audience} through interests and behaviors.`, priority: 'high' },
-      { channel: 'Email/SMS', channelType: 'email', role: 'Lifecycle, retention, and revenue', rationale: 'Highest-leverage owned channel. 25-35% revenue contribution at maturity through automated flows.', priority: 'high' },
-      { channel: 'TikTok', channelType: 'audience', role: 'Awareness and product discovery', rationale: 'Low CPMs and strong DTC storytelling potential. Viral content can drive outsized awareness at low cost.', priority: 'medium' },
+      { channel: 'Meta Ads', channelType: 'audience', role: 'Primary prospecting & retargeting', rationale: 'Largest addressable audience for DTC.', priority: 'high' },
+      { channel: 'Email/SMS', channelType: 'email', role: 'Lifecycle & retention', rationale: 'Highest-leverage owned channel.', priority: 'high' },
+      { channel: 'TikTok', channelType: 'audience', role: 'Awareness & product discovery', rationale: 'Low CPMs and strong storytelling potential.', priority: 'medium' },
     );
   } else {
     recs.push(
-      { channel: 'Meta Ads', channelType: 'audience', role: 'Awareness, prospecting, and retargeting', rationale: `Meta provides broad reach for ${inputs.industry.toLowerCase()} targeting ${ctx.audience}. ${isLocal ? `Geo-fenced to ${ctx.area} for local efficiency.` : 'Interest and behavior targeting for qualified prospecting.'}`, priority: 'high' },
-      { channel: 'Email', channelType: 'email', role: 'Retention and lifecycle communication', rationale: 'Cost-effective channel for nurturing leads and retaining customers.', priority: 'medium' },
-      { channel: 'Content/SEO', channelType: 'content', role: 'Organic traffic and authority', rationale: 'Builds sustainable traffic and brand authority over time.', priority: 'medium' },
+      { channel: 'Meta Ads', channelType: 'audience', role: 'Awareness & retargeting', rationale: `Broad reach for ${inputs.industry.toLowerCase()}. ${isLocal ? `Geo-fenced to ${ctx.localArea}.` : ''}`, priority: 'high' },
+      { channel: 'Email', channelType: 'email', role: 'Retention & lifecycle', rationale: 'Cost-effective nurturing.', priority: 'medium' },
+      { channel: 'Content/SEO', channelType: 'content', role: 'Organic traffic & authority', rationale: 'Sustainable traffic over time.', priority: 'medium' },
     );
   }
 
-  // Check if Spotify or LinkedIn was selected but not yet recommended
   for (const ch of inputs.selectedChannels) {
-    if (!recs.find(r => r.channel === ch)) {
-      if (ch === 'Spotify') {
-        recs.push({ channel: 'Spotify', channelType: 'audience', role: 'Audio awareness and brand recall', rationale: `Audio ads reach ${ctx.audience} during high-attention moments. Best for frequency building and local awareness in ${ctx.area}.`, priority: 'low' });
-      }
+    if (!recs.find(r => r.channel === ch) && ch === 'Spotify') {
+      recs.push({ channel: 'Spotify', channelType: 'audience', role: 'Audio awareness', rationale: `Audio ads during high-attention moments in ${ctx.localArea}.`, priority: 'low' });
     }
   }
 
@@ -447,81 +365,67 @@ function generateChannelRecs(inputs: MarketIntelligenceInputs, ctx: GenerationCo
 }
 
 /* ═══════════════════════════════════════════════════════
-   BENCHMARK ASSUMPTIONS — channel-type-aware
+   BENCHMARK ASSUMPTIONS
    ═══════════════════════════════════════════════════════ */
 
-function generateBenchmarks(
-  inputs: MarketIntelligenceInputs,
-  ctx: GenerationContext,
-  recs: ChannelRecommendation[],
-): BenchmarkAssumption[] {
+function generateBenchmarks(inputs: MarketIntelligenceInputs, ctx: GenerationContext, recs: ChannelRecommendation[]): BenchmarkAssumption[] {
   const benchmarks: BenchmarkAssumption[] = [];
-  const { isB2B, isEcom, isLocal, area } = ctx;
+  const { isB2B, isEcom, isLocal, area, localArea } = ctx;
+  const loc = isLocal ? localArea : area;
 
   for (const rec of recs) {
     switch (rec.channel) {
       case 'Google Ads':
         benchmarks.push(
-          { channel: 'Google Ads', channelType: 'search', metric: 'CPC', unit: '$', low: isB2B ? 3.0 : isLocal ? 1.2 : 0.8, high: isB2B ? 12.0 : isLocal ? 4.0 : 3.5, recommended: isB2B ? 5.5 : isLocal ? 2.2 : 1.8, rationale: `${inputs.industry} search CPC in ${area}. ${isB2B ? 'B2B terms command premium CPCs due to high LTV.' : isLocal ? 'Local modifiers reduce competition vs. national terms.' : 'Blended branded + non-branded estimate.'}` },
-          { channel: 'Google Ads', channelType: 'search', metric: 'CTR', unit: '%', low: 2.0, high: 6.0, recommended: isB2B ? 3.2 : 4.0, rationale: `Search CTR for ${inputs.industry.toLowerCase()}. ${isLocal ? 'Local intent ads typically achieve higher CTR.' : 'Assumes optimized ad copy and extensions.'}` },
-          { channel: 'Google Ads', channelType: 'search', metric: 'CVR', unit: '%', low: 1.5, high: 6.0, recommended: isB2B ? 3.0 : isEcom ? 2.5 : 3.5, rationale: `${isB2B ? 'Lead form conversion rate.' : isEcom ? 'Shopping + search blended conversion.' : 'Landing page conversion rate.'} Assumes optimized experience.` },
-          { channel: 'Google Ads', channelType: 'search', metric: isB2B ? 'CPL' : 'CPA', unit: '$', low: isB2B ? 40 : isEcom ? 15 : 20, high: isB2B ? 250 : isEcom ? 60 : 100, recommended: isB2B ? 120 : isEcom ? 35 : 50, rationale: `Derived from CPC ÷ CVR. ${isB2B ? 'B2B CPL varies widely by service complexity.' : `${inputs.industry} acquisition cost benchmark.`}` },
+          { channel: 'Google Ads', channelType: 'search', metric: 'CPC', unit: '$', low: isB2B ? 3.0 : isLocal ? 1.2 : 0.8, high: isB2B ? 12.0 : isLocal ? 4.0 : 3.5, recommended: isB2B ? 5.5 : isLocal ? 2.2 : 1.8, rationale: `${inputs.industry} search CPC in ${loc}.` },
+          { channel: 'Google Ads', channelType: 'search', metric: 'CTR', unit: '%', low: 2.0, high: 6.0, recommended: isB2B ? 3.2 : 4.0, rationale: `Search CTR for ${inputs.industry.toLowerCase()}.` },
+          { channel: 'Google Ads', channelType: 'search', metric: 'CVR', unit: '%', low: 1.5, high: 6.0, recommended: isB2B ? 3.0 : isEcom ? 2.5 : 3.5, rationale: `Landing page conversion rate.` },
+          { channel: 'Google Ads', channelType: 'search', metric: isB2B ? 'CPL' : 'CPA', unit: '$', low: isB2B ? 40 : isEcom ? 15 : 20, high: isB2B ? 250 : isEcom ? 60 : 100, recommended: isB2B ? 120 : isEcom ? 35 : 50, rationale: `Derived from CPC ÷ CVR.` },
         );
         break;
-
       case 'Meta Ads':
         benchmarks.push(
-          { channel: 'Meta Ads', channelType: 'audience', metric: 'CPM (Prospecting)', unit: '$', low: isLocal ? 7 : 6, high: isLocal ? 16 : 20, recommended: isLocal ? 10 : isB2B ? 14 : isEcom ? 11 : 12, rationale: `Prospecting CPM for ${inputs.industry.toLowerCase()} in ${area}. ${isLocal ? 'Local geo-targeting moderates competition.' : 'Varies by audience size and creative quality.'}` },
-          { channel: 'Meta Ads', channelType: 'audience', metric: 'CPM (Retargeting)', unit: '$', low: 12, high: 25, recommended: isB2B ? 18 : 15, rationale: 'Retargeting CPMs are higher due to smaller, warmer audiences. Justified by higher conversion rates.' },
-          { channel: 'Meta Ads', channelType: 'audience', metric: 'CTR', unit: '%', low: 0.5, high: 2.0, recommended: isEcom ? 1.2 : isB2B ? 0.7 : 0.9, rationale: `${isEcom ? 'Product-focused creative typically drives higher CTR.' : isB2B ? 'B2B CTR tends lower but traffic is more qualified.' : 'Blended prospecting + retargeting estimate.'}` },
-          { channel: 'Meta Ads', channelType: 'audience', metric: 'CVR', unit: '%', low: 0.8, high: 5.0, recommended: isEcom ? 1.8 : isB2B ? 2.0 : 1.5, rationale: `Landing page conversion rate from Meta traffic. ${isEcom ? 'Retargeting can reach 4-5% for cart abandoners.' : 'Varies by offer quality and landing page relevance.'}` },
-          { channel: 'Meta Ads', channelType: 'audience', metric: isB2B ? 'CPL' : 'CPA', unit: '$', low: isB2B ? 35 : isEcom ? 20 : 25, high: isB2B ? 180 : isEcom ? 65 : 90, recommended: isB2B ? 85 : isEcom ? 38 : 50, rationale: `Blended prospecting + retargeting ${isB2B ? 'cost per lead' : 'cost per acquisition'} for ${inputs.industry.toLowerCase()}.` },
+          { channel: 'Meta Ads', channelType: 'audience', metric: 'CPM (Prospecting)', unit: '$', low: isLocal ? 7 : 6, high: isLocal ? 16 : 20, recommended: isLocal ? 10 : isB2B ? 14 : isEcom ? 11 : 12, rationale: `Prospecting CPM in ${loc}.` },
+          { channel: 'Meta Ads', channelType: 'audience', metric: 'CPM (Retargeting)', unit: '$', low: 12, high: 25, recommended: isB2B ? 18 : 15, rationale: 'Higher due to smaller, warmer audiences.' },
+          { channel: 'Meta Ads', channelType: 'audience', metric: 'CTR', unit: '%', low: 0.5, high: 2.0, recommended: isEcom ? 1.2 : isB2B ? 0.7 : 0.9, rationale: 'Blended prospecting + retargeting.' },
+          { channel: 'Meta Ads', channelType: 'audience', metric: isB2B ? 'CPL' : 'CPA', unit: '$', low: isB2B ? 35 : isEcom ? 20 : 25, high: isB2B ? 180 : isEcom ? 65 : 90, recommended: isB2B ? 85 : isEcom ? 38 : 50, rationale: `Blended acquisition cost.` },
         );
         break;
-
       case 'LinkedIn':
         benchmarks.push(
-          { channel: 'LinkedIn', channelType: 'audience', metric: 'CPM', unit: '$', low: 25, high: 55, recommended: 35, rationale: `LinkedIn CPMs are premium but deliver precise B2B targeting. Justified by lead quality for ${inputs.industry}.` },
-          { channel: 'LinkedIn', channelType: 'audience', metric: 'CPC', unit: '$', low: 5, high: 15, recommended: 8.5, rationale: 'Sponsored content CPC. Higher than Meta but reaches verified professionals.' },
-          { channel: 'LinkedIn', channelType: 'audience', metric: 'CTR', unit: '%', low: 0.3, high: 0.8, recommended: 0.5, rationale: 'Professional feed environment. Thought leadership content outperforms promotional.' },
-          { channel: 'LinkedIn', channelType: 'audience', metric: 'CPL', unit: '$', low: 50, high: 250, recommended: 130, rationale: `Cost per lead via sponsored content to gated assets. ${inputs.industry} B2B lead value typically justifies this range.` },
+          { channel: 'LinkedIn', channelType: 'audience', metric: 'CPM', unit: '$', low: 25, high: 55, recommended: 35, rationale: 'Premium but precise B2B targeting.' },
+          { channel: 'LinkedIn', channelType: 'audience', metric: 'CPC', unit: '$', low: 5, high: 15, recommended: 8.5, rationale: 'Sponsored content CPC.' },
+          { channel: 'LinkedIn', channelType: 'audience', metric: 'CPL', unit: '$', low: 50, high: 250, recommended: 130, rationale: 'Cost per lead via gated content.' },
         );
         break;
-
       case 'Spotify':
         benchmarks.push(
-          { channel: 'Spotify', channelType: 'audience', metric: 'CPM', unit: '$', low: 12, high: 25, recommended: 18, rationale: `Audio ad CPM for ${area}. Premium inventory with high attention scores.` },
-          { channel: 'Spotify', channelType: 'audience', metric: 'Listen-Through Rate', unit: '%', low: 85, high: 97, recommended: 92, rationale: 'Non-skippable audio format drives high completion. Industry average 90%+.' },
-          { channel: 'Spotify', channelType: 'audience', metric: 'CTR (Companion)', unit: '%', low: 0.1, high: 0.5, recommended: 0.3, rationale: 'Companion display banner CTR. Audio is primarily an awareness channel.' },
+          { channel: 'Spotify', channelType: 'audience', metric: 'CPM', unit: '$', low: 12, high: 25, recommended: 18, rationale: 'Audio ad CPM.' },
+          { channel: 'Spotify', channelType: 'audience', metric: 'Listen-Through Rate', unit: '%', low: 85, high: 97, recommended: 92, rationale: 'Non-skippable format.' },
         );
         break;
-
       case 'TikTok':
         benchmarks.push(
-          { channel: 'TikTok', channelType: 'audience', metric: 'CPM', unit: '$', low: 3, high: 10, recommended: isLocal ? 5 : 4, rationale: `Lowest-CPM major platform. Excellent for awareness in ${inputs.industry.toLowerCase()}.` },
-          { channel: 'TikTok', channelType: 'audience', metric: 'CTR', unit: '%', low: 0.5, high: 1.5, recommended: 0.8, rationale: 'Short-form video CTR. Spark Ads (boosted organic) typically outperform traditional formats.' },
-          { channel: 'TikTok', channelType: 'audience', metric: 'CVR', unit: '%', low: 0.3, high: 1.5, recommended: 0.6, rationale: 'Lower conversion intent than search. Best paired with retargeting on other platforms.' },
+          { channel: 'TikTok', channelType: 'audience', metric: 'CPM', unit: '$', low: 3, high: 10, recommended: isLocal ? 5 : 4, rationale: 'Lowest-CPM major platform.' },
+          { channel: 'TikTok', channelType: 'audience', metric: 'CTR', unit: '%', low: 0.5, high: 1.5, recommended: 0.8, rationale: 'Short-form video CTR.' },
         );
         break;
-
       case 'Email':
       case 'Email/SMS':
         benchmarks.push(
-          { channel: rec.channel, channelType: 'email', metric: 'Open Rate', unit: '%', low: 18, high: 35, recommended: 24, rationale: `${inputs.industry} email open rate. List hygiene and segmentation are primary drivers.` },
-          { channel: rec.channel, channelType: 'email', metric: 'Click Rate', unit: '%', low: 1.5, high: 5.0, recommended: 3.2, rationale: 'Click-through rate. Flow emails typically outperform campaigns.' },
-          { channel: rec.channel, channelType: 'email', metric: 'Revenue Share', unit: '%', low: 15, high: 35, recommended: isEcom ? 28 : 20, rationale: `Percentage of total revenue from email. ${isEcom ? 'Best-in-class DTC programs reach 30%+.' : 'B2B attribution focuses on pipeline influence.'}` },
+          { channel: rec.channel, channelType: 'email', metric: 'Open Rate', unit: '%', low: 18, high: 35, recommended: 24, rationale: 'Cross-industry benchmark.' },
+          { channel: rec.channel, channelType: 'email', metric: 'Click Rate', unit: '%', low: 1.5, high: 5.0, recommended: 3.2, rationale: 'Flow emails outperform campaigns.' },
+          { channel: rec.channel, channelType: 'email', metric: 'Revenue Share', unit: '%', low: 15, high: 35, recommended: isEcom ? 28 : 20, rationale: isEcom ? 'Best-in-class DTC reach 30%+.' : 'B2B pipeline influence.' },
         );
         break;
-
       case 'Content/SEO':
         benchmarks.push(
-          { channel: 'Content/SEO', channelType: 'content', metric: 'Organic Traffic Growth', unit: '%/mo', low: 5, high: 20, recommended: 12, rationale: `Monthly organic traffic growth after 3-month ramp. ${inputs.industry} content competition is ${isB2B ? 'moderate' : 'competitive'}.` },
-          { channel: 'Content/SEO', channelType: 'content', metric: 'Organic CVR', unit: '%', low: 1.0, high: 4.0, recommended: 2.5, rationale: 'Organic visitor conversion rate. Higher for bottom-of-funnel content, lower for educational.' },
+          { channel: 'Content/SEO', channelType: 'content', metric: 'Organic Traffic Growth', unit: '%/mo', low: 5, high: 20, recommended: 12, rationale: 'After 3-month ramp.' },
+          { channel: 'Content/SEO', channelType: 'content', metric: 'Organic CVR', unit: '%', low: 1.0, high: 4.0, recommended: 2.5, rationale: 'Varies by content type.' },
         );
         break;
     }
   }
-
   return benchmarks;
 }
 
@@ -529,35 +433,32 @@ function generateBenchmarks(
    RESEARCH SUMMARY
    ═══════════════════════════════════════════════════════ */
 
-function generateSummary(
-  inputs: MarketIntelligenceInputs,
-  ctx: GenerationContext,
-  recs: ChannelRecommendation[],
-  audiences: AudienceModel[],
-): string {
+function generateSummary(inputs: MarketIntelligenceInputs, ctx: GenerationContext, recs: ChannelRecommendation[], audiences: AudienceModel[]): string {
   const searchChannels = recs.filter(r => r.channelType === 'search');
   const audienceChannels = recs.filter(r => r.channelType === 'audience');
   const highPriority = recs.filter(r => r.priority === 'high').map(r => r.channel).join(', ');
-  const audienceCount = audiences.filter(a => a.channelType === 'audience').length;
 
-  let summary = `${inputs.industry} in ${ctx.area} `;
-
+  let summary = `${inputs.industry} in ${ctx.isLocal ? ctx.localArea : ctx.area} `;
   if (searchChannels.length > 0 && audienceChannels.length > 0) {
     summary += `benefits from a dual approach: search-based demand capture via ${searchChannels.map(s => s.channel).join(', ')} and audience-based prospecting via ${audienceChannels.map(a => a.channel).join(', ')}. `;
   } else if (searchChannels.length > 0) {
     summary += `is best served by search-driven demand capture. `;
   } else {
-    summary += `should prioritize audience-based prospecting and awareness. `;
+    summary += `should prioritize audience-based prospecting. `;
   }
 
-  summary += `${audienceCount} audience model${audienceCount !== 1 ? 's' : ''} have been built across channels, each with platform-specific targeting criteria and benchmark assumptions. `;
   summary += `High-priority channels: ${highPriority}. `;
 
-  if (ctx.isLocal) {
-    summary += `Local targeting in ${ctx.area} provides geographic efficiency and reduces competition on key terms. `;
+  if (ctx.isLocal && ctx.radiusMiles) {
+    summary += `Research is localized to a ${ctx.radiusMiles}-mile radius around ${ctx.localArea}. `;
+  } else if (ctx.isLocal) {
+    summary += `Research is localized to ${ctx.localArea}. `;
   }
 
-  summary += `All benchmarks are modeled assumptions based on ${inputs.industry.toLowerCase()} vertical data and should be validated against actual performance within the first 30-60 days. These assumptions are designed to feed directly into the Growth Model for planning.`;
+  if (ctx.refinement) {
+    summary += `Refinement applied: "${ctx.refinement}". `;
+  }
 
+  summary += `All benchmarks are modeled assumptions and should be validated against actual performance within 30-60 days.`;
   return summary;
 }
