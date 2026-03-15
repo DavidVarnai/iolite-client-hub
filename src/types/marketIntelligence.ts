@@ -1,7 +1,8 @@
 /**
  * Market Intelligence Engine types — structured research layer.
  * Supports channel-specific outputs: search-based vs audience-based.
- * Includes locality, approval workflow, and benchmark sequencing.
+ * Includes locality, approval workflow, benchmark sequencing,
+ * and source-ranked evidence metadata.
  */
 
 /* ── Channel Classification ── */
@@ -40,9 +41,45 @@ export const LOCAL_RADIUS_OPTIONS: { value: LocalRadius; label: string }[] = [
   { value: 'custom', label: 'Custom' },
 ];
 
+/* ── Evidence Metadata ── */
+
+export type SourceType =
+  | 'manual'
+  | 'google_serp'
+  | 'google_maps'
+  | 'ai_inference'
+  | 'prior_approved_research'
+  | 'internal_benchmark';
+
+export type SourceConfidence = 'high' | 'medium' | 'low';
+
+/** Trust ranking: lower index = higher trust. AI must never overwrite higher-trust evidence. */
+export const SOURCE_TRUST_ORDER: SourceType[] = [
+  'manual',
+  'google_serp',
+  'google_maps',
+  'prior_approved_research',
+  'internal_benchmark',
+  'ai_inference',
+];
+
+export function getTrustRank(source: SourceType): number {
+  const idx = SOURCE_TRUST_ORDER.indexOf(source);
+  return idx === -1 ? SOURCE_TRUST_ORDER.length : idx;
+}
+
+export interface EvidenceMetadata {
+  sourceType: SourceType;
+  sourceConfidence: SourceConfidence;
+  approved?: boolean;
+  manuallyAdded?: boolean;
+  sourceKeyword?: string;
+  evidenceRefs?: string[];
+}
+
 /* ── Keyword-based outputs (Search channels) ── */
 
-export interface KeywordTheme {
+export interface KeywordTheme extends Partial<EvidenceMetadata> {
   id: string;
   theme: string;
   intentType: 'informational' | 'navigational' | 'transactional' | 'commercial';
@@ -51,6 +88,7 @@ export interface KeywordTheme {
   notes?: string;
   priority?: 'high' | 'medium' | 'low';
   localRelevance?: 'high' | 'medium' | 'low' | 'n/a';
+  localIntent?: boolean;
 }
 
 /* ── Audience-based outputs (Meta, LinkedIn, Spotify, etc.) ── */
@@ -72,7 +110,7 @@ export interface AudienceModel {
 
 /* ── Competitor Profiles ── */
 
-export interface CompetitorProfile {
+export interface CompetitorProfile extends Partial<EvidenceMetadata> {
   id: string;
   name: string;
   geography: string;
@@ -82,11 +120,14 @@ export interface CompetitorProfile {
   websiteUrl?: string;
   relevance?: 'high' | 'medium' | 'low';
   localRelevance?: 'high' | 'medium' | 'low' | 'n/a';
+  rankingKeywords?: string[];
+  estimatedDomainAuthority?: number;
+  paidAdsPresence?: boolean;
 }
 
 /* ── Channel Recommendations ── */
 
-export interface ChannelRecommendation {
+export interface ChannelRecommendation extends Partial<EvidenceMetadata> {
   channel: string;
   channelType: ChannelType;
   role: string;
@@ -96,7 +137,7 @@ export interface ChannelRecommendation {
 
 /* ── Benchmark Assumptions ── */
 
-export interface BenchmarkAssumption {
+export interface BenchmarkAssumption extends Partial<EvidenceMetadata> {
   channel: string;
   channelType: ChannelType;
   metric: string;
@@ -136,6 +177,8 @@ export interface MarketIntelligenceOutputs {
   channelRecommendations: ChannelRecommendation[];
   benchmarkAssumptions: BenchmarkAssumption[];
   researchSummary: string;
+  /** Core keywords used to drive competitor discovery */
+  coreSearchKeywords?: string[];
 }
 
 /* ── Approved Research ── */

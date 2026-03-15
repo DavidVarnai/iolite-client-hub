@@ -7,6 +7,7 @@ import { useState } from 'react';
 import {
   Check, RotateCcw, Search, Shield, Target, BarChart3,
   FileText, Radio, Users, Send, CheckCircle2, Lock, Globe,
+  Zap, MapPin,
 } from 'lucide-react';
 import type {
   MarketIntelligenceOutputs,
@@ -14,6 +15,8 @@ import type {
   AudienceModel,
   BenchmarkAssumption,
   ChannelType,
+  SourceType,
+  SourceConfidence,
 } from '@/types/marketIntelligence';
 import { Textarea } from '@/components/ui/textarea';
 import { format } from 'date-fns';
@@ -82,6 +85,22 @@ export default function MIResultsView({ outputs, run, onRerun, onRefine, onAppro
         </div>
       </div>
 
+      {/* ─── CORE SEARCH KEYWORDS ─── */}
+      {outputs.coreSearchKeywords && outputs.coreSearchKeywords.length > 0 && (
+        <div className="panel p-5 space-y-3">
+          <div className="flex items-center gap-2">
+            <Zap className="h-4 w-4 text-primary" />
+            <h4 className="text-sm font-semibold">Core Search Keywords</h4>
+            <span className="text-[10px] text-muted-foreground bg-muted px-1.5 py-0.5 rounded">Used for competitor discovery</span>
+          </div>
+          <div className="flex flex-wrap gap-2">
+            {outputs.coreSearchKeywords.map((kw, i) => (
+              <span key={i} className="text-xs bg-primary/10 text-primary px-2.5 py-1 rounded-md font-medium">{kw}</span>
+            ))}
+          </div>
+        </div>
+      )}
+
       {/* ─── TOP 10 KEYWORDS ─── */}
       {hasKeywords && (
         <div className="panel p-5 space-y-3">
@@ -96,7 +115,7 @@ export default function MIResultsView({ outputs, run, onRerun, onRefine, onAppro
                   <th className="py-2 pr-3 text-xs font-medium text-muted-foreground">Keyword / Theme</th>
                   <th className="py-2 pr-3 text-xs font-medium text-muted-foreground">Intent</th>
                   <th className="py-2 pr-3 text-xs font-medium text-muted-foreground">Priority</th>
-                  <th className="py-2 pr-3 text-xs font-medium text-muted-foreground">Local</th>
+                  <th className="py-2 pr-3 text-xs font-medium text-muted-foreground">Source</th>
                   <th className="py-2 text-xs font-medium text-muted-foreground">Notes</th>
                 </tr>
               </thead>
@@ -114,7 +133,7 @@ export default function MIResultsView({ outputs, run, onRerun, onRefine, onAppro
                     <td className="py-2 pr-3"><IntentBadge intent={kt.intentType} /></td>
                     <td className="py-2 pr-3"><PriorityBadge priority={kt.priority || 'medium'} /></td>
                     <td className="py-2 pr-3">
-                      <RelevanceBadge value={kt.localRelevance || 'n/a'} />
+                      <SourceBadge type={kt.sourceType} confidence={kt.sourceConfidence} />
                     </td>
                     <td className="py-2 text-[11px] text-muted-foreground max-w-[200px]">
                       {kt.demandCaptureRationale || kt.notes || '—'}
@@ -140,9 +159,9 @@ export default function MIResultsView({ outputs, run, onRerun, onRefine, onAppro
                 <tr className="border-b text-left">
                   <th className="py-2 pr-3 text-xs font-medium text-muted-foreground">Business</th>
                   <th className="py-2 pr-3 text-xs font-medium text-muted-foreground">Website</th>
+                  <th className="py-2 pr-3 text-xs font-medium text-muted-foreground">Source</th>
                   <th className="py-2 pr-3 text-xs font-medium text-muted-foreground">Relevance</th>
-                  <th className="py-2 pr-3 text-xs font-medium text-muted-foreground">Local</th>
-                  <th className="py-2 text-xs font-medium text-muted-foreground">Notes</th>
+                  <th className="py-2 text-xs font-medium text-muted-foreground">Details</th>
                 </tr>
               </thead>
               <tbody>
@@ -150,7 +169,7 @@ export default function MIResultsView({ outputs, run, onRerun, onRefine, onAppro
                   <tr key={cp.id} className="border-b last:border-0">
                     <td className="py-2 pr-3">
                       <div className="font-medium text-xs">{cp.name}</div>
-                      <div className="text-[10px] text-muted-foreground">{cp.positioning}</div>
+                      <div className="text-[10px] text-muted-foreground">{cp.geography}</div>
                     </td>
                     <td className="py-2 pr-3">
                       {cp.websiteUrl ? (
@@ -162,10 +181,25 @@ export default function MIResultsView({ outputs, run, onRerun, onRefine, onAppro
                         <span className="text-[11px] text-muted-foreground">—</span>
                       )}
                     </td>
+                    <td className="py-2 pr-3">
+                      <SourceBadge type={cp.sourceType} confidence={cp.sourceConfidence} />
+                    </td>
                     <td className="py-2 pr-3"><RelevanceBadge value={cp.relevance || 'medium'} /></td>
-                    <td className="py-2 pr-3"><RelevanceBadge value={cp.localRelevance || 'n/a'} /></td>
-                    <td className="py-2 text-[11px] text-muted-foreground max-w-[200px]">
-                      {cp.notes || cp.channelObservations || '—'}
+                    <td className="py-2 text-[11px] text-muted-foreground max-w-[250px]">
+                      <div>{cp.positioning}</div>
+                      {cp.rankingKeywords && cp.rankingKeywords.length > 0 && (
+                        <div className="flex flex-wrap gap-1 mt-1">
+                          {cp.rankingKeywords.slice(0, 3).map((kw, i) => (
+                            <span key={i} className="text-[10px] bg-muted px-1.5 py-0.5 rounded">{kw}</span>
+                          ))}
+                        </div>
+                      )}
+                      {cp.estimatedDomainAuthority != null && (
+                        <span className="text-[10px] text-muted-foreground">DA ~{cp.estimatedDomainAuthority}</span>
+                      )}
+                      {cp.paidAdsPresence && (
+                        <span className="text-[10px] text-primary ml-1">• Paid Ads</span>
+                      )}
                     </td>
                   </tr>
                 ))}
@@ -430,4 +464,28 @@ function formatBenchmarkValue(value: number, unit: string): string {
   if (unit === '$') return `$${value.toLocaleString(undefined, { minimumFractionDigits: value < 1 ? 2 : 0, maximumFractionDigits: 2 })}`;
   if (unit === '%' || unit === '%/mo') return `${value}${unit}`;
   return `${value} ${unit}`;
+}
+
+function SourceBadge({ type, confidence }: { type?: SourceType; confidence?: SourceConfidence }) {
+  if (!type) return <span className="text-[10px] text-muted-foreground">—</span>;
+
+  const typeLabels: Record<SourceType, { label: string; cls: string }> = {
+    manual: { label: 'Manual', cls: 'bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400' },
+    google_serp: { label: 'Google SERP', cls: 'bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400' },
+    google_maps: { label: 'Google Maps', cls: 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400' },
+    ai_inference: { label: 'AI Inference', cls: 'bg-purple-100 text-purple-700 dark:bg-purple-900/30 dark:text-purple-400' },
+    prior_approved_research: { label: 'Prior Research', cls: 'bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400' },
+    internal_benchmark: { label: 'Benchmark', cls: 'bg-muted text-muted-foreground' },
+  };
+
+  const { label, cls } = typeLabels[type] || { label: type, cls: 'bg-muted text-muted-foreground' };
+
+  return (
+    <div className="flex flex-col gap-0.5">
+      <span className={`text-[10px] px-1.5 py-0.5 rounded font-medium whitespace-nowrap ${cls}`}>{label}</span>
+      {confidence && (
+        <span className="text-[9px] text-muted-foreground">{confidence} conf.</span>
+      )}
+    </div>
+  );
 }
