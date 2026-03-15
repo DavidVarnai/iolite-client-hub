@@ -61,7 +61,14 @@ export function createOnboardingRepo(): OnboardingRepository {
     if (Object.keys(merged).length !== Object.keys(existing).length) persist(STORAGE_KEYS.onboarding, merged);
   }
   return {
-    get(clientId) { return (load<Record<string, OnboardingData>>(STORAGE_KEYS.onboarding) || {})[clientId] || { ...DEFAULT_ONBOARDING }; },
+    get(clientId) {
+      const raw = (load<Record<string, OnboardingData>>(STORAGE_KEYS.onboarding) || {})[clientId] || { ...DEFAULT_ONBOARDING };
+      // Ensure salesFunnelStages exists for backward compatibility
+      if (raw.discovery && !Array.isArray(raw.discovery.salesFunnelStages)) {
+        raw.discovery.salesFunnelStages = [];
+      }
+      return raw;
+    },
     save(clientId, data) { const map = load<Record<string, OnboardingData>>(STORAGE_KEYS.onboarding) || {}; map[clientId] = data; persist(STORAGE_KEYS.onboarding, map); },
     delete(clientId) { const map = load<Record<string, OnboardingData>>(STORAGE_KEYS.onboarding) || {}; delete map[clientId]; persist(STORAGE_KEYS.onboarding, map); },
   };
