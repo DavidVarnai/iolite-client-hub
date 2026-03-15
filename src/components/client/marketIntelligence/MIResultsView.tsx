@@ -465,3 +465,27 @@ function formatBenchmarkValue(value: number, unit: string): string {
   if (unit === '%' || unit === '%/mo') return `${value}${unit}`;
   return `${value} ${unit}`;
 }
+
+function SourceBadge({ type, confidence }: { type?: SourceType; confidence?: SourceConfidence }) {
+  if (!type) return <span className="text-[10px] text-muted-foreground">—</span>;
+
+  const typeLabels: Record<SourceType, { label: string; cls: string }> = {
+    manual: { label: 'Manual', cls: 'bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400' },
+    google_serp: { label: 'Google SERP', cls: 'bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400' },
+    google_maps: { label: 'Google Maps', cls: 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400' },
+    ai_inference: { label: 'AI Inference', cls: 'bg-purple-100 text-purple-700 dark:bg-purple-900/30 dark:text-purple-400' },
+    prior_approved_research: { label: 'Prior Research', cls: 'bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400' },
+    internal_benchmark: { label: 'Benchmark', cls: 'bg-muted text-muted-foreground' },
+  };
+
+  const { label, cls } = typeLabels[type] || { label: type, cls: 'bg-muted text-muted-foreground' };
+
+  return (
+    <div className="flex flex-col gap-0.5">
+      <span className={`text-[10px] px-1.5 py-0.5 rounded font-medium whitespace-nowrap ${cls}`}>{label}</span>
+      {confidence && (
+        <span className="text-[9px] text-muted-foreground">{confidence} conf.</span>
+      )}
+    </div>
+  );
+}
