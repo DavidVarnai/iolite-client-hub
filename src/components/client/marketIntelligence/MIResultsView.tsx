@@ -7,6 +7,7 @@ import { useState } from 'react';
 import {
   Check, RotateCcw, Search, Shield, Target, BarChart3,
   FileText, Radio, Users, Send, CheckCircle2, Lock, Globe,
+  Zap, MapPin,
 } from 'lucide-react';
 import type {
   MarketIntelligenceOutputs,
@@ -14,6 +15,8 @@ import type {
   AudienceModel,
   BenchmarkAssumption,
   ChannelType,
+  SourceType,
+  SourceConfidence,
 } from '@/types/marketIntelligence';
 import { Textarea } from '@/components/ui/textarea';
 import { format } from 'date-fns';
