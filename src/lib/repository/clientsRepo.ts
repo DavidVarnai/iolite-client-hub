@@ -5,7 +5,7 @@ import type { Client } from '@/types';
 import type { OnboardingData } from '@/types/onboarding';
 import type { ClientRepository, OnboardingRepository } from './types';
 import { load, persist, STORAGE_KEYS, isSeedStale, markSeedCurrent } from './helpers';
-import { DEFAULT_ONBOARDING } from '@/types/onboarding';
+import { DEFAULT_ONBOARDING, EMPTY_DISCOVERY } from '@/types/onboarding';
 import { seedClients } from '@/data/seed';
 import { c1Onboarding, c2Onboarding, c3Onboarding, c4Onboarding, c5Onboarding, c6Onboarding } from '@/data/onboardingSeed';
 
@@ -16,11 +16,32 @@ function seedOnboardingMap(): Record<string, OnboardingData> {
   };
 }
 
+/** Ensure new structured fields exist on legacy discovery data */
+function migrateDiscovery(raw: OnboardingData): OnboardingData {
+  const d = raw.discovery;
+  if (!d) {
+    raw.discovery = { ...EMPTY_DISCOVERY };
+    return raw;
+  }
+  // salesFunnelStages
+  if (!Array.isArray(d.salesFunnelStages)) d.salesFunnelStages = [];
+  // Structured performance fields
+  if (d.monthlyVisitors === undefined) d.monthlyVisitors = '';
+  if (d.monthlyLeads === undefined) d.monthlyLeads = '';
+  if (d.monthlyCustomers === undefined) d.monthlyCustomers = '';
+  if (d.monthlyMarketingBudget === undefined) d.monthlyMarketingBudget = '';
+  if (!d.performanceConfidence) d.performanceConfidence = 'unknown';
+  if (!Array.isArray(d.bottleneckTags)) d.bottleneckTags = [];
+  if (d.bottleneckNotes === undefined) d.bottleneckNotes = '';
+  // Structured competitors
+  if (!Array.isArray(d.competitors)) d.competitors = [];
+  return raw;
+}
+
 export function createClientRepo(): ClientRepository {
   const stale = isSeedStale();
   const existing = load<Client[]>(STORAGE_KEYS.clients) || [];
   if (stale) {
-    // Re-merge: seed values override existing for seed clients
     const merged = seedClients.map(s => {
       const ex = existing.find(e => e.id === s.id);
       return ex ? { ...ex, ...s } : s;
@@ -49,7 +70,6 @@ export function createOnboardingRepo(): OnboardingRepository {
   const existing = load<Record<string, OnboardingData>>(STORAGE_KEYS.onboarding) || {};
   const seed = seedOnboardingMap();
   if (stale) {
-    // Seed values override existing for seed clients
     const merged: Record<string, OnboardingData> = { ...existing };
     for (const [id, seedData] of Object.entries(seed)) {
       merged[id] = existing[id] ? { ...existing[id], ...seedData } : seedData;
@@ -63,11 +83,7 @@ export function createOnboardingRepo(): OnboardingRepository {
   return {
     get(clientId) {
       const raw = (load<Record<string, OnboardingData>>(STORAGE_KEYS.onboarding) || {})[clientId] || { ...DEFAULT_ONBOARDING };
-      // Ensure salesFunnelStages exists for backward compatibility
-      if (raw.discovery && !Array.isArray(raw.discovery.salesFunnelStages)) {
-        raw.discovery.salesFunnelStages = [];
-      }
-      return raw;
+      return migrateDiscovery(raw);
     },
     save(clientId, data) { const map = load<Record<string, OnboardingData>>(STORAGE_KEYS.onboarding) || {}; map[clientId] = data; persist(STORAGE_KEYS.onboarding, map); },
     delete(clientId) { const map = load<Record<string, OnboardingData>>(STORAGE_KEYS.onboarding) || {}; delete map[clientId]; persist(STORAGE_KEYS.onboarding, map); },
