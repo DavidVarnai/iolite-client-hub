@@ -204,7 +204,7 @@ function DiscoveryStep() {
 
   const hasMIApproved = useMemo(() => {
     const runs = repository.marketIntelligence.getByClient(client.id);
-    return runs.some(r => r.status === 'approved' && r.approvedCompetitors?.length);
+    return runs.some(r => r.status === 'approved' && r.approved?.approvedCompetitors?.length);
   }, [client.id]);
 
   // Competitor helpers
