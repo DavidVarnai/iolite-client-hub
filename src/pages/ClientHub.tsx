@@ -58,7 +58,7 @@ function ClientHubContentInner({
   const { client, onboarding, stageProgress, nextStep, updateOnboarding } = clientContext;
   const [proposalMode, setProposalMode] = useState(false);
   const [showWizard, setShowWizard] = useState(false);
-  const activeTab = (tab && TABS.includes(tab as any)) ? tab : 'overview';
+  const activeTab = (tab && (TABS as readonly string[]).includes(tab)) ? tab : 'overview';
 
   const setTab = (t: string) => navigate(`/clients/${clientId}/${t}`);
 

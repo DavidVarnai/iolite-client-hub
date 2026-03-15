@@ -193,9 +193,14 @@ export const DEFAULT_ONBOARDING: OnboardingData = {
 };
 
 /* Compute readiness for each stage */
+interface ClientReadinessInput {
+  strategySections: { clientSummary: { objective: string; priorities: string[] } }[];
+  activeChannels: string[];
+}
+
 export function computeStageReadiness(
   onboarding: OnboardingData,
-  client: { strategySections: any[]; activeChannels: any[] },
+  client: ClientReadinessInput,
   hasGrowthModel: boolean,
 ): ClientLifecycleProgress[] {
   const progress: ClientLifecycleProgress[] = [];
@@ -259,7 +264,7 @@ export function computeStageReadiness(
 
 export function getProposalChecklist(
   onboarding: OnboardingData,
-  client: { strategySections: any[]; activeChannels: any[] },
+  client: ClientReadinessInput,
   hasGrowthModel: boolean,
 ): ProposalChecklistItem[] {
   const d = onboarding.discovery;

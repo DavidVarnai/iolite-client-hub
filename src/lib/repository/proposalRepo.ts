@@ -16,7 +16,11 @@ export function createProposalRepo(): ProposalRepository {
     save(proposal) {
       const all = this.getAll();
       const idx = all.findIndex(p => p.id === proposal.id);
-      idx >= 0 ? (all[idx] = proposal) : all.push(proposal);
+      if (idx >= 0) {
+        all[idx] = proposal;
+      } else {
+        all.push(proposal);
+      }
       persist(STORAGE_KEYS.proposals, all);
     },
     delete(id) { persist(STORAGE_KEYS.proposals, this.getAll().filter(p => p.id !== id)); },

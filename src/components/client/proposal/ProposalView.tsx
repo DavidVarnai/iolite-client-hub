@@ -34,11 +34,11 @@ export default function ProposalView({ proposalMode = false }: { proposalMode?: 
 
   const activeProposal = proposals.find(p => p.id === activeProposalId) || null;
 
-  const refresh = () => {
+  const refresh = useCallback(() => {
     const updated = repository.proposals.getByClient(client.id);
     setProposals(updated);
     return updated;
-  };
+  }, [client.id]);
 
   const handleGenerate = useCallback((config: GenerationConfig) => {
     const proposal = generateProposal(client.id, config);
@@ -47,7 +47,7 @@ export default function ProposalView({ proposalMode = false }: { proposalMode?: 
     setActiveProposalId(proposal.id);
     setShowConfig(false);
     toast.success('Proposal generated from system data');
-  }, [client.id]);
+  }, [client.id, refresh]);
 
   const handleUpdate = (proposal: Proposal) => {
     const updated = { ...proposal, updatedAt: new Date().toISOString() };

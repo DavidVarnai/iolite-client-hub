@@ -45,7 +45,11 @@ export function createMarketIntelligenceRepo(): MarketIntelligenceRepository {
     save(run) {
       const all = this.getAll();
       const idx = all.findIndex(r => r.id === run.id);
-      idx >= 0 ? (all[idx] = run) : all.push(run);
+      if (idx >= 0) {
+        all[idx] = run;
+      } else {
+        all.push(run);
+      }
       persist(key, all);
     },
     archive(id) {
