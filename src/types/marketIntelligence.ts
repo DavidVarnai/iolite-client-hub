@@ -110,6 +110,8 @@ export interface AudienceModel {
 
 /* ── Competitor Profiles ── */
 
+export type CompetitorType = 'direct' | 'indirect' | 'directory_platform';
+
 export interface CompetitorProfile extends Partial<EvidenceMetadata> {
   id: string;
   name: string;
@@ -118,6 +120,7 @@ export interface CompetitorProfile extends Partial<EvidenceMetadata> {
   channelObservations: string;
   notes?: string;
   websiteUrl?: string;
+  competitorType?: CompetitorType;
   relevance?: 'high' | 'medium' | 'low';
   localRelevance?: 'high' | 'medium' | 'low' | 'n/a';
   rankingKeywords?: string[];
