@@ -33,7 +33,23 @@ const WIZARD_STEP_ORDER: WizardStep[] = ['setup', 'discovery', 'strategy', 'grow
 function ClientHubInner() {
   const { clientId, tab } = useParams();
   const navigate = useNavigate();
-  const { client, onboarding, stageProgress, nextStep, updateOnboarding } = useClientContext();
+  const clientContext = useOptionalClientContext();
+
+  if (!clientId) {
+    return <div className="p-6"><p className="text-muted-foreground">Client not found.</p></div>;
+  }
+
+  // Defensive recovery: if this component is ever rendered outside provider,
+  // wrap it locally instead of throwing a runtime error.
+  if (!clientContext) {
+    return (
+      <ClientProvider clientId={clientId}>
+        <ClientHubInner />
+      </ClientProvider>
+    );
+  }
+
+  const { client, onboarding, stageProgress, nextStep, updateOnboarding } = clientContext;
   const [proposalMode, setProposalMode] = useState(false);
   const [showWizard, setShowWizard] = useState(false);
   const activeTab = (tab && TABS.includes(tab as any)) ? tab : 'overview';
