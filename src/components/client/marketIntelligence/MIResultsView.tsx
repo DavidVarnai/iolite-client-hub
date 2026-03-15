@@ -2,12 +2,13 @@
  * MIResultsView — structured display with Top 10 Keywords, Top 10 Competitors,
  * channel recommendations, summary, refinement input, and approval actions.
  * Benchmark assumptions are gated behind approved keyword + competitor research.
+ * Competitors are classified as direct, indirect, or directory/platform.
  */
 import { useState } from 'react';
 import {
   Check, RotateCcw, Search, Shield, Target, BarChart3,
   FileText, Radio, Users, Send, CheckCircle2, Lock, Globe,
-  Zap, MapPin,
+  Zap, MapPin, AlertTriangle, Building2, Layers,
 } from 'lucide-react';
 import type {
   MarketIntelligenceOutputs,
@@ -17,6 +18,7 @@ import type {
   ChannelType,
   SourceType,
   SourceConfidence,
+  CompetitorType,
 } from '@/types/marketIntelligence';
 import { Textarea } from '@/components/ui/textarea';
 import { format } from 'date-fns';
