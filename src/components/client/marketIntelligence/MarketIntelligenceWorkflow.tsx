@@ -1,17 +1,18 @@
 /**
  * MarketIntelligenceWorkflow — full-screen modal workflow.
- * Steps: readiness → generating → results → saved.
+ * Steps: setup → generating → results (with refinement & approval).
  */
-import { useState, useCallback, useEffect } from 'react';
-import { X, AlertTriangle, Check, Loader2 } from 'lucide-react';
+import { useState, useCallback } from 'react';
+import { X, Loader2 } from 'lucide-react';
 import { useClientContext } from '@/contexts/ClientContext';
-import { checkMIReadiness, collectMIInputs } from '@/lib/ai/marketIntelligenceReadiness';
+import { collectMIInputs } from '@/lib/ai/marketIntelligenceReadiness';
 import { generateMarketIntelligence } from '@/lib/ai/marketIntelligenceAdapter';
 import { repository } from '@/lib/repository';
-import type { MarketIntelligenceRun, MarketIntelligenceOutputs } from '@/types/marketIntelligence';
+import type { MarketIntelligenceRun, MarketIntelligenceInputs, MarketIntelligenceOutputs } from '@/types/marketIntelligence';
 import MIResultsView from './MIResultsView';
+import ResearchSetupStep from './ResearchSetupStep';
 
-type Phase = 'readiness' | 'generating' | 'results';
+type Phase = 'setup' | 'generating' | 'results';
 
 interface Props {
   onClose: () => void;
@@ -19,18 +20,20 @@ interface Props {
 
 export default function MarketIntelligenceWorkflow({ onClose }: Props) {
   const { client, onboarding } = useClientContext();
-  const { ready, checks } = checkMIReadiness(client, onboarding);
 
-  const [phase, setPhase] = useState<Phase>(ready ? 'generating' : 'readiness');
+  const [phase, setPhase] = useState<Phase>('setup');
   const [progress, setProgress] = useState(0);
   const [progressLabel, setProgressLabel] = useState('');
   const [outputs, setOutputs] = useState<MarketIntelligenceOutputs | null>(null);
   const [savedRun, setSavedRun] = useState<MarketIntelligenceRun | null>(null);
+  const [currentInputs, setCurrentInputs] = useState<MarketIntelligenceInputs>(() =>
+    collectMIInputs(client, onboarding),
+  );
 
-  const runGeneration = useCallback(async () => {
+  const runGeneration = useCallback(async (inputs: MarketIntelligenceInputs) => {
+    setCurrentInputs(inputs);
     setPhase('generating');
     setProgress(0);
-    const inputs = collectMIInputs(client, onboarding);
 
     try {
       const result = await generateMarketIntelligence(inputs, (pct, label) => {
@@ -39,7 +42,6 @@ export default function MarketIntelligenceWorkflow({ onClose }: Props) {
       });
       setOutputs(result);
 
-      // Auto-save as a run
       const run: MarketIntelligenceRun = {
         id: `mi-${Date.now()}`,
         clientId: client.id,
@@ -54,17 +56,34 @@ export default function MarketIntelligenceWorkflow({ onClose }: Props) {
       setSavedRun(run);
       setPhase('results');
     } catch {
-      setPhase('readiness');
+      setPhase('setup');
     }
-  }, [client, onboarding]);
+  }, [client.id]);
 
-  // Auto-start if ready
-  useEffect(() => {
-    if (phase === 'generating' && !outputs) {
-      runGeneration();
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  const handleRefine = useCallback((refinementNote: string) => {
+    const refined = { ...currentInputs, refinementNote };
+    runGeneration(refined);
+  }, [currentInputs, runGeneration]);
+
+  const handleApprove = useCallback(() => {
+    if (!savedRun || !outputs) return;
+    const approved: MarketIntelligenceRun = {
+      ...savedRun,
+      status: 'approved',
+      updatedAt: new Date().toISOString(),
+      approved: {
+        approvedAt: new Date().toISOString(),
+        approvedKeywords: outputs.keywordThemes,
+        approvedCompetitors: outputs.competitorProfiles,
+        approvedRadius: currentInputs.localRadius,
+        approvedCustomRadius: currentInputs.customRadiusMiles,
+        approvedChannelRecommendations: outputs.channelRecommendations,
+        researchSummary: outputs.researchSummary,
+      },
+    };
+    repository.marketIntelligence.save(approved);
+    setSavedRun(approved);
+  }, [savedRun, outputs, currentInputs]);
 
   return (
     <div className="fixed inset-0 z-50 bg-background/80 backdrop-blur-sm flex items-center justify-center">
@@ -82,11 +101,10 @@ export default function MarketIntelligenceWorkflow({ onClose }: Props) {
 
         {/* Content */}
         <div className="flex-1 overflow-y-auto p-6">
-          {phase === 'readiness' && (
-            <ReadinessGate
-              checks={checks}
-              ready={ready}
-              onProceed={runGeneration}
+          {phase === 'setup' && (
+            <ResearchSetupStep
+              initialInputs={currentInputs}
+              onRun={runGeneration}
             />
           )}
 
@@ -98,68 +116,14 @@ export default function MarketIntelligenceWorkflow({ onClose }: Props) {
             <MIResultsView
               outputs={outputs}
               run={savedRun}
-              onRerun={runGeneration}
+              onRerun={() => setPhase('setup')}
+              onRefine={handleRefine}
+              onApprove={handleApprove}
               onClose={onClose}
             />
           )}
         </div>
       </div>
-    </div>
-  );
-}
-
-/* ── Readiness Gate ── */
-
-function ReadinessGate({
-  checks,
-  ready,
-  onProceed,
-}: {
-  checks: { key: string; label: string; met: boolean }[];
-  ready: boolean;
-  onProceed: () => void;
-}) {
-  return (
-    <div className="space-y-6 max-w-lg mx-auto py-8">
-      <div className="text-center space-y-2">
-        <div className="w-12 h-12 rounded-full bg-amber-100 dark:bg-amber-900/30 flex items-center justify-center mx-auto">
-          <AlertTriangle className="h-6 w-6 text-amber-600 dark:text-amber-400" />
-        </div>
-        <h3 className="text-sm font-semibold">Input Checklist</h3>
-        <p className="text-xs text-muted-foreground">
-          The following information is needed before running Market Intelligence.
-        </p>
-      </div>
-
-      <div className="space-y-2">
-        {checks.map(c => (
-          <div key={c.key} className="flex items-center gap-3 px-4 py-2.5 rounded-md bg-muted/50">
-            {c.met ? (
-              <div className="w-5 h-5 rounded-full bg-primary flex items-center justify-center flex-shrink-0">
-                <Check className="h-3 w-3 text-primary-foreground" />
-              </div>
-            ) : (
-              <div className="w-5 h-5 rounded-full border-2 border-amber-400 flex-shrink-0" />
-            )}
-            <span className={`text-sm ${c.met ? 'text-foreground' : 'text-muted-foreground'}`}>
-              {c.label}
-            </span>
-          </div>
-        ))}
-      </div>
-
-      {ready ? (
-        <button
-          onClick={onProceed}
-          className="w-full py-2.5 bg-primary text-primary-foreground text-sm font-medium rounded-md hover:opacity-90 transition-opacity"
-        >
-          Run Market Intelligence
-        </button>
-      ) : (
-        <p className="text-xs text-center text-muted-foreground">
-          Complete the missing inputs in Discovery / Onboarding to proceed.
-        </p>
-      )}
     </div>
   );
 }

@@ -1,6 +1,7 @@
 /**
  * Market Intelligence Engine types — structured research layer.
  * Supports channel-specific outputs: search-based vs audience-based.
+ * Includes locality, approval workflow, and benchmark sequencing.
  */
 
 /* ── Channel Classification ── */
@@ -27,6 +28,18 @@ export function getChannelType(channel: string): ChannelType {
   return CHANNEL_TYPE_MAP[channel] || 'other';
 }
 
+/* ── Locality ── */
+
+export type LocalRadius = 5 | 10 | 25 | 50 | 'custom';
+
+export const LOCAL_RADIUS_OPTIONS: { value: LocalRadius; label: string }[] = [
+  { value: 5, label: '5 miles' },
+  { value: 10, label: '10 miles' },
+  { value: 25, label: '25 miles' },
+  { value: 50, label: '50 miles' },
+  { value: 'custom', label: 'Custom' },
+];
+
 /* ── Keyword-based outputs (Search channels) ── */
 
 export interface KeywordTheme {
@@ -36,6 +49,8 @@ export interface KeywordTheme {
   keywordExamples: string[];
   demandCaptureRationale?: string;
   notes?: string;
+  priority?: 'high' | 'medium' | 'low';
+  localRelevance?: 'high' | 'medium' | 'low' | 'n/a';
 }
 
 /* ── Audience-based outputs (Meta, LinkedIn, Spotify, etc.) ── */
@@ -64,6 +79,9 @@ export interface CompetitorProfile {
   positioning: string;
   channelObservations: string;
   notes?: string;
+  websiteUrl?: string;
+  relevance?: 'high' | 'medium' | 'low';
+  localRelevance?: 'high' | 'medium' | 'low' | 'n/a';
 }
 
 /* ── Channel Recommendations ── */
@@ -103,6 +121,12 @@ export interface MarketIntelligenceInputs {
   primaryGoal: string;
   budgetRange: string;
   selectedChannels: string[];
+  /* Locality fields */
+  primaryCity?: string;
+  localRadius?: LocalRadius;
+  customRadiusMiles?: number;
+  /* Refinement */
+  refinementNote?: string;
 }
 
 export interface MarketIntelligenceOutputs {
@@ -114,9 +138,21 @@ export interface MarketIntelligenceOutputs {
   researchSummary: string;
 }
 
+/* ── Approved Research ── */
+
+export interface ApprovedResearch {
+  approvedAt: string;
+  approvedKeywords: KeywordTheme[];
+  approvedCompetitors: CompetitorProfile[];
+  approvedRadius?: LocalRadius;
+  approvedCustomRadius?: number;
+  approvedChannelRecommendations: ChannelRecommendation[];
+  researchSummary: string;
+}
+
 /* ── Run ── */
 
-export type MarketIntelligenceStatus = 'draft' | 'generating' | 'complete' | 'archived';
+export type MarketIntelligenceStatus = 'draft' | 'generating' | 'complete' | 'approved' | 'archived';
 
 export interface MarketIntelligenceRun {
   id: string;
@@ -128,6 +164,7 @@ export interface MarketIntelligenceRun {
   inputs: MarketIntelligenceInputs;
   outputs: MarketIntelligenceOutputs;
   notes?: string;
+  approved?: ApprovedResearch;
 }
 
 /* ── Admin Defaults ── */
