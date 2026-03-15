@@ -1,7 +1,7 @@
 import { useParams, useNavigate } from 'react-router-dom';
 import { useState, useMemo } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
-import { ClientProvider, useClientContext, useOptionalClientContext } from '@/contexts/ClientContext';
+import { ClientProvider, useOptionalClientContext } from '@/contexts/ClientContext';
 import { LIFECYCLE_STAGES } from '@/types/onboarding';
 import ClientLifecycleBar from '@/components/client/ClientLifecycleBar';
 import NextStepCard from '@/components/client/NextStepCard';
@@ -27,12 +27,35 @@ const TABS = [
 ] as const;
 
 type WizardStep = 'setup' | 'discovery' | 'strategy' | 'growth_model' | 'proposal';
+type ResolvedClientContext = NonNullable<ReturnType<typeof useOptionalClientContext>>;
 
 const WIZARD_STEP_ORDER: WizardStep[] = ['setup', 'discovery', 'strategy', 'growth_model', 'proposal'];
 
 function ClientHubContent({ clientId, tab }: { clientId: string; tab?: string }) {
+  const clientContext = useOptionalClientContext();
+
+  if (!clientContext) {
+    return (
+      <ClientProvider clientId={clientId}>
+        <ClientHubContent clientId={clientId} tab={tab} />
+      </ClientProvider>
+    );
+  }
+
+  return <ClientHubContentInner clientId={clientId} tab={tab} clientContext={clientContext} />;
+}
+
+function ClientHubContentInner({
+  clientId,
+  tab,
+  clientContext,
+}: {
+  clientId: string;
+  tab?: string;
+  clientContext: ResolvedClientContext;
+}) {
   const navigate = useNavigate();
-  const { client, onboarding, stageProgress, nextStep, updateOnboarding } = useClientContext();
+  const { client, onboarding, stageProgress, nextStep, updateOnboarding } = clientContext;
   const [proposalMode, setProposalMode] = useState(false);
   const [showWizard, setShowWizard] = useState(false);
   const activeTab = (tab && TABS.includes(tab as any)) ? tab : 'overview';
@@ -201,21 +224,16 @@ function ClientHubContent({ clientId, tab }: { clientId: string; tab?: string })
 
 function ClientHubInner() {
   const { clientId, tab } = useParams();
-  const clientContext = useOptionalClientContext();
 
   if (!clientId) {
     return <div className="p-6"><p className="text-muted-foreground">Client not found.</p></div>;
   }
 
-  if (!clientContext) {
-    return (
-      <ClientProvider clientId={clientId}>
-        <ClientHubContent clientId={clientId} tab={tab} />
-      </ClientProvider>
-    );
-  }
-
-  return <ClientHubContent clientId={clientId} tab={tab} />;
+  return (
+    <ClientProvider clientId={clientId}>
+      <ClientHubContent clientId={clientId} tab={tab} />
+    </ClientProvider>
+  );
 }
 
 export default function ClientHub() {
