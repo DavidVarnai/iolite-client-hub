@@ -246,6 +246,7 @@ export const c6Onboarding: OnboardingData = {
     majorGrowthPriorities: 'Client acquisition',
     funnelType: 'lead_gen',
     leadQualSaleStructure: '',
+    salesFunnelStages: [],
     closeRate: '',
     salesCycleLength: '',
     paidMediaPlatforms: '',
