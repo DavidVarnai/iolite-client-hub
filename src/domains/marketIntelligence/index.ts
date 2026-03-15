@@ -6,6 +6,7 @@ export type {
   SourceType,
   SourceConfidence,
   EvidenceMetadata,
+  CompetitorType,
   KeywordTheme,
   CompetitorProfile,
   AudienceModel,
