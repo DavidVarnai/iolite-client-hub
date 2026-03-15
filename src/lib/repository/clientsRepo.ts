@@ -25,6 +25,14 @@ function migrateDiscovery(raw: OnboardingData): OnboardingData {
   }
   // salesFunnelStages
   if (!Array.isArray(d.salesFunnelStages)) d.salesFunnelStages = [];
+  // Migrate string[] to FunnelStage[]
+  if (d.salesFunnelStages.length > 0 && typeof d.salesFunnelStages[0] === 'string') {
+    d.salesFunnelStages = (d.salesFunnelStages as unknown as string[]).map(name => ({
+      name,
+      category: 'qualification' as const,
+      isCustom: true,
+    }));
+  }
   // Structured performance fields
   if (d.monthlyVisitors === undefined) d.monthlyVisitors = '';
   if (d.monthlyLeads === undefined) d.monthlyLeads = '';

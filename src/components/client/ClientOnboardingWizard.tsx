@@ -1,5 +1,5 @@
 import { useState, useCallback, useMemo } from 'react';
-import { ClientDiscovery, EMPTY_DISCOVERY, BusinessModel, GrowthGoal, PerformanceConfidence, BOTTLENECK_OPTIONS, DiscoveryCompetitor } from '@/types/onboarding';
+import { ClientDiscovery, EMPTY_DISCOVERY, BusinessModel, GrowthGoal, PerformanceConfidence, BOTTLENECK_OPTIONS, DiscoveryCompetitor, FunnelStage, FunnelStageCategory, FUNNEL_STAGE_OPTIONS, FUNNEL_CATEGORY_ORDER } from '@/types/onboarding';
 import { ServiceChannel, SERVICE_CHANNEL_LABELS } from '@/types';
 import { Check, ChevronLeft, ChevronRight, X, Loader2, Sparkles, Plus, Trash2, ArrowRight, Download } from 'lucide-react';
 import { AnimatePresence, motion } from 'framer-motion';
@@ -34,10 +34,27 @@ const STACK_OPTIONS: Record<string, string[]> = {
 };
 
 // ── Sales funnel templates by type ──
-const FUNNEL_TEMPLATES: Record<string, string[]> = {
-  ecommerce: ['Ad Click', 'Landing Page Visit', 'Product View', 'Add to Cart', 'Purchase'],
-  lead_gen: ['Ad Click', 'Landing Page Visit', 'Form Submission', 'Qualification Call', 'Closed Deal'],
-  hybrid: ['Ad Click', 'Landing Page Visit', 'Form / Cart', 'Qualification', 'Proposal', 'Closed Deal'],
+const FUNNEL_TEMPLATES: Record<string, FunnelStage[]> = {
+  ecommerce: [
+    { name: 'Ad Click', category: 'traffic' },
+    { name: 'Product Page', category: 'page_interaction' },
+    { name: 'Email Signup', category: 'lead_capture' },
+    { name: 'Purchase', category: 'conversion' },
+  ],
+  lead_gen: [
+    { name: 'Ad Click', category: 'traffic' },
+    { name: 'Landing Page Visit', category: 'page_interaction' },
+    { name: 'Form Submission', category: 'lead_capture' },
+    { name: 'Discovery Call', category: 'qualification' },
+    { name: 'Closed Deal', category: 'conversion' },
+  ],
+  hybrid: [
+    { name: 'Ad Click', category: 'traffic' },
+    { name: 'Landing Page Visit', category: 'page_interaction' },
+    { name: 'Form Submission', category: 'lead_capture' },
+    { name: 'Consultation', category: 'qualification' },
+    { name: 'Purchase', category: 'conversion' },
+  ],
 };
 
 const FUNNEL_TYPE_OPTIONS = [
@@ -258,7 +275,7 @@ function DiscoveryStep() {
               updateD({
                 funnelType: ft,
                 salesFunnelStages: template,
-                leadQualSaleStructure: template.join('\n'),
+                leadQualSaleStructure: template.map(s => s.name).join('\n'),
               });
             }}
             className="w-full rounded-md border bg-background px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-ring"
@@ -272,32 +289,96 @@ function DiscoveryStep() {
           <label className="text-xs font-medium text-muted-foreground uppercase tracking-wider mb-1.5 block">
             Funnel Steps
           </label>
-          <p className="text-[10px] text-muted-foreground mb-2">One step per line. Select a funnel type above to auto-populate a template.</p>
-          <textarea
-            value={d.salesFunnelStages.length > 0 ? d.salesFunnelStages.join('\n') : d.leadQualSaleStructure}
-            onChange={(e) => {
-              const text = e.target.value;
-              const stages = text.split('\n').map(s => s.trim()).filter(Boolean);
-              updateD({
-                leadQualSaleStructure: text,
-                salesFunnelStages: stages,
-              });
+          <p className="text-[10px] text-muted-foreground mb-2">Build your funnel by adding steps. Select a funnel type above to auto-populate a template.</p>
+
+          {/* Structured funnel step rows */}
+          <div className="space-y-2">
+            {(d.salesFunnelStages || []).map((stage, idx) => (
+              <div key={idx} className="flex items-center gap-2">
+                <span className="text-xs text-muted-foreground w-5 text-right shrink-0">{idx + 1}.</span>
+                <select
+                  value={stage.isCustom ? '__custom__' : `${stage.category}::${stage.name}`}
+                  onChange={(e) => {
+                    const val = e.target.value;
+                    const stages = [...d.salesFunnelStages];
+                    if (val === '__custom__') {
+                      stages[idx] = { name: stage.name || '', category: stage.category || 'qualification', isCustom: true };
+                    } else {
+                      const [cat, name] = val.split('::');
+                      stages[idx] = { name, category: cat as FunnelStageCategory };
+                    }
+                    updateD({ salesFunnelStages: stages, leadQualSaleStructure: stages.map(s => s.name).join('\n') });
+                  }}
+                  className="flex-1 rounded-md border bg-background px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-ring"
+                >
+                  <option value="">Select stage…</option>
+                  {FUNNEL_CATEGORY_ORDER.map(cat => {
+                    const group = FUNNEL_STAGE_OPTIONS[cat];
+                    return (
+                      <optgroup key={cat} label={group.label}>
+                        {group.stages.map(s => (
+                          <option key={`${cat}::${s}`} value={`${cat}::${s}`}>{s}</option>
+                        ))}
+                      </optgroup>
+                    );
+                  })}
+                  <optgroup label="Other">
+                    <option value="__custom__">Custom…</option>
+                  </optgroup>
+                </select>
+                {stage.isCustom && (
+                  <input
+                    type="text"
+                    value={stage.name}
+                    onChange={(e) => {
+                      const stages = [...d.salesFunnelStages];
+                      stages[idx] = { ...stages[idx], name: e.target.value };
+                      updateD({ salesFunnelStages: stages, leadQualSaleStructure: stages.map(s => s.name).join('\n') });
+                    }}
+                    placeholder="Custom stage name"
+                    className="flex-1 rounded-md border bg-background px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-ring"
+                  />
+                )}
+                <button
+                  type="button"
+                  onClick={() => {
+                    const stages = d.salesFunnelStages.filter((_, i) => i !== idx);
+                    updateD({ salesFunnelStages: stages, leadQualSaleStructure: stages.map(s => s.name).join('\n') });
+                  }}
+                  className="p-1.5 rounded-md text-muted-foreground hover:text-destructive hover:bg-destructive/10 transition-colors"
+                >
+                  <Trash2 className="h-3.5 w-3.5" />
+                </button>
+              </div>
+            ))}
+          </div>
+
+          <button
+            type="button"
+            onClick={() => {
+              const stages = [...(d.salesFunnelStages || []), { name: '', category: 'qualification' as FunnelStageCategory }];
+              updateD({ salesFunnelStages: stages });
             }}
-            placeholder={"Ad Click\nLanding Page Visit\nForm Submission\nQualification Call\nClosed Deal"}
-            rows={5}
-            className="w-full rounded-md border bg-background px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-ring resize-y font-mono leading-relaxed"
-          />
-          {d.salesFunnelStages.length > 0 && (
+            className="mt-2 flex items-center gap-1 text-xs font-medium text-primary hover:text-primary/80 transition-colors"
+          >
+            <Plus className="h-3.5 w-3.5" /> Add Step
+          </button>
+
+          {/* Funnel preview */}
+          {d.salesFunnelStages.length > 0 && d.salesFunnelStages.some(s => s.name) && (
             <div className="mt-3 p-3 rounded-md bg-muted/50 border">
               <p className="text-[10px] font-medium text-muted-foreground uppercase tracking-wider mb-2">Funnel Preview</p>
               <div className="flex flex-wrap items-center gap-1">
-                {d.salesFunnelStages.map((stage, idx) => (
+                {d.salesFunnelStages.filter(s => s.name).map((stage, idx, arr) => (
                   <span key={idx} className="flex items-center gap-1">
                     <span className="px-2.5 py-1 text-xs font-medium rounded-md bg-primary/10 text-primary border border-primary/20">
-                      {stage}
+                      {stage.name}
+                      <span className="ml-1 text-[9px] text-muted-foreground">
+                        ({FUNNEL_STAGE_OPTIONS[stage.category]?.label || stage.category})
+                      </span>
                     </span>
-                    {idx < d.salesFunnelStages.length - 1 && (
-                      <span className="text-muted-foreground text-xs">→</span>
+                    {idx < arr.length - 1 && (
+                      <ArrowRight className="h-3 w-3 text-muted-foreground" />
                     )}
                   </span>
                 ))}
