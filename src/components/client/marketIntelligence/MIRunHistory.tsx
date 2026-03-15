@@ -87,13 +87,18 @@ function RunCard({
 }) {
   return (
     <div className="panel overflow-hidden">
-      <button
+      {/* Use div instead of button to avoid nesting interactive elements */}
+      <div
+        role="button"
+        tabIndex={0}
         onClick={onToggle}
-        className="w-full flex items-center justify-between px-4 py-3 hover:bg-muted/30 transition-colors"
+        onKeyDown={e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); onToggle(); } }}
+        className="w-full flex items-center justify-between px-4 py-3 hover:bg-muted/30 transition-colors cursor-pointer select-none"
       >
         <div className="flex items-center gap-3">
           <span className={`text-[10px] px-1.5 py-0.5 rounded font-medium ${
             run.status === 'complete' ? 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400'
+            : run.status === 'approved' ? 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400'
             : run.status === 'archived' ? 'bg-muted text-muted-foreground'
             : 'bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400'
           }`}>
@@ -120,7 +125,7 @@ function RunCard({
           )}
           {expanded ? <ChevronUp className="h-4 w-4 text-muted-foreground" /> : <ChevronDown className="h-4 w-4 text-muted-foreground" />}
         </div>
-      </button>
+      </div>
 
       {expanded && (
         <div className="border-t p-5">
