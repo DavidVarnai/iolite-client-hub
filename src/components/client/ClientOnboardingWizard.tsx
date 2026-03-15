@@ -7,6 +7,7 @@ import { useClientContext } from '@/contexts/ClientContext';
 import { runMarketResearch } from '@/lib/ai/aiActions';
 import { repository } from '@/lib/repository';
 import type { AiActionStatus } from '@/types/ai';
+import FunnelVisualPreview from './discovery/FunnelVisualPreview';
 
 type WizardStep = 'setup' | 'discovery' | 'strategy' | 'growth_model' | 'proposal';
 
