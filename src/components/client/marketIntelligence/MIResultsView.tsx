@@ -159,9 +159,9 @@ export default function MIResultsView({ outputs, run, onRerun, onRefine, onAppro
                 <tr className="border-b text-left">
                   <th className="py-2 pr-3 text-xs font-medium text-muted-foreground">Business</th>
                   <th className="py-2 pr-3 text-xs font-medium text-muted-foreground">Website</th>
+                  <th className="py-2 pr-3 text-xs font-medium text-muted-foreground">Source</th>
                   <th className="py-2 pr-3 text-xs font-medium text-muted-foreground">Relevance</th>
-                  <th className="py-2 pr-3 text-xs font-medium text-muted-foreground">Local</th>
-                  <th className="py-2 text-xs font-medium text-muted-foreground">Notes</th>
+                  <th className="py-2 text-xs font-medium text-muted-foreground">Details</th>
                 </tr>
               </thead>
               <tbody>
@@ -169,7 +169,7 @@ export default function MIResultsView({ outputs, run, onRerun, onRefine, onAppro
                   <tr key={cp.id} className="border-b last:border-0">
                     <td className="py-2 pr-3">
                       <div className="font-medium text-xs">{cp.name}</div>
-                      <div className="text-[10px] text-muted-foreground">{cp.positioning}</div>
+                      <div className="text-[10px] text-muted-foreground">{cp.geography}</div>
                     </td>
                     <td className="py-2 pr-3">
                       {cp.websiteUrl ? (
@@ -181,10 +181,25 @@ export default function MIResultsView({ outputs, run, onRerun, onRefine, onAppro
                         <span className="text-[11px] text-muted-foreground">—</span>
                       )}
                     </td>
+                    <td className="py-2 pr-3">
+                      <SourceBadge type={cp.sourceType} confidence={cp.sourceConfidence} />
+                    </td>
                     <td className="py-2 pr-3"><RelevanceBadge value={cp.relevance || 'medium'} /></td>
-                    <td className="py-2 pr-3"><RelevanceBadge value={cp.localRelevance || 'n/a'} /></td>
-                    <td className="py-2 text-[11px] text-muted-foreground max-w-[200px]">
-                      {cp.notes || cp.channelObservations || '—'}
+                    <td className="py-2 text-[11px] text-muted-foreground max-w-[250px]">
+                      <div>{cp.positioning}</div>
+                      {cp.rankingKeywords && cp.rankingKeywords.length > 0 && (
+                        <div className="flex flex-wrap gap-1 mt-1">
+                          {cp.rankingKeywords.slice(0, 3).map((kw, i) => (
+                            <span key={i} className="text-[10px] bg-muted px-1.5 py-0.5 rounded">{kw}</span>
+                          ))}
+                        </div>
+                      )}
+                      {cp.estimatedDomainAuthority != null && (
+                        <span className="text-[10px] text-muted-foreground">DA ~{cp.estimatedDomainAuthority}</span>
+                      )}
+                      {cp.paidAdsPresence && (
+                        <span className="text-[10px] text-primary ml-1">• Paid Ads</span>
+                      )}
                     </td>
                   </tr>
                 ))}
