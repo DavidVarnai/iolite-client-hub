@@ -45,10 +45,21 @@ export function createClientRepo(): ClientRepository {
 }
 
 export function createOnboardingRepo(): OnboardingRepository {
+  const stale = isSeedStale();
   const existing = load<Record<string, OnboardingData>>(STORAGE_KEYS.onboarding) || {};
   const seed = seedOnboardingMap();
-  const merged = { ...seed, ...existing };
-  if (Object.keys(merged).length !== Object.keys(existing).length) persist(STORAGE_KEYS.onboarding, merged);
+  if (stale) {
+    // Seed values override existing for seed clients
+    const merged: Record<string, OnboardingData> = { ...existing };
+    for (const [id, seedData] of Object.entries(seed)) {
+      merged[id] = existing[id] ? { ...existing[id], ...seedData } : seedData;
+    }
+    persist(STORAGE_KEYS.onboarding, merged);
+    markSeedCurrent();
+  } else {
+    const merged = { ...seed, ...existing };
+    if (Object.keys(merged).length !== Object.keys(existing).length) persist(STORAGE_KEYS.onboarding, merged);
+  }
   return {
     get(clientId) { return (load<Record<string, OnboardingData>>(STORAGE_KEYS.onboarding) || {})[clientId] || { ...DEFAULT_ONBOARDING }; },
     save(clientId, data) { const map = load<Record<string, OnboardingData>>(STORAGE_KEYS.onboarding) || {}; map[clientId] = data; persist(STORAGE_KEYS.onboarding, map); },
