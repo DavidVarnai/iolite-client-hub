@@ -128,6 +128,8 @@ function RunCard({
             outputs={run.outputs}
             run={run}
             onRerun={onRerun}
+            onRefine={() => {}}
+            onApprove={() => {}}
             onClose={() => {}}
           />
         </div>
