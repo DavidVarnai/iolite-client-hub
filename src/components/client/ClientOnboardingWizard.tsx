@@ -275,7 +275,7 @@ function DiscoveryStep() {
               updateD({
                 funnelType: ft,
                 salesFunnelStages: template,
-                leadQualSaleStructure: template.join('\n'),
+                leadQualSaleStructure: template.map(s => s.name).join('\n'),
               });
             }}
             className="w-full rounded-md border bg-background px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-ring"
