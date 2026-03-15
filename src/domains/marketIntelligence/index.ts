@@ -3,6 +3,9 @@
  */
 export type {
   ChannelType,
+  SourceType,
+  SourceConfidence,
+  EvidenceMetadata,
   KeywordTheme,
   CompetitorProfile,
   AudienceModel,
@@ -15,4 +18,4 @@ export type {
   MarketIntelligenceDefaults,
 } from '@/types/marketIntelligence';
 
-export { CHANNEL_TYPE_MAP, getChannelType } from '@/types/marketIntelligence';
+export { CHANNEL_TYPE_MAP, getChannelType, SOURCE_TRUST_ORDER, getTrustRank } from '@/types/marketIntelligence';
