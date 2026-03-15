@@ -85,7 +85,22 @@ export default function MIResultsView({ outputs, run, onRerun, onRefine, onAppro
         </div>
       </div>
 
-      {/* ─── TOP 10 KEYWORDS ─── */}
+      {/* ─── CORE SEARCH KEYWORDS ─── */}
+      {outputs.coreSearchKeywords && outputs.coreSearchKeywords.length > 0 && (
+        <div className="panel p-5 space-y-3">
+          <div className="flex items-center gap-2">
+            <Zap className="h-4 w-4 text-primary" />
+            <h4 className="text-sm font-semibold">Core Search Keywords</h4>
+            <span className="text-[10px] text-muted-foreground bg-muted px-1.5 py-0.5 rounded">Used for competitor discovery</span>
+          </div>
+          <div className="flex flex-wrap gap-2">
+            {outputs.coreSearchKeywords.map((kw, i) => (
+              <span key={i} className="text-xs bg-primary/10 text-primary px-2.5 py-1 rounded-md font-medium">{kw}</span>
+            ))}
+          </div>
+        </div>
+      )}
+
       {hasKeywords && (
         <div className="panel p-5 space-y-3">
           <div className="flex items-center gap-2">
