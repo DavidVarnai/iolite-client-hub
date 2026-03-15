@@ -33,7 +33,12 @@ export const c1Onboarding: OnboardingData = {
     majorGrowthPriorities: 'Scale paid acquisition, reduce CAC, grow email revenue to 30%',
     funnelType: 'ecommerce',
     leadQualSaleStructure: 'Ad click → PDP → Add to Cart → Purchase',
-    salesFunnelStages: ['Ad Click', 'Product Page', 'Add to Cart', 'Purchase'],
+    salesFunnelStages: [
+      { name: 'Ad Click', category: 'traffic' },
+      { name: 'Product Page', category: 'page_interaction' },
+      { name: 'Add to Cart', category: 'page_interaction', isCustom: true },
+      { name: 'Purchase', category: 'conversion' },
+    ],
     closeRate: '2.8% site-wide conversion',
     salesCycleLength: 'Same session or within 7 days',
     paidMediaPlatforms: 'Meta Ads, Google Ads (Shopping + Search)',
