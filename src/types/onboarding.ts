@@ -35,6 +35,24 @@ export interface DiscoveryCompetitor {
   url: string;
 }
 
+export type FunnelStageCategory = 'traffic' | 'page_interaction' | 'lead_capture' | 'qualification' | 'conversion';
+
+export interface FunnelStage {
+  name: string;
+  category: FunnelStageCategory;
+  isCustom?: boolean;
+}
+
+export const FUNNEL_STAGE_OPTIONS: Record<FunnelStageCategory, { label: string; stages: string[] }> = {
+  traffic: { label: 'Traffic', stages: ['Ad Click', 'Organic Search', 'Social Media', 'Referral', 'Direct'] },
+  page_interaction: { label: 'Page Interaction', stages: ['Landing Page Visit', 'Content Page', 'Product Page', 'Pricing Page'] },
+  lead_capture: { label: 'Lead Capture', stages: ['Form Submission', 'Email Signup', 'Quote Request', 'Demo Request', 'Free Trial'] },
+  qualification: { label: 'Qualification', stages: ['Discovery Call', 'Sales Call', 'Product Demo', 'Consultation', 'Application Submitted'] },
+  conversion: { label: 'Conversion', stages: ['Closed Deal', 'Purchase', 'Contract Signed', 'Enrollment', 'Subscription'] },
+};
+
+export const FUNNEL_CATEGORY_ORDER: FunnelStageCategory[] = ['traffic', 'page_interaction', 'lead_capture', 'qualification', 'conversion'];
+
 export interface ClientDiscovery {
   // A. Business Overview
   businessModel: BusinessModel;
