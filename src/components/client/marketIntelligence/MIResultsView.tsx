@@ -39,6 +39,11 @@ export default function MIResultsView({ outputs, run, onRerun, onRefine, onAppro
   const hasCompetitors = outputs.competitorProfiles.length > 0;
   const benchmarksReady = isApproved && hasKeywords && hasCompetitors;
 
+  const directCompetitors = outputs.competitorProfiles.filter(c => c.competitorType === 'direct' || !c.competitorType);
+  const directoryCompetitors = outputs.competitorProfiles.filter(c => c.competitorType === 'directory_platform');
+  const gapIndicator = directCompetitors.find(c => c.name.startsWith('⚠'));
+  const realDirectCompetitors = directCompetitors.filter(c => !c.name.startsWith('⚠'));
+
   const benchmarksByChannel = outputs.benchmarkAssumptions.reduce<Record<string, BenchmarkAssumption[]>>((acc, ba) => {
     (acc[ba.channel] ??= []).push(ba);
     return acc;
