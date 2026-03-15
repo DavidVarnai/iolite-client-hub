@@ -34,10 +34,27 @@ const STACK_OPTIONS: Record<string, string[]> = {
 };
 
 // ── Sales funnel templates by type ──
-const FUNNEL_TEMPLATES: Record<string, string[]> = {
-  ecommerce: ['Ad Click', 'Landing Page Visit', 'Product View', 'Add to Cart', 'Purchase'],
-  lead_gen: ['Ad Click', 'Landing Page Visit', 'Form Submission', 'Qualification Call', 'Closed Deal'],
-  hybrid: ['Ad Click', 'Landing Page Visit', 'Form / Cart', 'Qualification', 'Proposal', 'Closed Deal'],
+const FUNNEL_TEMPLATES: Record<string, FunnelStage[]> = {
+  ecommerce: [
+    { name: 'Ad Click', category: 'traffic' },
+    { name: 'Product Page', category: 'page_interaction' },
+    { name: 'Email Signup', category: 'lead_capture' },
+    { name: 'Purchase', category: 'conversion' },
+  ],
+  lead_gen: [
+    { name: 'Ad Click', category: 'traffic' },
+    { name: 'Landing Page Visit', category: 'page_interaction' },
+    { name: 'Form Submission', category: 'lead_capture' },
+    { name: 'Discovery Call', category: 'qualification' },
+    { name: 'Closed Deal', category: 'conversion' },
+  ],
+  hybrid: [
+    { name: 'Ad Click', category: 'traffic' },
+    { name: 'Landing Page Visit', category: 'page_interaction' },
+    { name: 'Form Submission', category: 'lead_capture' },
+    { name: 'Consultation', category: 'qualification' },
+    { name: 'Purchase', category: 'conversion' },
+  ],
 };
 
 const FUNNEL_TYPE_OPTIONS = [
