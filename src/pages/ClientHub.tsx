@@ -219,7 +219,7 @@ function ClientHubInner() {
 }
 
 export default function ClientHub() {
-  const { clientId } = useParams();
+  const { clientId, tab } = useParams();
 
   if (!clientId) {
     return <div className="p-6"><p className="text-muted-foreground">Client not found.</p></div>;
@@ -227,7 +227,7 @@ export default function ClientHub() {
 
   return (
     <ClientProvider clientId={clientId}>
-      <ClientHubInner />
+      <ClientHubContent clientId={clientId} tab={tab} />
     </ClientProvider>
   );
 }
