@@ -27,11 +27,11 @@ const TABS = [
 ] as const;
 
 type WizardStep = 'setup' | 'discovery' | 'strategy' | 'growth_model' | 'proposal';
+type ResolvedClientContext = NonNullable<ReturnType<typeof useOptionalClientContext>>;
 
 const WIZARD_STEP_ORDER: WizardStep[] = ['setup', 'discovery', 'strategy', 'growth_model', 'proposal'];
 
 function ClientHubContent({ clientId, tab }: { clientId: string; tab?: string }) {
-  const navigate = useNavigate();
   const clientContext = useOptionalClientContext();
 
   if (!clientContext) {
@@ -42,6 +42,19 @@ function ClientHubContent({ clientId, tab }: { clientId: string; tab?: string })
     );
   }
 
+  return <ClientHubContentInner clientId={clientId} tab={tab} clientContext={clientContext} />;
+}
+
+function ClientHubContentInner({
+  clientId,
+  tab,
+  clientContext,
+}: {
+  clientId: string;
+  tab?: string;
+  clientContext: ResolvedClientContext;
+}) {
+  const navigate = useNavigate();
   const { client, onboarding, stageProgress, nextStep, updateOnboarding } = clientContext;
   const [proposalMode, setProposalMode] = useState(false);
   const [showWizard, setShowWizard] = useState(false);
