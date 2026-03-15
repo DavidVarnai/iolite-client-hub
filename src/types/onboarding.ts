@@ -33,6 +33,7 @@ export interface ClientDiscovery {
   // C. Sales Process
   funnelType: string;
   leadQualSaleStructure: string;
+  salesFunnelStages: string[];
   closeRate: string;
   salesCycleLength: string;
 
