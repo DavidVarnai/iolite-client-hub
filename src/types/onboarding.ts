@@ -307,11 +307,11 @@ export function getNextStepPrompt(onboarding: OnboardingData, stageProgress: Cli
       if (stageInfo.percentComplete < 80) {
         return { message: 'Complete discovery to unlock strategy recommendations.', action: 'Continue Discovery', openWizard: true };
       }
-      return { message: 'Discovery is ready. Start building the strategy.', action: 'Draft Strategy', targetTab: 'strategy' };
+      return { message: 'Discovery is ready. Continue onboarding to draft your strategy.', action: 'Continue to Strategy', openWizard: true };
     case 'strategy':
-      return { message: 'Add channel assumptions to finalize the Growth Model.', action: 'Build Growth Model', targetTab: 'growth-model' };
+      return { message: 'Strategy is in progress. Continue onboarding to build the Growth Model.', action: 'Continue Onboarding', openWizard: true };
     case 'growth_model':
-      return { message: 'Review proposal readiness before presenting to client.', action: 'Check Proposal', targetTab: 'overview' };
+      return { message: 'Review proposal readiness before presenting to client.', action: 'Check Proposal Readiness', openWizard: true };
     case 'proposal_ready':
       return { message: 'Activate this client after approval to begin operations.', action: 'Activate Client', targetTab: 'overview' };
     case 'active_client':
