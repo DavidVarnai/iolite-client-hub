@@ -733,14 +733,17 @@ function GrowthModelStep({ onNavigateTab }: { onNavigateTab: (tab: string) => vo
       </div>
 
       <div className="panel p-4 bg-primary/5 border-primary/20">
-        <p className="text-sm text-foreground mb-3">
-          Open the Growth Model tab to build the investment plan, assumptions, and revenue projections.
+        <p className="text-sm text-foreground mb-1">
+          Continue to the Growth Model tab to build the investment plan, assumptions, and revenue projections.
+        </p>
+        <p className="text-xs text-muted-foreground mb-3">
+          You'll stay in onboarding — a progress panel will guide you back when you're ready.
         </p>
         <button
           onClick={() => onNavigateTab('growth-model')}
-          className="px-4 py-2 bg-primary text-primary-foreground text-xs font-medium rounded-md hover:opacity-90 transition-opacity"
+          className="flex items-center gap-1.5 px-4 py-2 bg-primary text-primary-foreground text-xs font-medium rounded-md hover:opacity-90 transition-opacity"
         >
-          Go to Growth Model Tab
+          Continue to Growth Model <ArrowRight className="h-3.5 w-3.5" />
         </button>
       </div>
     </div>
