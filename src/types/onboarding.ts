@@ -167,6 +167,18 @@ export interface ProposalChecklistItem {
   complete: boolean;
 }
 
+/** Tracks onboarding context when user navigates from the wizard to a tab */
+export interface OnboardingContinuation {
+  /** The wizard step the user came from */
+  sourceStep: string;
+  /** The onboarding step being completed on the current tab */
+  currentStep: string;
+  /** The next onboarding step after this one */
+  nextStep: string | null;
+  /** The step the wizard should reopen at */
+  returnStep: string;
+}
+
 export interface OnboardingData {
   lifecycleStage: LifecycleStage;
   stageProgress?: ClientLifecycleProgress[]; // deprecated — computed dynamically
