@@ -40,4 +40,6 @@ export function createLocalStorageRepository(): AppRepository {
     marketIntelligence: createMarketIntelligenceRepo(),
     marketIntelligenceDefaults: createMarketIntelligenceDefaultsRepo(),
   };
+  markSeedCurrent();
+  return repo;
 }
