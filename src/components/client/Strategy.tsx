@@ -367,6 +367,7 @@ export default function ClientStrategy({
           ))}
         </div>
       )}
+      </div>
     </div>
   );
 }

@@ -1,5 +1,6 @@
 import { useState, useMemo } from 'react';
 import type { GrowthModel, GrowthModelMode, GrowthModelScenario } from '@/types/growthModel';
+import type { OnboardingContinuation } from '@/types/onboarding';
 import { calcRollups } from '@/lib/growthModelCalculations';
 import { GROWTH_MODEL_TEMPLATES, initializeFromTemplate } from '@/lib/growthModelTemplates';
 import SummaryBar from './growth/SummaryBar';
@@ -9,6 +10,7 @@ import RevenueModel from './growth/RevenueModel';
 import ForecastVsActual from './growth/ForecastVsActual';
 import ExecutiveSummary from './growth/ExecutiveSummary';
 import SnapshotManager from './growth/SnapshotManager';
+import OnboardingContinuityPanel from './OnboardingContinuityPanel';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { FileText } from 'lucide-react';
 import { useClientContext } from '@/contexts/ClientContext';
