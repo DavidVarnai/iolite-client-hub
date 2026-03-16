@@ -133,6 +133,7 @@ export default function GrowthModelView({
             </Card>
           ))}
         </div>
+        </div>
       </div>
     );
   }
@@ -141,6 +142,15 @@ export default function GrowthModelView({
 
   return (
     <div className="flex flex-col h-full">
+      {onboardingContinuation && onReturnToWizard && onPauseOnboarding && (
+        <OnboardingContinuityPanel
+          continuation={onboardingContinuation}
+          onReturnToWizard={onReturnToWizard}
+          onPauseOnboarding={onPauseOnboarding}
+          onContinueToNext={onContinueToNext}
+          stepReady={!!model}
+        />
+      )}
       <div className="border-b px-6 py-3 flex items-center justify-between bg-background">
         <div className="flex items-center gap-3">
           <h2 className="text-sm font-semibold text-foreground">{model.name}</h2>
