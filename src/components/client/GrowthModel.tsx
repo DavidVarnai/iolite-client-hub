@@ -90,7 +90,17 @@ export default function GrowthModelView({
 
   if (!model) {
     return (
-      <div className="p-6">
+      <div>
+        {onboardingContinuation && onReturnToWizard && onPauseOnboarding && (
+          <OnboardingContinuityPanel
+            continuation={onboardingContinuation}
+            onReturnToWizard={onReturnToWizard}
+            onPauseOnboarding={onPauseOnboarding}
+            onContinueToNext={onContinueToNext}
+            stepReady={false}
+          />
+        )}
+        <div className="p-6">
         <div className="panel p-8 text-center mb-6">
           <h3 className="text-lg font-semibold text-foreground mb-2">No Growth Model</h3>
           <p className="text-sm text-muted-foreground mb-6">
