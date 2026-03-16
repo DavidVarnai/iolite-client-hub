@@ -1,8 +1,9 @@
 import { useParams, useNavigate } from 'react-router-dom';
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useCallback } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
 import { ClientProvider, useOptionalClientContext } from '@/contexts/ClientContext';
 import { LIFECYCLE_STAGES } from '@/types/onboarding';
+import type { OnboardingContinuation } from '@/types/onboarding';
 import ClientLifecycleBar from '@/components/client/ClientLifecycleBar';
 import NextStepCard from '@/components/client/NextStepCard';
 import ClientOnboardingWizard from '@/components/client/ClientOnboardingWizard';
@@ -31,6 +32,23 @@ type ResolvedClientContext = NonNullable<ReturnType<typeof useOptionalClientCont
 
 const WIZARD_STEP_ORDER: WizardStep[] = ['setup', 'discovery', 'strategy', 'growth_model', 'proposal'];
 
+/** Map wizard steps to their next step */
+function getNextWizardStep(step: string): string | null {
+  const idx = WIZARD_STEP_ORDER.indexOf(step as WizardStep);
+  return idx >= 0 && idx < WIZARD_STEP_ORDER.length - 1 ? WIZARD_STEP_ORDER[idx + 1] : null;
+}
+
+/** Map wizard steps to tab names */
+const STEP_TO_TAB: Record<string, string> = {
+  strategy: 'strategy',
+  growth_model: 'growth-model',
+};
+
+const TAB_TO_STEP: Record<string, string> = {
+  strategy: 'strategy',
+  'growth-model': 'growth_model',
+};
+
 function ClientHubContent({ clientId, tab }: { clientId: string; tab?: string }) {
   const clientContext = useOptionalClientContext();
 
@@ -58,9 +76,17 @@ function ClientHubContentInner({
   const { client, onboarding, stageProgress, nextStep, updateOnboarding } = clientContext;
   const [proposalMode, setProposalMode] = useState(false);
   const [showWizard, setShowWizard] = useState(false);
+  const [wizardInitialStep, setWizardInitialStep] = useState<WizardStep | undefined>();
+  const [onboardingContinuation, setOnboardingContinuation] = useState<OnboardingContinuation | null>(null);
   const activeTab = (tab && (TABS as readonly string[]).includes(tab)) ? tab : 'overview';
 
-  const setTab = (t: string) => navigate(`/clients/${clientId}/${t}`);
+  const setTab = useCallback((t: string) => {
+    // If manually navigating to a tab that isn't the current onboarding tab, clear continuation
+    if (onboardingContinuation && t !== STEP_TO_TAB[onboardingContinuation.currentStep]) {
+      setOnboardingContinuation(null);
+    }
+    navigate(`/clients/${clientId}/${t}`);
+  }, [clientId, navigate, onboardingContinuation]);
 
   // Compute the first incomplete wizard step from stageProgress
   const resumeStep = useMemo((): WizardStep => {
@@ -77,8 +103,63 @@ function ClientHubContentInner({
         return stageToStep[sp.stage];
       }
     }
-    return 'proposal'; // all complete, show final step
+    return 'proposal';
   }, [stageProgress]);
+
+  /** Called by wizard when it sends the user to a tab (strategy / growth-model) */
+  const handleWizardNavigateTab = useCallback((tab: string) => {
+    const step = TAB_TO_STEP[tab];
+    if (step) {
+      setOnboardingContinuation({
+        sourceStep: step,
+        currentStep: step,
+        nextStep: getNextWizardStep(step),
+        returnStep: step,
+      });
+    }
+    setShowWizard(false);
+    navigate(`/clients/${clientId}/${tab}`);
+  }, [clientId, navigate]);
+
+  /** Return to wizard from continuity panel */
+  const handleReturnToWizard = useCallback(() => {
+    const step = onboardingContinuation?.returnStep as WizardStep | undefined;
+    setWizardInitialStep(step || resumeStep);
+    setOnboardingContinuation(null);
+    setShowWizard(true);
+  }, [onboardingContinuation, resumeStep]);
+
+  /** Pause onboarding — clears continuation, keeps progress */
+  const handlePauseOnboarding = useCallback(() => {
+    setOnboardingContinuation(null);
+  }, []);
+
+  /** Continue to next onboarding step from continuity panel */
+  const handleContinueToNextStep = useCallback(() => {
+    if (!onboardingContinuation?.nextStep) return;
+    const nextTab = STEP_TO_TAB[onboardingContinuation.nextStep];
+    if (nextTab) {
+      // Navigate to next tab, update continuation
+      setOnboardingContinuation({
+        sourceStep: onboardingContinuation.currentStep,
+        currentStep: onboardingContinuation.nextStep,
+        nextStep: getNextWizardStep(onboardingContinuation.nextStep),
+        returnStep: onboardingContinuation.nextStep,
+      });
+      navigate(`/clients/${clientId}/${nextTab}`);
+    } else {
+      // Next step is handled in wizard (proposal)
+      setWizardInitialStep(onboardingContinuation.nextStep as WizardStep);
+      setOnboardingContinuation(null);
+      setShowWizard(true);
+    }
+  }, [onboardingContinuation, clientId, navigate]);
+
+  /** Open wizard fresh or resume */
+  const handleOpenWizard = useCallback(() => {
+    setWizardInitialStep(resumeStep);
+    setShowWizard(true);
+  }, [resumeStep]);
 
   const handleActivateClient = () => {
     updateOnboarding(prev => ({
@@ -95,14 +176,29 @@ function ClientHubContentInner({
       case 'overview': return (
         <ClientOverview
           onNavigateTab={setTab}
-          onOpenWizard={() => setShowWizard(true)}
+          onOpenWizard={handleOpenWizard}
           onActivateClient={handleActivateClient}
           onSetProposalMode={() => setProposalMode(true)}
         />
       );
       case 'intelligence': return <MarketIntelligenceTab />;
-      case 'strategy': return <ClientStrategy proposalMode={proposalMode} />;
-      case 'growth-model': return <GrowthModelView />;
+      case 'strategy': return (
+        <ClientStrategy
+          proposalMode={proposalMode}
+          onboardingContinuation={onboardingContinuation}
+          onReturnToWizard={handleReturnToWizard}
+          onPauseOnboarding={handlePauseOnboarding}
+          onContinueToNext={handleContinueToNextStep}
+        />
+      );
+      case 'growth-model': return (
+        <GrowthModelView
+          onboardingContinuation={onboardingContinuation}
+          onReturnToWizard={handleReturnToWizard}
+          onPauseOnboarding={handlePauseOnboarding}
+          onContinueToNext={handleContinueToNextStep}
+        />
+      );
       case 'proposal': return <ProposalView proposalMode={proposalMode} />;
       case 'campaigns': return <Campaigns client={client} />;
       case 'performance': return <ClientPerformance />;
@@ -116,7 +212,7 @@ function ClientHubContentInner({
       default: return (
         <ClientOverview
           onNavigateTab={setTab}
-          onOpenWizard={() => setShowWizard(true)}
+          onOpenWizard={handleOpenWizard}
           onActivateClient={handleActivateClient}
           onSetProposalMode={() => setProposalMode(true)}
         />
@@ -141,10 +237,10 @@ function ClientHubContentInner({
 
         <div className="flex items-center gap-2">
           <button
-            onClick={() => setShowWizard(true)}
+            onClick={handleOpenWizard}
             className="px-4 py-2 rounded-md text-sm font-medium bg-muted text-muted-foreground hover:text-foreground transition-colors"
           >
-            Onboarding
+            {onboardingContinuation ? 'Resume Onboarding' : 'Onboarding'}
           </button>
           <button
             onClick={() => setProposalMode(!proposalMode)}
@@ -169,13 +265,13 @@ function ClientHubContentInner({
       )}
 
       {/* Next step prompt */}
-      {!proposalMode && nextStep && activeTab === 'overview' && (
+      {!proposalMode && nextStep && activeTab === 'overview' && !onboardingContinuation && (
         <div className="px-6 pt-4">
           <NextStepCard
             message={nextStep.message}
             action={nextStep.action}
             onAction={() => {
-              if (nextStep.openWizard) setShowWizard(true);
+              if (nextStep.openWizard) handleOpenWizard();
               else if (nextStep.targetTab) setTab(nextStep.targetTab);
             }}
           />
@@ -210,12 +306,12 @@ function ClientHubContentInner({
         </motion.div>
       </AnimatePresence>
 
-      {/* Onboarding wizard — opens at first incomplete step */}
+      {/* Onboarding wizard */}
       {showWizard && (
         <ClientOnboardingWizard
           onClose={() => setShowWizard(false)}
-          onNavigateTab={setTab}
-          initialStep={resumeStep}
+          onNavigateTab={handleWizardNavigateTab}
+          initialStep={wizardInitialStep || resumeStep}
         />
       )}
     </div>

@@ -1,5 +1,6 @@
 import { useState, useMemo } from 'react';
 import type { GrowthModel, GrowthModelMode, GrowthModelScenario } from '@/types/growthModel';
+import type { OnboardingContinuation } from '@/types/onboarding';
 import { calcRollups } from '@/lib/growthModelCalculations';
 import { GROWTH_MODEL_TEMPLATES, initializeFromTemplate } from '@/lib/growthModelTemplates';
 import SummaryBar from './growth/SummaryBar';
@@ -9,6 +10,7 @@ import RevenueModel from './growth/RevenueModel';
 import ForecastVsActual from './growth/ForecastVsActual';
 import ExecutiveSummary from './growth/ExecutiveSummary';
 import SnapshotManager from './growth/SnapshotManager';
+import OnboardingContinuityPanel from './OnboardingContinuityPanel';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { FileText } from 'lucide-react';
 import { useClientContext } from '@/contexts/ClientContext';
@@ -23,7 +25,19 @@ const SUB_TABS: { key: SubTab; label: string }[] = [
   { key: 'summary', label: 'Executive Summary' },
 ];
 
-export default function GrowthModelView() {
+interface GrowthModelViewProps {
+  onboardingContinuation?: OnboardingContinuation | null;
+  onReturnToWizard?: () => void;
+  onPauseOnboarding?: () => void;
+  onContinueToNext?: () => void;
+}
+
+export default function GrowthModelView({
+  onboardingContinuation,
+  onReturnToWizard,
+  onPauseOnboarding,
+  onContinueToNext,
+}: GrowthModelViewProps) {
   const { client, growthModel: model, updateGrowthModel } = useClientContext();
   const [mode, setMode] = useState<GrowthModelMode>('planning');
   const [activeTab, setActiveTab] = useState<SubTab>('investment');
@@ -76,7 +90,17 @@ export default function GrowthModelView() {
 
   if (!model) {
     return (
-      <div className="p-6">
+      <div>
+        {onboardingContinuation && onReturnToWizard && onPauseOnboarding && (
+          <OnboardingContinuityPanel
+            continuation={onboardingContinuation}
+            onReturnToWizard={onReturnToWizard}
+            onPauseOnboarding={onPauseOnboarding}
+            onContinueToNext={onContinueToNext}
+            stepReady={false}
+          />
+        )}
+        <div className="p-6">
         <div className="panel p-8 text-center mb-6">
           <h3 className="text-lg font-semibold text-foreground mb-2">No Growth Model</h3>
           <p className="text-sm text-muted-foreground mb-6">
@@ -109,6 +133,7 @@ export default function GrowthModelView() {
             </Card>
           ))}
         </div>
+        </div>
       </div>
     );
   }
@@ -117,6 +142,15 @@ export default function GrowthModelView() {
 
   return (
     <div className="flex flex-col h-full">
+      {onboardingContinuation && onReturnToWizard && onPauseOnboarding && (
+        <OnboardingContinuityPanel
+          continuation={onboardingContinuation}
+          onReturnToWizard={onReturnToWizard}
+          onPauseOnboarding={onPauseOnboarding}
+          onContinueToNext={onContinueToNext}
+          stepReady={!!model}
+        />
+      )}
       <div className="border-b px-6 py-3 flex items-center justify-between bg-background">
         <div className="flex items-center gap-3">
           <h2 className="text-sm font-semibold text-foreground">{model.name}</h2>

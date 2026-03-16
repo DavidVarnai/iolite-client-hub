@@ -5,9 +5,11 @@ import AiActionButton from '@/components/ai/AiActionButton';
 import AiResultPanel from '@/components/ai/AiResultPanel';
 import { runStrategyDraft } from '@/lib/ai/aiActions';
 import type { AiActionStatus, StrategyDraftResult } from '@/types/ai';
+import type { OnboardingContinuation } from '@/types/onboarding';
 import { useClientContext } from '@/contexts/ClientContext';
 import { Plus, Trash2 } from 'lucide-react';
 import RunMIButton from '@/components/client/marketIntelligence/RunMIButton';
+import OnboardingContinuityPanel from './OnboardingContinuityPanel';
 
 function StrategySectionCard({ section, proposalMode }: { section: StrategySection; proposalMode: boolean }) {
   const { client, onboarding, updateClient, saveAiArtifact } = useClientContext();
@@ -253,7 +255,21 @@ const STRATEGY_CHANNELS: { channel: ServiceChannel; label: string }[] = [
   { channel: 'app_development', label: 'App Development' },
 ];
 
-export default function ClientStrategy({ proposalMode }: { proposalMode: boolean }) {
+interface StrategyProps {
+  proposalMode: boolean;
+  onboardingContinuation?: OnboardingContinuation | null;
+  onReturnToWizard?: () => void;
+  onPauseOnboarding?: () => void;
+  onContinueToNext?: () => void;
+}
+
+export default function ClientStrategy({
+  proposalMode,
+  onboardingContinuation,
+  onReturnToWizard,
+  onPauseOnboarding,
+  onContinueToNext,
+}: StrategyProps) {
   const { client, updateClient } = useClientContext();
   const [showAddSection, setShowAddSection] = useState(false);
   const [newSectionId, setNewSectionId] = useState<string | null>(null);
@@ -288,8 +304,25 @@ export default function ClientStrategy({ proposalMode }: { proposalMode: boolean
     setNewSectionId(sectionId);
   };
 
+  // Check if strategy has meaningful content (for continuity panel)
+  const hasMeaningfulStrategy = client.strategySections.some(s =>
+    s.clientSummary.objective && s.clientSummary.priorities.length > 0
+  );
+
   return (
-    <div className="p-6 max-w-4xl space-y-6">
+    <div className="max-w-4xl space-y-6">
+      {/* Onboarding continuity panel */}
+      {onboardingContinuation && onReturnToWizard && onPauseOnboarding && (
+        <OnboardingContinuityPanel
+          continuation={onboardingContinuation}
+          onReturnToWizard={onReturnToWizard}
+          onPauseOnboarding={onPauseOnboarding}
+          onContinueToNext={onContinueToNext}
+          stepReady={hasMeaningfulStrategy}
+        />
+      )}
+
+      <div className="px-6 pt-6 space-y-6">
       <div className="flex items-center justify-between">
         <div>
           <h2 className="text-lg font-semibold">Strategy</h2>
@@ -334,6 +367,7 @@ export default function ClientStrategy({ proposalMode }: { proposalMode: boolean
           ))}
         </div>
       )}
+      </div>
     </div>
   );
 }
