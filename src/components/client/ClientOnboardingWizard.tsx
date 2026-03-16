@@ -692,14 +692,17 @@ function StrategyDraftStep({ onNavigateTab }: { onNavigateTab: (tab: string) => 
       </div>
 
       <div className="panel p-4 bg-primary/5 border-primary/20">
-        <p className="text-sm text-foreground mb-3">
-          Open the Strategy tab to create and edit detailed strategy sections for each service line.
+        <p className="text-sm text-foreground mb-1">
+          Continue to the Strategy tab to create and refine strategy sections for each service line.
+        </p>
+        <p className="text-xs text-muted-foreground mb-3">
+          You'll stay in onboarding — a progress panel will guide you back when you're ready.
         </p>
         <button
           onClick={() => onNavigateTab('strategy')}
-          className="px-4 py-2 bg-primary text-primary-foreground text-xs font-medium rounded-md hover:opacity-90 transition-opacity"
+          className="flex items-center gap-1.5 px-4 py-2 bg-primary text-primary-foreground text-xs font-medium rounded-md hover:opacity-90 transition-opacity"
         >
-          Go to Strategy Tab
+          Continue to Strategy <ArrowRight className="h-3.5 w-3.5" />
         </button>
       </div>
     </div>
