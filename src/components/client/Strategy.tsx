@@ -255,7 +255,21 @@ const STRATEGY_CHANNELS: { channel: ServiceChannel; label: string }[] = [
   { channel: 'app_development', label: 'App Development' },
 ];
 
-export default function ClientStrategy({ proposalMode }: { proposalMode: boolean }) {
+interface StrategyProps {
+  proposalMode: boolean;
+  onboardingContinuation?: OnboardingContinuation | null;
+  onReturnToWizard?: () => void;
+  onPauseOnboarding?: () => void;
+  onContinueToNext?: () => void;
+}
+
+export default function ClientStrategy({
+  proposalMode,
+  onboardingContinuation,
+  onReturnToWizard,
+  onPauseOnboarding,
+  onContinueToNext,
+}: StrategyProps) {
   const { client, updateClient } = useClientContext();
   const [showAddSection, setShowAddSection] = useState(false);
   const [newSectionId, setNewSectionId] = useState<string | null>(null);
