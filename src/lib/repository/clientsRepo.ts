@@ -84,10 +84,9 @@ export function createOnboardingRepo(): OnboardingRepository {
   if (stale) {
     const merged: Record<string, OnboardingData> = { ...existing };
     for (const [id, seedData] of Object.entries(seed)) {
-      merged[id] = existing[id] ? { ...existing[id], ...seedData } : seedData;
+      merged[id] = existing[id] ? { ...seedData, ...existing[id] } : seedData;
     }
     persist(STORAGE_KEYS.onboarding, merged);
-    markSeedCurrent();
   } else {
     const merged = { ...seed, ...existing };
     if (Object.keys(merged).length !== Object.keys(existing).length) persist(STORAGE_KEYS.onboarding, merged);

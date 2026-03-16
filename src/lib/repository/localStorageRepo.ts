@@ -3,6 +3,7 @@
  * Composes domain-specific repos into the unified AppRepository interface.
  */
 import type { AppRepository } from './types';
+import { markSeedCurrent } from './helpers';
 import { createClientRepo, createOnboardingRepo } from './clientsRepo';
 import { createGrowthModelRepo, createAiArtifactRepo } from './settingsRepo';
 import {
