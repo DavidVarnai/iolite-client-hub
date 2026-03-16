@@ -52,7 +52,7 @@ export function createClientRepo(): ClientRepository {
   if (stale) {
     const merged = seedClients.map(s => {
       const ex = existing.find(e => e.id === s.id);
-      return ex ? { ...ex, ...s } : s;
+      return ex ? { ...s, ...ex } : s;
     });
     const custom = existing.filter(e => !seedClients.find(s => s.id === e.id));
     persist(STORAGE_KEYS.clients, [...merged, ...custom]);
