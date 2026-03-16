@@ -22,7 +22,7 @@ import { createProposalRepo, createProposalDefaultsRepo } from './proposalRepo';
 import { createMarketIntelligenceRepo, createMarketIntelligenceDefaultsRepo } from './marketIntelligenceRepo';
 
 export function createLocalStorageRepository(): AppRepository {
-  return {
+  const repo: AppRepository = {
     clients: createClientRepo(),
     onboarding: createOnboardingRepo(),
     growthModels: createGrowthModelRepo(),
