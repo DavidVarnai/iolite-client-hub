@@ -304,8 +304,25 @@ export default function ClientStrategy({
     setNewSectionId(sectionId);
   };
 
+  // Check if strategy has meaningful content (for continuity panel)
+  const hasMeaningfulStrategy = client.strategySections.some(s =>
+    s.clientSummary.objective && s.clientSummary.priorities.length > 0
+  );
+
   return (
-    <div className="p-6 max-w-4xl space-y-6">
+    <div className="max-w-4xl space-y-6">
+      {/* Onboarding continuity panel */}
+      {onboardingContinuation && onReturnToWizard && onPauseOnboarding && (
+        <OnboardingContinuityPanel
+          continuation={onboardingContinuation}
+          onReturnToWizard={onReturnToWizard}
+          onPauseOnboarding={onPauseOnboarding}
+          onContinueToNext={onContinueToNext}
+          stepReady={hasMeaningfulStrategy}
+        />
+      )}
+
+      <div className="px-6 pt-6 space-y-6">
       <div className="flex items-center justify-between">
         <div>
           <h2 className="text-lg font-semibold">Strategy</h2>
