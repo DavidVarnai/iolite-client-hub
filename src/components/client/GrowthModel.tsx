@@ -25,7 +25,19 @@ const SUB_TABS: { key: SubTab; label: string }[] = [
   { key: 'summary', label: 'Executive Summary' },
 ];
 
-export default function GrowthModelView() {
+interface GrowthModelViewProps {
+  onboardingContinuation?: OnboardingContinuation | null;
+  onReturnToWizard?: () => void;
+  onPauseOnboarding?: () => void;
+  onContinueToNext?: () => void;
+}
+
+export default function GrowthModelView({
+  onboardingContinuation,
+  onReturnToWizard,
+  onPauseOnboarding,
+  onContinueToNext,
+}: GrowthModelViewProps) {
   const { client, growthModel: model, updateGrowthModel } = useClientContext();
   const [mode, setMode] = useState<GrowthModelMode>('planning');
   const [activeTab, setActiveTab] = useState<SubTab>('investment');
