@@ -52,7 +52,7 @@ export function createClientRepo(): ClientRepository {
   if (stale) {
     const merged = seedClients.map(s => {
       const ex = existing.find(e => e.id === s.id);
-      return ex ? { ...ex, ...s } : s;
+      return ex ? { ...s, ...ex } : s;
     });
     const custom = existing.filter(e => !seedClients.find(s => s.id === e.id));
     persist(STORAGE_KEYS.clients, [...merged, ...custom]);
@@ -84,10 +84,9 @@ export function createOnboardingRepo(): OnboardingRepository {
   if (stale) {
     const merged: Record<string, OnboardingData> = { ...existing };
     for (const [id, seedData] of Object.entries(seed)) {
-      merged[id] = existing[id] ? { ...existing[id], ...seedData } : seedData;
+      merged[id] = existing[id] ? { ...seedData, ...existing[id] } : seedData;
     }
     persist(STORAGE_KEYS.onboarding, merged);
-    markSeedCurrent();
   } else {
     const merged = { ...seed, ...existing };
     if (Object.keys(merged).length !== Object.keys(existing).length) persist(STORAGE_KEYS.onboarding, merged);

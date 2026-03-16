@@ -3,6 +3,7 @@
  * Composes domain-specific repos into the unified AppRepository interface.
  */
 import type { AppRepository } from './types';
+import { markSeedCurrent } from './helpers';
 import { createClientRepo, createOnboardingRepo } from './clientsRepo';
 import { createGrowthModelRepo, createAiArtifactRepo } from './settingsRepo';
 import {
@@ -21,7 +22,7 @@ import { createProposalRepo, createProposalDefaultsRepo } from './proposalRepo';
 import { createMarketIntelligenceRepo, createMarketIntelligenceDefaultsRepo } from './marketIntelligenceRepo';
 
 export function createLocalStorageRepository(): AppRepository {
-  return {
+  const repo: AppRepository = {
     clients: createClientRepo(),
     onboarding: createOnboardingRepo(),
     growthModels: createGrowthModelRepo(),
@@ -39,4 +40,6 @@ export function createLocalStorageRepository(): AppRepository {
     marketIntelligence: createMarketIntelligenceRepo(),
     marketIntelligenceDefaults: createMarketIntelligenceDefaultsRepo(),
   };
+  markSeedCurrent();
+  return repo;
 }
