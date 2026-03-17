@@ -1,5 +1,5 @@
 import { SERVICE_CHANNEL_LABELS } from '@/types';
-import { LIFECYCLE_STAGES, getProposalChecklist } from '@/types/onboarding';
+import { LIFECYCLE_STAGES, getProposalChecklist, GROWTH_OBJECTIVE_LABELS } from '@/types/onboarding';
 import { format } from 'date-fns';
 import { Check, Circle, Rocket, Settings, ArrowRight, ChevronRight } from 'lucide-react';
 import ProposalReadinessChecklist from './ProposalReadinessChecklist';
