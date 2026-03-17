@@ -51,8 +51,18 @@ function fmt(n: number): string {
 }
 
 export default function RevenueModel({ model, scenario, onUpdate }: Props) {
+  const { onboarding } = useClientContext();
+  const revenueModel = onboarding.discovery.revenueModel;
   const months = useMemo(() => generateMonths(model.startMonth, model.monthCount), [model]);
   const ra = scenario.revenueAssumption;
+
+  // Use discovery revenue model for deal size if available
+  const effectiveDealSize = useMemo(() => {
+    if (revenueModel?.revenuePerConversion > 0) {
+      return getEffectiveRevenuePerConversion(revenueModel);
+    }
+    return ra.avgDealSize;
+  }, [revenueModel, ra.avgDealSize]);
 
   const updateAssumption = useCallback((patch: Partial<RevenueAssumption>) => {
     if (!onUpdate) return;
