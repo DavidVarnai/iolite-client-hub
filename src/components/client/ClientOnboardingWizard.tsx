@@ -93,10 +93,10 @@ function ClientSetupStep() {
   const { client, updateClient, onboarding, updateOnboarding } = useClientContext();
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-8">
       <div>
-        <h3 className="text-base font-semibold mb-1">Client Setup</h3>
-        <p className="text-sm text-muted-foreground">Capture foundational client data.</p>
+        <h3 className="text-lg font-semibold mb-1">Client Setup</h3>
+        <p className="text-sm text-muted-foreground">Capture foundational client data before moving into discovery.</p>
       </div>
 
       <div className="grid grid-cols-2 gap-4">
@@ -269,9 +269,9 @@ function DiscoveryStep() {
   };
 
   return (
-    <div className="space-y-8">
+    <div className="space-y-10">
       <div>
-        <h3 className="text-base font-semibold mb-1">Discovery</h3>
+        <h3 className="text-lg font-semibold mb-1">Discovery</h3>
         <p className="text-sm text-muted-foreground">Capture structured discovery inputs that will feed Strategy and Growth Model.</p>
       </div>
 
@@ -717,9 +717,9 @@ function StrategyDraftStep({ onNavigateTab }: { onNavigateTab: (tab: string) => 
   const existingSections = new Set(client.strategySections.map(s => s.channel));
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-8">
       <div>
-        <h3 className="text-base font-semibold mb-1">Strategy Draft</h3>
+        <h3 className="text-lg font-semibold mb-1">Strategy Draft</h3>
         <p className="text-sm text-muted-foreground">Build initial strategy structure across service lines.</p>
       </div>
 
@@ -765,9 +765,9 @@ function StrategyDraftStep({ onNavigateTab }: { onNavigateTab: (tab: string) => 
 // ---------- STEP 4: Growth Model ----------
 function GrowthModelStep({ onNavigateTab }: { onNavigateTab: (tab: string) => void }) {
   return (
-    <div className="space-y-6">
+    <div className="space-y-8">
       <div>
-        <h3 className="text-base font-semibold mb-1">Growth Model</h3>
+        <h3 className="text-lg font-semibold mb-1">Growth Model</h3>
         <p className="text-sm text-muted-foreground">Turn the strategy into investment and outcome planning.</p>
       </div>
 
@@ -821,9 +821,9 @@ function ProposalReadyStep({ onNavigateTab }: { onNavigateTab: (tab: string) => 
   };
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-8">
       <div>
-        <h3 className="text-base font-semibold mb-1">Proposal Ready</h3>
+        <h3 className="text-lg font-semibold mb-1">Proposal Ready</h3>
         <p className="text-sm text-muted-foreground">Review whether the proposal is ready for client presentation.</p>
       </div>
 
@@ -992,9 +992,9 @@ function SelectField({ label, value, options, onChange }: {
 
 function DiscoverySection({ title, children }: { title: string; children: React.ReactNode }) {
   return (
-    <div className="space-y-4">
+    <div className="space-y-5">
       <h4 className="text-sm font-semibold border-b pb-2">{title}</h4>
-      <div className="grid grid-cols-2 gap-4">{children}</div>
+      <div className="grid grid-cols-2 gap-5">{children}</div>
     </div>
   );
 }
@@ -1017,42 +1017,48 @@ export default function ClientOnboardingWizard({ onClose, onNavigateTab, initial
   };
 
   return (
-    <div className="fixed inset-0 z-50 bg-background/80 backdrop-blur-sm flex items-center justify-center">
-      <div className="bg-background border rounded-xl shadow-lg w-full max-w-4xl max-h-[85vh] flex flex-col">
-        {/* Header */}
-        <div className="flex items-center justify-between px-6 py-4 border-b">
-          <div>
-            <h2 className="text-base font-semibold">Client Onboarding</h2>
-            <p className="text-xs text-muted-foreground">Step {stepIdx + 1} of {STEPS.length}</p>
-          </div>
-          <button onClick={onClose} className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-muted-foreground hover:text-foreground hover:bg-muted rounded-md transition-colors">
-            <Pause className="h-3 w-3" />
-            Save &amp; Exit
-          </button>
+    <div className="fixed inset-0 z-50 bg-background flex flex-col">
+      {/* ── Top bar ── */}
+      <div className="flex items-center justify-between px-6 py-3 border-b bg-background shrink-0">
+        <div className="flex items-center gap-4">
+          <h2 className="text-base font-semibold">Client Onboarding</h2>
+          <span className="text-xs text-muted-foreground bg-muted px-2.5 py-1 rounded-full font-medium">
+            Step {stepIdx + 1} of {STEPS.length}
+          </span>
+        </div>
+        <button
+          onClick={onClose}
+          className="flex items-center gap-1.5 px-4 py-2 text-sm font-medium text-muted-foreground hover:text-foreground hover:bg-muted rounded-md transition-colors"
+        >
+          <Pause className="h-3.5 w-3.5" />
+          Save &amp; Exit
+        </button>
+      </div>
+
+      {/* ── Body: sidebar + content ── */}
+      <div className="flex flex-1 overflow-hidden">
+        {/* Step navigation sidebar */}
+        <div className="w-60 border-r p-5 space-y-1 flex-shrink-0 bg-muted/30">
+          {STEPS.map((step, idx) => (
+            <button key={step.key} onClick={() => setCurrentStep(step.key)}
+              className={`w-full flex items-center gap-3 px-3 py-3 rounded-lg text-sm transition-colors ${
+                step.key === currentStep ? 'bg-primary/10 text-primary font-medium'
+                  : idx < stepIdx ? 'text-foreground hover:bg-muted' : 'text-muted-foreground hover:bg-muted'
+              }`}>
+              <div className={`w-7 h-7 rounded-full flex items-center justify-center text-xs font-semibold flex-shrink-0 ${
+                idx < stepIdx ? 'bg-primary text-primary-foreground'
+                  : step.key === currentStep ? 'border-2 border-primary text-primary' : 'border-2 border-border text-muted-foreground'
+              }`}>
+                {idx < stepIdx ? <Check className="h-3.5 w-3.5" /> : step.number}
+              </div>
+              <span>{step.label}</span>
+            </button>
+          ))}
         </div>
 
-        <div className="flex flex-1 overflow-hidden">
-          {/* Step navigation sidebar */}
-          <div className="w-56 border-r p-4 space-y-1 flex-shrink-0">
-            {STEPS.map((step, idx) => (
-              <button key={step.key} onClick={() => setCurrentStep(step.key)}
-                className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-md text-sm transition-colors ${
-                  step.key === currentStep ? 'bg-primary/10 text-primary font-medium'
-                    : idx < stepIdx ? 'text-foreground hover:bg-muted' : 'text-muted-foreground hover:bg-muted'
-                }`}>
-                <div className={`w-6 h-6 rounded-full flex items-center justify-center text-xs font-semibold flex-shrink-0 ${
-                  idx < stepIdx ? 'bg-primary text-primary-foreground'
-                    : step.key === currentStep ? 'border-2 border-primary text-primary' : 'border-2 border-border text-muted-foreground'
-                }`}>
-                  {idx < stepIdx ? <Check className="h-3 w-3" /> : step.number}
-                </div>
-                <span>{step.label}</span>
-              </button>
-            ))}
-          </div>
-
-          {/* Content */}
-          <div className="flex-1 overflow-y-auto p-6">
+        {/* Content */}
+        <div className="flex-1 overflow-y-auto py-10 px-6">
+          <div className="max-w-5xl mx-auto">
             <AnimatePresence mode="wait">
               <motion.div key={currentStep} initial={{ opacity: 0, x: 10 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -10 }} transition={{ duration: 0.2 }}>
                 {currentStep === 'setup' && <ClientSetupStep />}
@@ -1064,31 +1070,30 @@ export default function ClientOnboardingWizard({ onClose, onNavigateTab, initial
             </AnimatePresence>
           </div>
         </div>
+      </div>
 
-        {/* Footer */}
-        <div className="flex items-center justify-between px-6 py-4 border-t">
-          <button onClick={onClose} className="text-xs text-muted-foreground hover:text-foreground transition-colors flex items-center gap-1.5">
-            Pause Onboarding
-          </button>
-          <div className="flex gap-2">
-            {stepIdx > 0 && (
-              <button onClick={handleBack}
-                className="flex items-center gap-1 px-4 py-2 text-xs font-medium rounded-md bg-muted text-muted-foreground hover:text-foreground transition-colors">
-                <ChevronLeft className="h-3.5 w-3.5" /> Back
-              </button>
-            )}
-            {stepIdx < STEPS.length - 1 ? (
-              <button onClick={handleNext}
-                className="flex items-center gap-1 px-4 py-2 text-xs font-medium rounded-md bg-primary text-primary-foreground hover:opacity-90 transition-opacity">
-                Next <ChevronRight className="h-3.5 w-3.5" />
-              </button>
-            ) : (
-              <button onClick={onClose}
-                className="px-4 py-2 text-xs font-medium rounded-md bg-primary text-primary-foreground hover:opacity-90 transition-opacity">
-                Finish
-              </button>
-            )}
-          </div>
+      {/* ── Sticky bottom navigation ── */}
+      <div className="flex items-center justify-between px-6 py-4 border-t bg-background shrink-0">
+        <div>
+          {stepIdx > 0 && (
+            <button onClick={handleBack}
+              className="flex items-center gap-1.5 px-4 py-2.5 text-sm font-medium rounded-md bg-muted text-muted-foreground hover:text-foreground transition-colors">
+              <ChevronLeft className="h-4 w-4" /> Back
+            </button>
+          )}
+        </div>
+        <div>
+          {stepIdx < STEPS.length - 1 ? (
+            <button onClick={handleNext}
+              className="flex items-center gap-1.5 px-5 py-2.5 text-sm font-medium rounded-md bg-primary text-primary-foreground hover:opacity-90 transition-opacity">
+              Save &amp; Continue <ChevronRight className="h-4 w-4" />
+            </button>
+          ) : (
+            <button onClick={onClose}
+              className="px-5 py-2.5 text-sm font-medium rounded-md bg-primary text-primary-foreground hover:opacity-90 transition-opacity">
+              Finish
+            </button>
+          )}
         </div>
       </div>
     </div>
