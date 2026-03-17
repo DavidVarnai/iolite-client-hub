@@ -184,6 +184,9 @@ export interface MarketIntelligenceInputs {
   refinementNote?: string;
 }
 
+/** How competitor research was conducted */
+export type ResearchSourceMode = 'live_search' | 'modeled_fallback';
+
 export interface MarketIntelligenceOutputs {
   keywordThemes: KeywordTheme[];
   competitorProfiles: CompetitorProfile[];
@@ -195,6 +198,10 @@ export interface MarketIntelligenceOutputs {
   coreSearchKeywords?: string[];
   /** Search queries used for SERP-based competitor discovery */
   discoveryQueries?: string[];
+  /** Whether competitors came from live search or modeled fallback */
+  researchSourceMode?: ResearchSourceMode;
+  /** Human-readable note about the research source */
+  researchSourceNote?: string;
 }
 
 /* ── Approved Research ── */
