@@ -281,6 +281,7 @@ export async function searchCompetitorsLive(
   }
 
   console.log(`[MI-Live] Final: ${profiles.length} competitors (${directCompetitors.length} direct candidates, ${directoryResults.length} directories)`);
+  console.log(`[MI-Live] Source mode: live_search | Top domains: ${directCompetitors.slice(0, 5).map(e => e.domain).join(', ')}`);
 
   return {
     competitors: profiles,
