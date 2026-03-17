@@ -86,7 +86,9 @@ export interface ClientDiscovery {
   businessModel: BusinessModel;
   primaryProducts: string;
   revenueStreams: string;
+  /** @deprecated use revenueModel */
   avgOrderValue: string;
+  revenueModel: RevenueModelConfig;
   coreCustomerSegments: string;
 
   // B. Growth Targets
