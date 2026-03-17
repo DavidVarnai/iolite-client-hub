@@ -9,6 +9,7 @@ import { runMarketResearch } from '@/lib/ai/aiActions';
 import { repository } from '@/lib/repository';
 import type { AiActionStatus } from '@/types/ai';
 import FunnelVisualPreview from './discovery/FunnelVisualPreview';
+import { Collapsible, CollapsibleTrigger, CollapsibleContent } from '@/components/ui/collapsible';
 
 type WizardStep = 'setup' | 'discovery' | 'strategy' | 'growth_model' | 'proposal';
 
@@ -522,99 +523,113 @@ function DiscoveryStep() {
           onChange={(v) => updateD({ websitePlatform: v })} />
       </DiscoverySection>
 
-      {/* ── E. Current Performance (structured) ── */}
+      {/* ── E. Baseline Performance (Optional, collapsible) ── */}
       <div className="space-y-4">
-        <div className="flex items-center justify-between border-b pb-2">
-          <h4 className="text-sm font-semibold">E. Current Performance</h4>
-          <div className="flex items-center gap-1.5">
-            <span className="text-[10px] text-muted-foreground uppercase tracking-wider">Confidence:</span>
-            <div className="flex gap-1">
-              {CONFIDENCE_OPTIONS.map(opt => (
-                <button
-                  key={opt.value}
-                  type="button"
-                  onClick={() => updateD({ performanceConfidence: opt.value })}
-                  className={`px-2 py-0.5 text-[10px] font-medium rounded border transition-colors ${
-                    d.performanceConfidence === opt.value ? opt.color : 'bg-background text-muted-foreground border-border hover:border-primary/30'
-                  }`}
-                >
-                  {opt.label}
-                </button>
-              ))}
+        {/* Confidence selector — always visible */}
+        <div className="flex items-center gap-1.5">
+          <span className="text-[10px] text-muted-foreground uppercase tracking-wider">Data Confidence:</span>
+          <div className="flex gap-1">
+            {CONFIDENCE_OPTIONS.map(opt => (
+              <button
+                key={opt.value}
+                type="button"
+                onClick={() => updateD({ performanceConfidence: opt.value })}
+                className={`px-2 py-0.5 text-[10px] font-medium rounded border transition-colors ${
+                  d.performanceConfidence === opt.value ? opt.color : 'bg-background text-muted-foreground border-border hover:border-primary/30'
+                }`}
+              >
+                {opt.label}
+              </button>
+            ))}
+          </div>
+        </div>
+
+        <Collapsible>
+          <div className="flex items-center justify-between border-b pb-2">
+            <div>
+              <h4 className="text-sm font-semibold">E. Baseline Performance (Optional)</h4>
+              <p className="text-xs text-muted-foreground mt-0.5">If available, provide current performance metrics. This helps improve projection accuracy but can be skipped.</p>
             </div>
+            <CollapsibleTrigger asChild>
+              <button type="button" className="px-3 py-1.5 text-xs font-medium rounded-md border bg-muted text-muted-foreground hover:text-foreground hover:border-primary/30 transition-colors">
+                Add current metrics
+              </button>
+            </CollapsibleTrigger>
           </div>
-        </div>
 
-        {/* Input groups */}
-        <div className="grid grid-cols-3 gap-4">
-          <div className="space-y-3">
-            <p className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider">Traffic</p>
-            <NumericField label="Monthly Website Visitors" value={d.monthlyVisitors}
-              onChange={(v) => updateD({ monthlyVisitors: v })} placeholder="e.g. 25000" />
-          </div>
-          <div className="space-y-3">
-            <p className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider">Conversion</p>
-            <NumericField label="Monthly Leads" value={d.monthlyLeads}
-              onChange={(v) => updateD({ monthlyLeads: v })} placeholder="e.g. 500" />
-            <NumericField label="Monthly Customers" value={d.monthlyCustomers}
-              onChange={(v) => updateD({ monthlyCustomers: v })} placeholder="e.g. 50" />
-          </div>
-          <div className="space-y-3">
-            <p className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider">Marketing Spend</p>
-            <NumericField label="Monthly Marketing Budget" value={d.monthlyMarketingBudget}
-              onChange={(v) => updateD({ monthlyMarketingBudget: v })} placeholder="e.g. 15000" prefix="$" />
-          </div>
-        </div>
-
-        {/* Auto-calculated metrics */}
-        {hasMetrics && (
-          <div className="p-3 rounded-md bg-muted/50 border">
-            <p className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider mb-2.5">Calculated Metrics</p>
-            <div className="grid grid-cols-5 gap-3">
-              <MetricCard label="Visitor → Lead" value={visitorToLeadRate > 0 ? fmtPct(visitorToLeadRate) : '—'} />
-              <MetricCard label="Lead → Customer" value={leadToCustomerRate > 0 ? fmtPct(leadToCustomerRate) : '—'} />
-              <MetricCard label="Visitor → Customer" value={visitorToCustomerRate > 0 ? fmtPct(visitorToCustomerRate) : '—'} />
-              <MetricCard label="CPA (per Lead)" value={cpa > 0 ? fmtCurrency(cpa) : '—'} />
-              <MetricCard label="CAC (per Customer)" value={cac > 0 ? fmtCurrency(cac) : '—'} />
+          <CollapsibleContent className="pt-4 space-y-4">
+            {/* Input groups */}
+            <div className="grid grid-cols-3 gap-4">
+              <div className="space-y-3">
+                <p className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider">Traffic</p>
+                <NumericField label="Monthly Website Visitors" value={d.monthlyVisitors}
+                  onChange={(v) => updateD({ monthlyVisitors: v })} placeholder="e.g. 25000" />
+              </div>
+              <div className="space-y-3">
+                <p className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider">Conversion</p>
+                <NumericField label="Monthly Leads" value={d.monthlyLeads}
+                  onChange={(v) => updateD({ monthlyLeads: v })} placeholder="e.g. 500" />
+                <NumericField label="Monthly Customers" value={d.monthlyCustomers}
+                  onChange={(v) => updateD({ monthlyCustomers: v })} placeholder="e.g. 50" />
+              </div>
+              <div className="space-y-3">
+                <p className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider">Marketing Spend</p>
+                <NumericField label="Monthly Marketing Budget" value={d.monthlyMarketingBudget}
+                  onChange={(v) => updateD({ monthlyMarketingBudget: v })} placeholder="e.g. 15000" prefix="$" />
+              </div>
             </div>
-          </div>
-        )}
 
-        {/* Bottleneck selector */}
-        <div>
-          <label className="text-xs font-medium text-muted-foreground uppercase tracking-wider mb-2 block">Known Constraints</label>
-          <div className="flex flex-wrap gap-1.5 mb-2">
-            {BOTTLENECK_OPTIONS.map(tag => {
-              const active = (d.bottleneckTags || []).includes(tag);
-              return (
-                <button
-                  key={tag}
-                  type="button"
-                  onClick={() => {
-                    const tags = d.bottleneckTags || [];
-                    updateD({
-                      bottleneckTags: active ? tags.filter(t => t !== tag) : [...tags, tag],
-                    });
-                  }}
-                  className={`px-3 py-1.5 text-xs font-medium rounded-md border transition-colors ${
-                    active
-                      ? 'bg-destructive/10 text-destructive border-destructive/20'
-                      : 'bg-background text-muted-foreground border-border hover:border-primary/50 hover:text-foreground'
-                  }`}
-                >
-                  {tag}
-                </button>
-              );
-            })}
-          </div>
-          <textarea
-            value={d.bottleneckNotes || ''}
-            onChange={(e) => updateD({ bottleneckNotes: e.target.value })}
-            placeholder="Additional notes about constraints or bottlenecks…"
-            rows={2}
-            className="w-full rounded-md border bg-background px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-ring resize-y placeholder:text-muted-foreground/50"
-          />
-        </div>
+            {/* Auto-calculated metrics */}
+            {hasMetrics && (
+              <div className="p-3 rounded-md bg-muted/50 border">
+                <p className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider mb-2.5">Calculated Metrics</p>
+                <div className="grid grid-cols-5 gap-3">
+                  <MetricCard label="Visitor → Lead" value={visitorToLeadRate > 0 ? fmtPct(visitorToLeadRate) : '—'} />
+                  <MetricCard label="Lead → Customer" value={leadToCustomerRate > 0 ? fmtPct(leadToCustomerRate) : '—'} />
+                  <MetricCard label="Visitor → Customer" value={visitorToCustomerRate > 0 ? fmtPct(visitorToCustomerRate) : '—'} />
+                  <MetricCard label="CPA (per Lead)" value={cpa > 0 ? fmtCurrency(cpa) : '—'} />
+                  <MetricCard label="CAC (per Customer)" value={cac > 0 ? fmtCurrency(cac) : '—'} />
+                </div>
+              </div>
+            )}
+
+            {/* Bottleneck selector */}
+            <div>
+              <label className="text-xs font-medium text-muted-foreground uppercase tracking-wider mb-2 block">Known Constraints</label>
+              <div className="flex flex-wrap gap-1.5 mb-2">
+                {BOTTLENECK_OPTIONS.map(tag => {
+                  const active = (d.bottleneckTags || []).includes(tag);
+                  return (
+                    <button
+                      key={tag}
+                      type="button"
+                      onClick={() => {
+                        const tags = d.bottleneckTags || [];
+                        updateD({
+                          bottleneckTags: active ? tags.filter(t => t !== tag) : [...tags, tag],
+                        });
+                      }}
+                      className={`px-3 py-1.5 text-xs font-medium rounded-md border transition-colors ${
+                        active
+                          ? 'bg-destructive/10 text-destructive border-destructive/20'
+                          : 'bg-background text-muted-foreground border-border hover:border-primary/50 hover:text-foreground'
+                      }`}
+                    >
+                      {tag}
+                    </button>
+                  );
+                })}
+              </div>
+              <textarea
+                value={d.bottleneckNotes || ''}
+                onChange={(e) => updateD({ bottleneckNotes: e.target.value })}
+                placeholder="Additional notes about constraints or bottlenecks…"
+                rows={2}
+                className="w-full rounded-md border bg-background px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-ring resize-y placeholder:text-muted-foreground/50"
+              />
+            </div>
+          </CollapsibleContent>
+        </Collapsible>
       </div>
 
       {/* ── F. Competitive Landscape (structured) ── */}
