@@ -397,9 +397,9 @@ function CompetitorTable({ competitors }: { competitors: CompetitorProfile[] }) 
             <th className="py-2 pr-3 text-xs font-medium text-muted-foreground">Business</th>
             <th className="py-2 pr-3 text-xs font-medium text-muted-foreground">Website</th>
             <th className="py-2 pr-3 text-xs font-medium text-muted-foreground">SERP Source</th>
+            <th className="py-2 pr-3 text-xs font-medium text-muted-foreground">Query Freq.</th>
             <th className="py-2 pr-3 text-xs font-medium text-muted-foreground">Confidence</th>
-            <th className="py-2 pr-3 text-xs font-medium text-muted-foreground">Source</th>
-            <th className="py-2 text-xs font-medium text-muted-foreground">Details</th>
+            <th className="py-2 text-xs font-medium text-muted-foreground">Why Included</th>
           </tr>
         </thead>
         <tbody>
@@ -408,12 +408,15 @@ function CompetitorTable({ competitors }: { competitors: CompetitorProfile[] }) 
               <td className="py-2 pr-3">
                 <div className="font-medium text-xs">{cp.name}</div>
                 <div className="text-[10px] text-muted-foreground">{cp.geography}</div>
+                {cp.manuallyAdded && (
+                  <span className="text-[9px] bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400 px-1 py-0.5 rounded mt-0.5 inline-block">User-provided</span>
+                )}
               </td>
               <td className="py-2 pr-3">
                 {cp.websiteUrl ? (
                   <a href={cp.websiteUrl} target="_blank" rel="noopener noreferrer" className="text-[11px] text-primary hover:underline flex items-center gap-1">
                     <Globe className="h-3 w-3" />
-                    {cp.websiteUrl.replace(/^https?:\/\//, '').replace(/\/$/, '')}
+                    {cp.websiteUrl.replace(/^https?:\/\//, '').replace(/\/$/, '').substring(0, 30)}
                   </a>
                 ) : (
                   <span className="text-[11px] text-muted-foreground">—</span>
@@ -421,10 +424,22 @@ function CompetitorTable({ competitors }: { competitors: CompetitorProfile[] }) 
               </td>
               <td className="py-2 pr-3">
                 <SERPSourceBadge source={cp.serpSource} />
-                {cp.queryFrequency != null && cp.totalQueries != null && (
-                  <span className="text-[9px] text-muted-foreground block mt-0.5">
-                    {cp.queryFrequency}/{cp.totalQueries} queries
-                  </span>
+              </td>
+              <td className="py-2 pr-3">
+                {cp.queryFrequency != null && cp.totalQueries != null ? (
+                  <div className="flex items-center gap-1.5">
+                    <div className="w-10 h-1.5 bg-muted rounded-full overflow-hidden">
+                      <div
+                        className="h-full rounded-full bg-primary"
+                        style={{ width: `${Math.round((cp.queryFrequency / cp.totalQueries) * 100)}%` }}
+                      />
+                    </div>
+                    <span className="text-[10px] font-medium whitespace-nowrap">
+                      {cp.queryFrequency}/{cp.totalQueries}
+                    </span>
+                  </div>
+                ) : (
+                  <span className="text-[10px] text-muted-foreground">—</span>
                 )}
               </td>
               <td className="py-2 pr-3">
@@ -439,23 +454,17 @@ function CompetitorTable({ competitors }: { competitors: CompetitorProfile[] }) 
                     <span className="text-[10px] font-medium">{cp.confidenceScore}%</span>
                   </div>
                 ) : (
-                  <span className="text-[10px] text-muted-foreground">—</span>
+                  <SourceBadge type={cp.sourceType} confidence={cp.sourceConfidence} />
                 )}
               </td>
-              <td className="py-2 pr-3">
-                <SourceBadge type={cp.sourceType} confidence={cp.sourceConfidence} />
-              </td>
-              <td className="py-2 text-[11px] text-muted-foreground max-w-[250px]">
-                <div>{cp.positioning}</div>
+              <td className="py-2 text-[11px] text-muted-foreground max-w-[280px]">
+                <div>{cp.channelObservations || cp.positioning}</div>
                 {cp.rankingKeywords && cp.rankingKeywords.length > 0 && (
                   <div className="flex flex-wrap gap-1 mt-1">
                     {cp.rankingKeywords.slice(0, 3).map((kw, i) => (
                       <span key={i} className="text-[10px] bg-muted px-1.5 py-0.5 rounded">{kw}</span>
                     ))}
                   </div>
-                )}
-                {cp.estimatedDomainAuthority != null && (
-                  <span className="text-[10px] text-muted-foreground">DA ~{cp.estimatedDomainAuthority}</span>
                 )}
               </td>
             </tr>
