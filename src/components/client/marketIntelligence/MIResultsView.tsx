@@ -94,13 +94,29 @@ export default function MIResultsView({ outputs, run, onRerun, onRefine, onAppro
         </div>
       </div>
 
+      {/* ─── DISCOVERY QUERIES ─── */}
+      {outputs.discoveryQueries && outputs.discoveryQueries.length > 0 && (
+        <div className="panel p-5 space-y-3">
+          <div className="flex items-center gap-2">
+            <Search className="h-4 w-4 text-primary" />
+            <h4 className="text-sm font-semibold">Discovery Queries</h4>
+            <span className="text-[10px] text-muted-foreground bg-muted px-1.5 py-0.5 rounded">Used to find competitors from Google results</span>
+          </div>
+          <div className="flex flex-wrap gap-2">
+            {outputs.discoveryQueries.map((q, i) => (
+              <span key={i} className="text-xs bg-accent/50 text-accent-foreground px-2.5 py-1 rounded-md font-medium">"{q}"</span>
+            ))}
+          </div>
+        </div>
+      )}
+
       {/* ─── CORE SEARCH KEYWORDS ─── */}
       {outputs.coreSearchKeywords && outputs.coreSearchKeywords.length > 0 && (
         <div className="panel p-5 space-y-3">
           <div className="flex items-center gap-2">
             <Zap className="h-4 w-4 text-primary" />
             <h4 className="text-sm font-semibold">Core Search Keywords</h4>
-            <span className="text-[10px] text-muted-foreground bg-muted px-1.5 py-0.5 rounded">Used for competitor discovery</span>
+            <span className="text-[10px] text-muted-foreground bg-muted px-1.5 py-0.5 rounded">Keyword themes for targeting</span>
           </div>
           <div className="flex flex-wrap gap-2">
             {outputs.coreSearchKeywords.map((kw, i) => (
