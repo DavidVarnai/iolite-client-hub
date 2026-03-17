@@ -180,6 +180,9 @@ export default function MIResultsView({ outputs, run, onRerun, onRefine, onAppro
             <span className="text-[10px] text-muted-foreground bg-muted px-1.5 py-0.5 rounded">Modeled from discovery queries &amp; industry pools</span>
           </div>
           <CompetitorTable competitors={realDirectCompetitors} />
+          <p className="text-[10px] text-muted-foreground mt-2 italic">
+            Methodology: Competitors are identified using generated discovery queries matched against modeled industry pools. Rankings reflect query frequency and organic/paid weighting. This is not live Google SERP data — results are modeled estimates.
+          </p>
         </div>
       )}
 
