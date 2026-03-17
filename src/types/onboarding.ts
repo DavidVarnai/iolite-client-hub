@@ -145,6 +145,7 @@ export const EMPTY_DISCOVERY: ClientDiscovery = {
   primaryProducts: '',
   revenueStreams: '',
   avgOrderValue: '',
+  revenueModel: { revenueModelType: 'one_time', revenuePerConversion: 0, revenueUnit: 'per_deal' },
   coreCustomerSegments: '',
   revenueTargets: '',
   customerLeadTargets: '',

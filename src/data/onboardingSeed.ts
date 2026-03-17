@@ -240,6 +240,7 @@ export const c6Onboarding: OnboardingData = {
     primaryProducts: 'Financial advisory and services',
     revenueStreams: 'Financial services engagements',
     avgOrderValue: 'Financial services engagement',
+    revenueModel: { revenueModelType: 'one_time', revenuePerConversion: 0, revenueUnit: 'per_deal' },
     coreCustomerSegments: 'Businesses and individuals requiring financial advisory services',
     revenueTargets: 'Client acquisition',
     customerLeadTargets: 'Qualified financial advisory leads',
