@@ -972,8 +972,9 @@ export default function ClientOnboardingWizard({ onClose, onNavigateTab, initial
             <h2 className="text-base font-semibold">Client Onboarding</h2>
             <p className="text-xs text-muted-foreground">Step {stepIdx + 1} of {STEPS.length}</p>
           </div>
-          <button onClick={onClose} className="p-2 hover:bg-muted rounded-md transition-colors">
-            <X className="h-4 w-4 text-muted-foreground" />
+          <button onClick={onClose} className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-muted-foreground hover:text-foreground hover:bg-muted rounded-md transition-colors">
+            <Pause className="h-3 w-3" />
+            Save &amp; Exit
           </button>
         </div>
 
