@@ -93,10 +93,10 @@ function ClientSetupStep() {
   const { client, updateClient, onboarding, updateOnboarding } = useClientContext();
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-8">
       <div>
-        <h3 className="text-base font-semibold mb-1">Client Setup</h3>
-        <p className="text-sm text-muted-foreground">Capture foundational client data.</p>
+        <h3 className="text-lg font-semibold mb-1">Client Setup</h3>
+        <p className="text-sm text-muted-foreground">Capture foundational client data before moving into discovery.</p>
       </div>
 
       <div className="grid grid-cols-2 gap-4">
