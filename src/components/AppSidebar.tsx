@@ -111,34 +111,6 @@ export function AppSidebar() {
           </SidebarGroup>
         )}
 
-        {/* Recent clients */}
-        {!collapsed && (
-          <SidebarGroup>
-            <SidebarGroupLabel className="text-[11px] uppercase tracking-wider text-sidebar-highlight font-medium">
-              Recent Clients
-            </SidebarGroupLabel>
-            <SidebarGroupContent>
-              <SidebarMenu>
-                {clients.map(client => (
-                  <SidebarMenuItem key={client.id}>
-                    <SidebarMenuButton asChild>
-                      <NavLink
-                        to={`/clients/${client.id}`}
-                        className="text-sm px-3 py-1.5 rounded-md text-sidebar-foreground hover:bg-sidebar-accent transition-colors flex items-center gap-2"
-                        activeClassName="bg-sidebar-accent text-sidebar-highlight font-medium"
-                      >
-                        <span className="w-5 h-5 rounded bg-sidebar-highlight/15 flex items-center justify-center text-[10px] font-semibold text-sidebar-highlight flex-shrink-0">
-                          {client.logoInitials}
-                        </span>
-                        <span className="truncate">{client.name}</span>
-                      </NavLink>
-                    </SidebarMenuButton>
-                  </SidebarMenuItem>
-                ))}
-              </SidebarMenu>
-            </SidebarGroupContent>
-          </SidebarGroup>
-        )}
       </SidebarContent>
     </Sidebar>
   );
