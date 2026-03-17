@@ -207,7 +207,24 @@ export default function ProposalView({ proposalMode = false }: { proposalMode?: 
           </ProposalSection>
         )}
 
-        {/* Projected Outcomes */}
+        {/* Revenue Economics (read-only from Discovery) */}
+        {onboarding.discovery.revenueModel?.revenuePerConversion > 0 && (
+          <ProposalSection>
+            <SectionHeader icon={BarChart3} title="Revenue Economics" />
+            <RevenueModelDisplay
+              revenueModel={onboarding.discovery.revenueModel}
+              showEditHint={!proposalMode}
+              onEditClick={!proposalMode ? undefined : undefined}
+              variant="card"
+            />
+            {!proposalMode && (
+              <p className="text-[10px] text-muted-foreground mt-3 italic">
+                This section is read-only. To update revenue assumptions, edit them in Discovery.
+              </p>
+            )}
+          </ProposalSection>
+        )}
+
         {defaults.showProjections && (
           <ProposalSection>
             <SectionHeader icon={TrendingUp} title="Projected Outcomes" />
