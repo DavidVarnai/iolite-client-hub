@@ -3,6 +3,7 @@ import { LIFECYCLE_STAGES, getProposalChecklist } from '@/types/onboarding';
 import { format } from 'date-fns';
 import { Check, Circle, Rocket, Settings, ArrowRight, ChevronRight } from 'lucide-react';
 import ProposalReadinessChecklist from './ProposalReadinessChecklist';
+import RevenueModelDisplay from './RevenueModelDisplay';
 import RunMIButton from './marketIntelligence/RunMIButton';
 import { useClientContext } from '@/contexts/ClientContext';
 
@@ -129,17 +130,18 @@ export default function ClientOverview({ onNavigateTab, onOpenWizard, onActivate
               <p className="text-xs text-muted-foreground">Business Model</p>
               <p className="font-medium capitalize">{onboarding.discovery.businessModel.replace('_', ' ')}</p>
             </div>
-            <div>
-              <p className="text-xs text-muted-foreground">Revenue per Conversion</p>
-              <p className="font-medium">
-                {onboarding.discovery.revenueModel?.revenuePerConversion > 0
-                  ? `$${onboarding.discovery.revenueModel.revenuePerConversion.toLocaleString()}`
-                  : onboarding.discovery.avgOrderValue || '—'}
-              </p>
-              {onboarding.discovery.revenueModel?.revenuePerConversion > 0 && (
-                <p className="text-[10px] text-muted-foreground capitalize">
-                  {onboarding.discovery.revenueModel.revenueModelType.replace('_', ' ')}
-                </p>
+            <div className="col-span-2">
+              {onboarding.discovery.revenueModel?.revenuePerConversion > 0 ? (
+                <RevenueModelDisplay
+                  revenueModel={onboarding.discovery.revenueModel}
+                  showEditHint={false}
+                  variant="inline"
+                />
+              ) : (
+                <div>
+                  <p className="text-xs text-muted-foreground">Revenue per Conversion</p>
+                  <p className="font-medium">{onboarding.discovery.avgOrderValue || '—'}</p>
+                </div>
               )}
             </div>
             <div>
