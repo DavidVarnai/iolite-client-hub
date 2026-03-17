@@ -24,6 +24,7 @@ export default function MarketIntelligenceWorkflow({ onClose }: Props) {
   const [phase, setPhase] = useState<Phase>('setup');
   const [progress, setProgress] = useState(0);
   const [progressLabel, setProgressLabel] = useState('');
+  const [runError, setRunError] = useState<string | null>(null);
   const [outputs, setOutputs] = useState<MarketIntelligenceOutputs | null>(null);
   const [savedRun, setSavedRun] = useState<MarketIntelligenceRun | null>(null);
   const [currentInputs, setCurrentInputs] = useState<MarketIntelligenceInputs>(() =>
