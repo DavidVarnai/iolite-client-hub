@@ -183,11 +183,17 @@ export default function MIResultsView({ outputs, run, onRerun, onRefine, onAppro
           <div className="flex items-center gap-2">
             <Building2 className="h-4 w-4 text-primary" />
             <h4 className="text-sm font-semibold">Direct Competitors ({realDirectCompetitors.length})</h4>
-            <span className="text-[10px] text-muted-foreground bg-muted px-1.5 py-0.5 rounded">Modeled from discovery queries &amp; industry pools</span>
+            <span className="text-[10px] text-muted-foreground bg-muted px-1.5 py-0.5 rounded">
+              {outputs.researchSourceMode === 'live_search'
+                ? 'From live Google search results'
+                : 'Modeled from discovery queries & industry pools'}
+            </span>
           </div>
           <CompetitorTable competitors={realDirectCompetitors} />
           <p className="text-[10px] text-muted-foreground mt-2 italic">
-            Methodology: Competitors are identified using generated discovery queries matched against modeled industry pools. Rankings reflect query frequency and organic/paid weighting. This is not live Google SERP data — results are modeled estimates.
+            {outputs.researchSourceMode === 'live_search'
+              ? 'Competitors identified from live Google search results for the discovery queries above. Rankings reflect frequency across queries and organic/paid presence.'
+              : 'Methodology: Competitors are identified using generated discovery queries matched against modeled industry pools. Rankings reflect query frequency and organic/paid weighting. This is not live Google SERP data — results are modeled estimates.'}
           </p>
         </div>
       )}
