@@ -3,6 +3,7 @@ import { LIFECYCLE_STAGES, getProposalChecklist } from '@/types/onboarding';
 import { format } from 'date-fns';
 import { Check, Circle, Rocket, Settings, ArrowRight, ChevronRight } from 'lucide-react';
 import ProposalReadinessChecklist from './ProposalReadinessChecklist';
+import RevenueModelDisplay from './RevenueModelDisplay';
 import RunMIButton from './marketIntelligence/RunMIButton';
 import { useClientContext } from '@/contexts/ClientContext';
 
