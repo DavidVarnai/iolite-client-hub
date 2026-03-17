@@ -5,7 +5,7 @@
 import { useState, useMemo, useCallback } from 'react';
 import {
   FileText, Sparkles, Check, Target, DollarSign,
-  TrendingUp, Calendar, ChevronRight, Clock,
+  TrendingUp, Calendar, ChevronRight, Clock, BarChart3,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -24,6 +24,7 @@ import { ProposalSection, SectionHeader, PlaceholderNotice } from './ProposalSec
 import ProposalPricingTable from './ProposalPricingTable';
 import ProposalGrowthModelPlaceholder from './ProposalGrowthModelPlaceholder';
 import ProposalConfigPanel from './ProposalConfigPanel';
+import RevenueModelDisplay from '../RevenueModelDisplay';
 
 export default function ProposalView({ proposalMode = false }: { proposalMode?: boolean }) {
   const { client, growthModel: contextGrowthModel } = useClientContext();
