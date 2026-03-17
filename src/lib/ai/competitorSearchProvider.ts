@@ -306,7 +306,8 @@ export { generateCompetitorProfilesModeled } from './competitorModeledProvider';
 export async function searchCompetitors(
   ctx: CompetitorSearchContext,
 ): Promise<CompetitorSearchResult> {
-  const mode = ctx.researchModePreference || 'auto';
+  const mode = ctx.competitorResearchMode || 'auto';
+  console.log(`[MI] Research mode selected: "${mode}"`);
 
   // If explicitly set to modeled only, skip live search
   if (mode === 'modeled_only') {
