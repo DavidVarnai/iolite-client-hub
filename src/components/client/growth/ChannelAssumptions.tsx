@@ -134,11 +134,13 @@ export default function ChannelAssumptions({ model, scenario, onUpdate }: Props)
   const { client, onboarding } = useClientContext();
   const [showMIBanner, setShowMIBanner] = useState(true);
 
+  const revenueModel = onboarding.discovery.revenueModel;
   const globalAov = useMemo(() => {
+    if (revenueModel?.revenuePerConversion > 0) return revenueModel.revenuePerConversion;
     const raw = onboarding.discovery.avgOrderValue || '';
     const parsed = parseFloat(raw.replace(/[^0-9.]/g, ''));
     return isNaN(parsed) ? 0 : parsed;
-  }, [onboarding.discovery.avgOrderValue]);
+  }, [revenueModel, onboarding.discovery.avgOrderValue]);
 
   // Fetch latest MI run for this client
   const miRun = useMemo<MarketIntelligenceRun | null>(() => {
