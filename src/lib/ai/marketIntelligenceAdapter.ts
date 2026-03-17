@@ -887,6 +887,9 @@ function generateSummary(
   const highPriority = recs.filter(r => r.priority === 'high').map(r => r.channel).join(', ');
   const directCount = competitors.filter(c => c.competitorType === 'direct' && !c.name.startsWith('⚠')).length;
   const directoryCount = competitors.filter(c => c.competitorType === 'directory_platform').length;
+  const bothCount = competitors.filter(c => c.serpSource === 'both' && !c.manuallyAdded).length;
+  const organicOnly = competitors.filter(c => c.serpSource === 'organic' && c.competitorType === 'direct').length;
+  const paidOnly = competitors.filter(c => c.serpSource === 'paid' && c.competitorType === 'direct').length;
 
   let summary = `${inputs.industry} (normalized: ${ctx.normalizedIndustry}) in ${ctx.isLocal ? ctx.localArea : ctx.area} `;
   if (searchChannels.length > 0 && audienceChannels.length > 0) {
@@ -898,7 +901,11 @@ function generateSummary(
   }
 
   summary += `High-priority channels: ${highPriority}. `;
-  summary += `Identified ${directCount} direct competitor${directCount !== 1 ? 's' : ''} and ${directoryCount} directory/platform${directoryCount !== 1 ? 's' : ''} via modeled SERP analysis. `;
+  summary += `Identified ${directCount} direct competitor${directCount !== 1 ? 's' : ''} from Google results`;
+  if (bothCount > 0) summary += ` (${bothCount} in both organic + paid)`;
+  if (organicOnly > 0) summary += `, ${organicOnly} organic-only`;
+  if (paidOnly > 0) summary += `, ${paidOnly} paid-only`;
+  summary += `. ${directoryCount} directory/platform${directoryCount !== 1 ? 's' : ''} also identified. `;
 
   if (ctx.isLocal && ctx.radiusMiles) {
     summary += `Research is localized to a ${ctx.radiusMiles}-mile radius around ${ctx.localArea}. `;
@@ -910,6 +917,6 @@ function generateSummary(
     summary += `Refinement applied: "${ctx.refinement}". `;
   }
 
-  summary += `Note: Competitor discovery uses modeled SERP-based pools, not live Google search results. All benchmarks are modeled assumptions and should be validated within 30-60 days.`;
+  summary += `Competitors are ranked by frequency across search queries and weighted by organic + paid presence. All benchmarks are modeled assumptions and should be validated within 30-60 days.`;
   return summary;
 }
