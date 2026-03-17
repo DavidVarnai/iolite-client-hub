@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Plug, CheckCircle2, XCircle, AlertCircle, ExternalLink, Link2, Globe, Database, Sparkles } from 'lucide-react';
+import { Plug, CheckCircle2, XCircle, AlertCircle, ExternalLink, Link2, Globe, Database, Sparkles, FlaskConical, Loader2 } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -9,6 +9,7 @@ import type { ConfigurationCompleteness } from '@/types/admin';
 import type { CompetitorResearchPreference } from '@/types/marketIntelligence';
 import { repository } from '@/lib/repository';
 import { toast } from '@/hooks/use-toast';
+import { supabase } from '@/integrations/supabase/client';
 
 const statusConfig = {
   connected: { icon: CheckCircle2, label: 'Connected', className: 'bg-emerald-500/10 text-emerald-600 border-emerald-500/20' },
@@ -27,6 +28,208 @@ const RESEARCH_MODES: { value: CompetitorResearchPreference; label: string; icon
   { value: 'live_only', label: 'Live Search Only', icon: Globe, description: 'Always use real Google results via SerpAPI. Fails if API is unavailable.' },
   { value: 'modeled_only', label: 'Modeled Only', icon: Database, description: 'Use modeled industry pools. No API calls — zero cost.' },
 ];
+
+/* ── Test Provider Panel ── */
+
+type TestStatus = 'idle' | 'testing' | 'success' | 'fail';
+
+interface TestResult {
+  status: TestStatus;
+  envReady: boolean;
+  serpApiConfigured: boolean | null; // null = unknown until tested
+  sampleQuery: string;
+  organicCount?: number;
+  paidCount?: number;
+  latencyMs?: number;
+  error?: string;
+  effectiveMode: string;
+}
+
+const INITIAL_TEST: TestResult = {
+  status: 'idle',
+  envReady: Boolean(import.meta.env.VITE_SUPABASE_URL && import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY),
+  serpApiConfigured: null,
+  sampleQuery: 'best digital marketing agency',
+  effectiveMode: '—',
+};
+
+function SearchProviderTest({ researchMode }: { researchMode: CompetitorResearchPreference }) {
+  const [test, setTest] = useState<TestResult>(INITIAL_TEST);
+
+  const runTest = async () => {
+    const modeLabel = RESEARCH_MODES.find(m => m.value === researchMode)?.label ?? researchMode;
+    console.log(`[ProviderTest] Starting test — admin mode: "${researchMode}"`);
+
+    // Determine effective mode
+    if (researchMode === 'modeled_only') {
+      console.log('[ProviderTest] Mode is modeled_only — no live call needed');
+      setTest(prev => ({
+        ...prev,
+        status: 'success',
+        serpApiConfigured: null,
+        effectiveMode: 'Modeled Only',
+        organicCount: undefined,
+        paidCount: undefined,
+        latencyMs: undefined,
+        error: undefined,
+      }));
+      toast({ title: 'Modeled Only', description: 'No live search call is made in this mode. Modeled pools will be used.' });
+      return;
+    }
+
+    setTest(prev => ({ ...prev, status: 'testing', error: undefined }));
+
+    const start = performance.now();
+    try {
+      const { data, error } = await supabase.functions.invoke('serp-search', {
+        body: { query: test.sampleQuery, num: 3 },
+      });
+
+      const latencyMs = Math.round(performance.now() - start);
+
+      if (error) {
+        console.error('[ProviderTest] Edge function error:', error);
+        const wouldFallback = researchMode === 'auto';
+        setTest(prev => ({
+          ...prev,
+          status: 'fail',
+          serpApiConfigured: false,
+          latencyMs,
+          effectiveMode: wouldFallback ? 'Modeled Fallback' : 'BLOCKED',
+          error: error.message || 'Edge function call failed',
+        }));
+        return;
+      }
+
+      if (data?.error) {
+        console.error('[ProviderTest] SerpAPI error:', data.error);
+        const wouldFallback = researchMode === 'auto';
+        setTest(prev => ({
+          ...prev,
+          status: 'fail',
+          serpApiConfigured: false,
+          latencyMs,
+          effectiveMode: wouldFallback ? 'Modeled Fallback' : 'BLOCKED',
+          error: `SerpAPI: ${data.error}`,
+        }));
+        return;
+      }
+
+      const organicCount = data?.organic_results?.length ?? 0;
+      const paidCount = data?.paid_results?.length ?? 0;
+      console.log(`[ProviderTest] ✅ Success — ${organicCount} organic, ${paidCount} paid (${latencyMs}ms)`);
+      console.log(`[ProviderTest] Effective source: live_search`);
+
+      setTest(prev => ({
+        ...prev,
+        status: 'success',
+        serpApiConfigured: true,
+        organicCount,
+        paidCount,
+        latencyMs,
+        effectiveMode: 'Live Search',
+        error: undefined,
+      }));
+    } catch (err) {
+      const latencyMs = Math.round(performance.now() - start);
+      const message = err instanceof Error ? err.message : 'Unknown error';
+      console.error('[ProviderTest] Unexpected error:', message);
+      const wouldFallback = researchMode === 'auto';
+      setTest(prev => ({
+        ...prev,
+        status: 'fail',
+        serpApiConfigured: false,
+        latencyMs,
+        effectiveMode: wouldFallback ? 'Modeled Fallback' : 'BLOCKED',
+        error: message,
+      }));
+    }
+  };
+
+  const StatusBadge = () => {
+    if (test.status === 'idle') return <Badge variant="outline" className="text-muted-foreground">Not tested</Badge>;
+    if (test.status === 'testing') return <Badge variant="outline" className="bg-primary/10 text-primary border-primary/20"><Loader2 className="h-3 w-3 mr-1 animate-spin" />Testing…</Badge>;
+    if (test.status === 'success') return <Badge variant="outline" className="bg-emerald-500/10 text-emerald-600 border-emerald-500/20"><CheckCircle2 className="h-3 w-3 mr-1" />Pass</Badge>;
+    return <Badge variant="outline" className="bg-destructive/10 text-destructive border-destructive/20"><XCircle className="h-3 w-3 mr-1" />Fail</Badge>;
+  };
+
+  return (
+    <Card>
+      <CardHeader className="pb-3">
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center">
+              <FlaskConical className="h-5 w-5 text-primary" />
+            </div>
+            <div>
+              <CardTitle className="text-base">Test Search Provider</CardTitle>
+              <CardDescription className="text-xs mt-0.5">
+                Verify live search connectivity without running a full MI workflow.
+              </CardDescription>
+            </div>
+          </div>
+          <StatusBadge />
+        </div>
+      </CardHeader>
+      <CardContent className="space-y-3">
+        {/* Diagnostics grid */}
+        <div className="grid grid-cols-2 gap-x-6 gap-y-1.5 text-xs">
+          <Row label="Backend configured" value={test.envReady ? 'Yes' : 'No'} ok={test.envReady} />
+          <Row label="SerpAPI secret" value={test.serpApiConfigured === null ? '—' : test.serpApiConfigured ? 'Present' : 'Missing / Invalid'} ok={test.serpApiConfigured ?? undefined} />
+          <Row label="Admin mode" value={RESEARCH_MODES.find(m => m.value === researchMode)?.label ?? researchMode} />
+          <Row label="Effective source" value={test.effectiveMode} />
+          {test.latencyMs !== undefined && <Row label="Latency" value={`${test.latencyMs}ms`} />}
+          {test.organicCount !== undefined && <Row label="Sample results" value={`${test.organicCount} organic · ${test.paidCount ?? 0} paid`} />}
+        </div>
+
+        {/* Error message */}
+        {test.error && (
+          <div className="rounded-md bg-destructive/5 border border-destructive/20 px-3 py-2 text-xs text-destructive">
+            {test.error}
+            {researchMode === 'auto' && (
+              <p className="mt-1 text-muted-foreground">Mode is "Auto" — the system would fall back to modeled research.</p>
+            )}
+            {researchMode === 'live_only' && (
+              <p className="mt-1 font-medium">Mode is "Live Only" — MI runs will fail until this is resolved.</p>
+            )}
+          </div>
+        )}
+
+        <div className="flex items-center justify-between pt-1">
+          <p className="text-[10px] text-muted-foreground italic max-w-[260px]">
+            Sends one lightweight test query. No secrets are exposed in the browser.
+          </p>
+          <Button
+            variant="outline"
+            size="sm"
+            className="text-xs"
+            onClick={runTest}
+            disabled={test.status === 'testing'}
+          >
+            {test.status === 'testing' ? (
+              <><Loader2 className="h-3 w-3 mr-1.5 animate-spin" />Testing…</>
+            ) : (
+              <><FlaskConical className="h-3 w-3 mr-1.5" />Run Test</>
+            )}
+          </Button>
+        </div>
+      </CardContent>
+    </Card>
+  );
+}
+
+function Row({ label, value, ok }: { label: string; value: string; ok?: boolean }) {
+  return (
+    <>
+      <span className="text-muted-foreground">{label}</span>
+      <span className={`font-medium ${ok === true ? 'text-emerald-600' : ok === false ? 'text-destructive' : 'text-foreground'}`}>
+        {value}
+      </span>
+    </>
+  );
+}
+
+/* ── Main Component ── */
 
 export default function AdminIntegrations() {
   const [researchMode, setResearchMode] = useState<CompetitorResearchPreference>('auto');
@@ -106,6 +309,9 @@ export default function AdminIntegrations() {
           </p>
         </CardContent>
       </Card>
+
+      {/* ── Test Provider ── */}
+      <SearchProviderTest researchMode={researchMode} />
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         {defaultIntegrations.map(integration => {
