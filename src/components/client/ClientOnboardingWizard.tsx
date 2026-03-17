@@ -1,6 +1,6 @@
 import { useState, useCallback, useMemo } from 'react';
-import { ClientDiscovery, EMPTY_DISCOVERY, BusinessModel, GrowthGoal, PerformanceConfidence, BOTTLENECK_OPTIONS, DiscoveryCompetitor, AiDiscoveredCompetitor, FunnelStage, FunnelStageCategory, FUNNEL_STAGE_OPTIONS, FUNNEL_CATEGORY_ORDER, deriveRevenueUnit } from '@/types/onboarding';
-import type { RevenueModelType } from '@/types/onboarding';
+import { ClientDiscovery, EMPTY_DISCOVERY, BusinessModel, GrowthGoal, PerformanceConfidence, BOTTLENECK_OPTIONS, DiscoveryCompetitor, AiDiscoveredCompetitor, FunnelStage, FunnelStageCategory, FUNNEL_STAGE_OPTIONS, FUNNEL_CATEGORY_ORDER, deriveRevenueUnit, GROWTH_OBJECTIVE_LABELS } from '@/types/onboarding';
+import type { RevenueModelType, GrowthObjective } from '@/types/onboarding';
 import { ServiceChannel, SERVICE_CHANNEL_LABELS } from '@/types';
 import { Check, ChevronLeft, ChevronRight, X, Loader2, Sparkles, Plus, Trash2, ArrowRight, Download, Pause } from 'lucide-react';
 import { AnimatePresence, motion } from 'framer-motion';
@@ -343,10 +343,63 @@ function DiscoveryStep() {
       </DiscoverySection>
 
       <DiscoverySection title="B. Growth Targets">
-        <ExpandableField label="Revenue Targets" value={d.revenueTargets} onChange={(v) => updateD({ revenueTargets: v })} />
-        <ExpandableField label="Customer / Lead Targets" value={d.customerLeadTargets} onChange={(v) => updateD({ customerLeadTargets: v })} />
-        <Field label="Time Horizon" value={d.timeHorizon} onChange={(v) => updateD({ timeHorizon: v })} />
-        <ExpandableField label="Major Growth Priorities" value={d.majorGrowthPriorities} onChange={(v) => updateD({ majorGrowthPriorities: v })} />
+        <div className="col-span-2">
+          <p className="text-xs font-semibold text-foreground mb-0.5">Business Outcomes</p>
+          <p className="text-[10px] text-muted-foreground">Measurable targets for the engagement period.</p>
+        </div>
+        <div>
+          <label className="text-[10px] font-medium text-muted-foreground uppercase tracking-wider mb-1 block">Revenue Target ($)</label>
+          <input
+            type="number"
+            value={d.revenueTarget || ''}
+            onChange={(e) => updateD({ revenueTarget: parseFloat(e.target.value) || 0 })}
+            className="w-full rounded-md border bg-background px-3 py-2 text-sm"
+            placeholder="e.g. 500000"
+          />
+          <p className="text-[10px] text-muted-foreground mt-1">Total revenue goal for the time horizon</p>
+        </div>
+        <div>
+          <label className="text-[10px] font-medium text-muted-foreground uppercase tracking-wider mb-1 block">New Customers Target</label>
+          <input
+            type="number"
+            value={d.newCustomersTarget || ''}
+            onChange={(e) => updateD({ newCustomersTarget: parseInt(e.target.value) || 0 })}
+            className="w-full rounded-md border bg-background px-3 py-2 text-sm"
+            placeholder="e.g. 50"
+          />
+          <p className="text-[10px] text-muted-foreground mt-1">Number of new customers to acquire</p>
+        </div>
+        <Field label="Time Horizon" value={d.timeHorizon} onChange={(v) => updateD({ timeHorizon: v })} placeholder="e.g. 12 months" />
+        <div /> {/* grid spacer */}
+
+        <div className="col-span-2 mt-2">
+          <p className="text-xs font-semibold text-foreground mb-0.5">Growth Strategy</p>
+          <p className="text-[10px] text-muted-foreground">How this client plans to achieve their targets.</p>
+        </div>
+        <div>
+          <label className="text-[10px] font-medium text-muted-foreground uppercase tracking-wider mb-1 block">Primary Growth Objective</label>
+          <select
+            value={d.primaryGrowthObjective || ''}
+            onChange={(e) => updateD({ primaryGrowthObjective: e.target.value as GrowthObjective })}
+            className="w-full rounded-md border bg-background px-3 py-2 text-sm"
+          >
+            <option value="">Select objective…</option>
+            {Object.entries(GROWTH_OBJECTIVE_LABELS).map(([value, label]) => (
+              <option key={value} value={value}>{label}</option>
+            ))}
+          </select>
+        </div>
+        <div>
+          <label className="text-[10px] font-medium text-muted-foreground uppercase tracking-wider mb-1 block">Primary Lead Type</label>
+          <input
+            type="text"
+            value={d.primaryLeadType || ''}
+            onChange={(e) => updateD({ primaryLeadType: e.target.value })}
+            className="w-full rounded-md border bg-background px-3 py-2 text-sm"
+            placeholder="e.g. Qualified leads, Demo requests"
+          />
+          <p className="text-[10px] text-muted-foreground mt-1">What type of lead defines a successful conversion?</p>
+        </div>
       </DiscoverySection>
 
       <DiscoverySection title="C. Sales Process">
@@ -809,7 +862,7 @@ function ProposalReadyStep({ onNavigateTab }: { onNavigateTab: (tab: string) => 
 
   const checklist = [
     { key: 'client_setup', label: 'Client setup complete', complete: !!client.name && !!client.company },
-    { key: 'discovery', label: 'Discovery complete', complete: !!(onboarding.discovery.primaryProducts && onboarding.discovery.revenueTargets) },
+    { key: 'discovery', label: 'Discovery complete', complete: !!(onboarding.discovery.primaryProducts && (onboarding.discovery.revenueTarget > 0 || onboarding.discovery.revenueTargets)) },
     { key: 'strategy', label: 'Strategy module summarized', complete: client.strategySections.length > 0 },
     { key: 'growth_model', label: 'Growth model populated', complete: hasGrowthModel },
   ];

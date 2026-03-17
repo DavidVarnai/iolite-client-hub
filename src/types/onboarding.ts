@@ -17,6 +17,21 @@ export type BusinessModel = 'ecommerce' | 'lead_generation' | 'hybrid' | 'other'
 export type GrowthGoal = 'revenue_growth' | 'lead_volume' | 'market_expansion' | 'brand_awareness';
 export type PerformanceConfidence = 'high' | 'medium' | 'estimated' | 'unknown';
 
+export type GrowthObjective =
+  | 'acquire_new_customers'
+  | 'increase_deal_size'
+  | 'improve_conversion_rate'
+  | 'expand_existing_customers'
+  | 'reduce_churn';
+
+export const GROWTH_OBJECTIVE_LABELS: Record<GrowthObjective, string> = {
+  acquire_new_customers: 'Acquire new customers',
+  increase_deal_size: 'Increase deal size',
+  improve_conversion_rate: 'Improve conversion rate',
+  expand_existing_customers: 'Expand existing customers',
+  reduce_churn: 'Reduce churn',
+};
+
 export type RevenueModelType = 'one_time' | 'monthly_recurring' | 'annual_contract';
 export type RevenueUnit = 'per_deal' | 'per_month' | 'per_year';
 
@@ -120,10 +135,19 @@ export interface ClientDiscovery {
   revenueModel: RevenueModelConfig;
   coreCustomerSegments: string;
 
-  // B. Growth Targets
-  revenueTargets: string;
-  customerLeadTargets: string;
+  // B. Growth Targets — Business Outcomes
+  revenueTarget: number;
+  newCustomersTarget: number;
   timeHorizon: string;
+  // B. Growth Targets — Growth Strategy
+  primaryGrowthObjective: GrowthObjective | '';
+  primaryLeadType: string;
+
+  /** @deprecated use revenueTarget (number) */
+  revenueTargets: string;
+  /** @deprecated use newCustomersTarget + primaryLeadType */
+  customerLeadTargets: string;
+  /** @deprecated use primaryGrowthObjective */
   majorGrowthPriorities: string;
 
   // C. Sales Process
@@ -176,9 +200,13 @@ export const EMPTY_DISCOVERY: ClientDiscovery = {
   avgOrderValue: '',
   revenueModel: { revenueModelType: 'one_time', revenuePerConversion: 0, revenueUnit: 'per_deal' },
   coreCustomerSegments: '',
+  revenueTarget: 0,
+  newCustomersTarget: 0,
+  timeHorizon: '',
+  primaryGrowthObjective: '',
+  primaryLeadType: '',
   revenueTargets: '',
   customerLeadTargets: '',
-  timeHorizon: '',
   majorGrowthPriorities: '',
   funnelType: '',
   leadQualSaleStructure: '',
@@ -277,9 +305,11 @@ export function computeStageReadiness(
   // Discovery
   const d = onboarding.discovery;
   const revenueModelSet = d.revenueModel && d.revenueModel.revenuePerConversion > 0 ? 'set' : '';
+  const revenueTargetSet = d.revenueTarget > 0 ? 'set' : (d.revenueTargets || '');
+  const customersTargetSet = d.newCustomersTarget > 0 ? 'set' : (d.customerLeadTargets || '');
   const discoveryFields = [
     d.primaryProducts, d.revenueStreams, revenueModelSet, d.coreCustomerSegments,
-    d.revenueTargets, d.customerLeadTargets, d.timeHorizon,
+    revenueTargetSet, customersTargetSet, d.timeHorizon,
     d.funnelType, d.closeRate, d.salesCycleLength,
     d.monthlyVisitors || d.currentTraffic, d.monthlyLeads || d.currentLeadsOrders,
   ];
@@ -336,8 +366,9 @@ export function getProposalChecklist(
 ): ProposalChecklistItem[] {
   const d = onboarding.discovery;
   const revenueModelSet = d.revenueModel && d.revenueModel.revenuePerConversion > 0 ? 'set' : '';
-  const dFields = [d.primaryProducts, d.revenueStreams, revenueModelSet, d.revenueTargets, d.customerLeadTargets];
-  const dFilled = dFields.filter(f => f && f.trim().length > 0).length;
+  const revenueTargetSet = d.revenueTarget > 0 ? 'set' : (d.revenueTargets || '');
+  const dFields = [d.primaryProducts, d.revenueStreams, revenueModelSet, revenueTargetSet, d.newCustomersTarget > 0 ? 'set' : (d.customerLeadTargets || '')];
+  const dFilled = dFields.filter(f => f && String(f).trim().length > 0).length;
 
   return [
     { key: 'client_setup', label: 'Client setup complete', complete: true },

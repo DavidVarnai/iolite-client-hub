@@ -34,6 +34,10 @@ function migrateDiscovery(raw: OnboardingData): OnboardingData {
     }));
   }
   // Structured performance fields
+  if (d.revenueTarget === undefined) d.revenueTarget = 0;
+  if (d.newCustomersTarget === undefined) d.newCustomersTarget = 0;
+  if (d.primaryGrowthObjective === undefined) d.primaryGrowthObjective = '';
+  if (d.primaryLeadType === undefined) d.primaryLeadType = '';
   if (d.monthlyVisitors === undefined) d.monthlyVisitors = '';
   if (d.monthlyLeads === undefined) d.monthlyLeads = '';
   if (d.monthlyCustomers === undefined) d.monthlyCustomers = '';

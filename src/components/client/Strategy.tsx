@@ -28,10 +28,11 @@ function StrategySectionCard({ section, proposalMode }: { section: StrategySecti
         channel: section.channel,
         industry: client.industry,
         businessModel: onboarding.discovery.businessModel,
-        growthGoals: onboarding.discovery.majorGrowthPriorities || undefined,
+        growthGoals: onboarding.discovery.primaryGrowthObjective || onboarding.discovery.majorGrowthPriorities || undefined,
         geography: onboarding.geography,
         discoveryContext: JSON.stringify({
           primaryProducts: onboarding.discovery.primaryProducts,
+          revenueTarget: onboarding.discovery.revenueTarget,
           revenueTargets: onboarding.discovery.revenueTargets,
           coreCustomerSegments: onboarding.discovery.coreCustomerSegments,
           knownBottlenecks: onboarding.discovery.knownBottlenecks,

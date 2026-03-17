@@ -38,7 +38,7 @@ export function checkMIReadiness(
     {
       key: 'primary_goal',
       label: 'Primary growth goal defined',
-      met: !!(d.majorGrowthPriorities?.trim() || onboarding.primaryGrowthGoal),
+      met: !!(d.primaryGrowthObjective?.trim() || d.majorGrowthPriorities?.trim() || onboarding.primaryGrowthGoal),
     },
   ];
 
@@ -74,7 +74,7 @@ export function collectMIInputs(
     productsOrServices: d.primaryProducts || '',
     targetAudience: d.coreCustomerSegments || '',
     knownCompetitors: d.topCompetitors ? d.topCompetitors.split(',').map(s => s.trim()).filter(Boolean) : undefined,
-    primaryGoal: d.majorGrowthPriorities || onboarding.primaryGrowthGoal || '',
+    primaryGoal: d.primaryGrowthObjective || d.majorGrowthPriorities || onboarding.primaryGrowthGoal || '',
     budgetRange: '',
     selectedChannels: channels,
   };
