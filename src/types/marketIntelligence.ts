@@ -182,6 +182,8 @@ export interface MarketIntelligenceInputs {
   customRadiusMiles?: number;
   /* Refinement */
   refinementNote?: string;
+  /** Per-run override of competitor research mode */
+  competitorResearchMode?: import('./marketIntelligence').CompetitorResearchPreference;
 }
 
 /** How competitor research was conducted */
