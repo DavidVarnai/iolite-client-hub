@@ -544,6 +544,17 @@ function formatBenchmarkValue(value: number, unit: string): string {
   return `${value} ${unit}`;
 }
 
+function SERPSourceBadge({ source }: { source?: SERPSource }) {
+  if (!source) return <span className="text-[10px] text-muted-foreground">—</span>;
+  const config: Record<SERPSource, { label: string; cls: string }> = {
+    organic: { label: 'Organic', cls: 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400' },
+    paid: { label: 'Paid', cls: 'bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400' },
+    both: { label: 'Organic + Paid', cls: 'bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400' },
+  };
+  const { label, cls } = config[source];
+  return <span className={`text-[10px] px-1.5 py-0.5 rounded font-semibold whitespace-nowrap ${cls}`}>{label}</span>;
+}
+
 function SourceBadge({ type, confidence }: { type?: SourceType; confidence?: SourceConfidence }) {
   if (!type) return <span className="text-[10px] text-muted-foreground">—</span>;
 
