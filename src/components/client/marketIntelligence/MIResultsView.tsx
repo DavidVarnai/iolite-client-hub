@@ -397,9 +397,9 @@ function CompetitorTable({ competitors }: { competitors: CompetitorProfile[] }) 
             <th className="py-2 pr-3 text-xs font-medium text-muted-foreground">Business</th>
             <th className="py-2 pr-3 text-xs font-medium text-muted-foreground">Website</th>
             <th className="py-2 pr-3 text-xs font-medium text-muted-foreground">SERP Source</th>
+            <th className="py-2 pr-3 text-xs font-medium text-muted-foreground">Query Freq.</th>
             <th className="py-2 pr-3 text-xs font-medium text-muted-foreground">Confidence</th>
-            <th className="py-2 pr-3 text-xs font-medium text-muted-foreground">Source</th>
-            <th className="py-2 text-xs font-medium text-muted-foreground">Details</th>
+            <th className="py-2 text-xs font-medium text-muted-foreground">Why Included</th>
           </tr>
         </thead>
         <tbody>
@@ -408,12 +408,15 @@ function CompetitorTable({ competitors }: { competitors: CompetitorProfile[] }) 
               <td className="py-2 pr-3">
                 <div className="font-medium text-xs">{cp.name}</div>
                 <div className="text-[10px] text-muted-foreground">{cp.geography}</div>
+                {cp.manuallyAdded && (
+                  <span className="text-[9px] bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400 px-1 py-0.5 rounded mt-0.5 inline-block">User-provided</span>
+                )}
               </td>
               <td className="py-2 pr-3">
                 {cp.websiteUrl ? (
                   <a href={cp.websiteUrl} target="_blank" rel="noopener noreferrer" className="text-[11px] text-primary hover:underline flex items-center gap-1">
                     <Globe className="h-3 w-3" />
-                    {cp.websiteUrl.replace(/^https?:\/\//, '').replace(/\/$/, '')}
+                    {cp.websiteUrl.replace(/^https?:\/\//, '').replace(/\/$/, '').substring(0, 30)}
                   </a>
                 ) : (
                   <span className="text-[11px] text-muted-foreground">—</span>
@@ -421,10 +424,22 @@ function CompetitorTable({ competitors }: { competitors: CompetitorProfile[] }) 
               </td>
               <td className="py-2 pr-3">
                 <SERPSourceBadge source={cp.serpSource} />
-                {cp.queryFrequency != null && cp.totalQueries != null && (
-                  <span className="text-[9px] text-muted-foreground block mt-0.5">
-                    {cp.queryFrequency}/{cp.totalQueries} queries
-                  </span>
+              </td>
+              <td className="py-2 pr-3">
+                {cp.queryFrequency != null && cp.totalQueries != null ? (
+                  <div className="flex items-center gap-1.5">
+                    <div className="w-10 h-1.5 bg-muted rounded-full overflow-hidden">
+                      <div
+                        className="h-full rounded-full bg-primary"
+                        style={{ width: `${Math.round((cp.queryFrequency / cp.totalQueries) * 100)}%` }}
+                      />
+                    </div>
+                    <span className="text-[10px] font-medium whitespace-nowrap">
+                      {cp.queryFrequency}/{cp.totalQueries}
+                    </span>
+                  </div>
+                ) : (
+                  <span className="text-[10px] text-muted-foreground">—</span>
                 )}
               </td>
               <td className="py-2 pr-3">
@@ -439,23 +454,17 @@ function CompetitorTable({ competitors }: { competitors: CompetitorProfile[] }) 
                     <span className="text-[10px] font-medium">{cp.confidenceScore}%</span>
                   </div>
                 ) : (
-                  <span className="text-[10px] text-muted-foreground">—</span>
+                  <SourceBadge type={cp.sourceType} confidence={cp.sourceConfidence} />
                 )}
               </td>
-              <td className="py-2 pr-3">
-                <SourceBadge type={cp.sourceType} confidence={cp.sourceConfidence} />
-              </td>
-              <td className="py-2 text-[11px] text-muted-foreground max-w-[250px]">
-                <div>{cp.positioning}</div>
+              <td className="py-2 text-[11px] text-muted-foreground max-w-[280px]">
+                <div>{cp.channelObservations || cp.positioning}</div>
                 {cp.rankingKeywords && cp.rankingKeywords.length > 0 && (
                   <div className="flex flex-wrap gap-1 mt-1">
                     {cp.rankingKeywords.slice(0, 3).map((kw, i) => (
                       <span key={i} className="text-[10px] bg-muted px-1.5 py-0.5 rounded">{kw}</span>
                     ))}
                   </div>
-                )}
-                {cp.estimatedDomainAuthority != null && (
-                  <span className="text-[10px] text-muted-foreground">DA ~{cp.estimatedDomainAuthority}</span>
                 )}
               </td>
             </tr>
@@ -608,35 +617,49 @@ function ResearchSourceBanner({
   selectedMode?: 'auto' | 'live_only' | 'modeled_only';
 }) {
   const isLive = sourceMode === 'live_search';
+  const isFallback = selectedMode === 'auto' && sourceMode === 'modeled_fallback';
   const modeLabels: Record<string, string> = {
     auto: 'Auto',
     live_only: 'Live Only',
     modeled_only: 'Modeled Only',
   };
   return (
-    <div className={`panel p-4 flex items-start gap-3 ${isLive ? 'border-green-200 dark:border-green-800 bg-green-50 dark:bg-green-900/10' : 'border-amber-200 dark:border-amber-800 bg-amber-50 dark:bg-amber-900/10'}`}>
-      <div className={`w-6 h-6 rounded-full flex items-center justify-center flex-shrink-0 ${isLive ? 'bg-green-100 dark:bg-green-900/30' : 'bg-amber-100 dark:bg-amber-900/30'}`}>
-        {isLive
-          ? <Globe className="h-3 w-3 text-green-600 dark:text-green-400" />
-          : <AlertTriangle className="h-3 w-3 text-amber-600 dark:text-amber-400" />}
-      </div>
-      <div className="flex-1">
-        <div className="flex items-center gap-2">
-          <h4 className={`text-xs font-semibold ${isLive ? 'text-green-700 dark:text-green-400' : 'text-amber-700 dark:text-amber-400'}`}>
-            {isLive ? 'Live Search Results' : 'Modeled Results'}
-          </h4>
-          {selectedMode && (
-            <span className="text-[10px] bg-muted text-muted-foreground px-1.5 py-0.5 rounded">
-              Mode: {modeLabels[selectedMode] || selectedMode}
-            </span>
-          )}
+    <div className={`panel p-4 space-y-2 ${isLive ? 'border-green-200 dark:border-green-800 bg-green-50 dark:bg-green-900/10' : 'border-amber-200 dark:border-amber-800 bg-amber-50 dark:bg-amber-900/10'}`}>
+      <div className="flex items-start gap-3">
+        <div className={`w-6 h-6 rounded-full flex items-center justify-center flex-shrink-0 ${isLive ? 'bg-green-100 dark:bg-green-900/30' : 'bg-amber-100 dark:bg-amber-900/30'}`}>
+          {isLive
+            ? <Globe className="h-3 w-3 text-green-600 dark:text-green-400" />
+            : <AlertTriangle className="h-3 w-3 text-amber-600 dark:text-amber-400" />}
         </div>
-        <p className={`text-xs mt-0.5 ${isLive ? 'text-green-600/80 dark:text-green-400/70' : 'text-amber-600/80 dark:text-amber-400/70'}`}>
-          {sourceNote || (isLive
-            ? 'Competitors identified from live Google search results via SerpAPI.'
-            : 'Using modeled industry pools. Configure SerpAPI to enable live results.')}
-        </p>
+        <div className="flex-1">
+          <div className="flex items-center gap-2 flex-wrap">
+            <h4 className={`text-xs font-semibold ${isLive ? 'text-green-700 dark:text-green-400' : 'text-amber-700 dark:text-amber-400'}`}>
+              {isLive ? 'Live Search Results' : 'Modeled Results'}
+            </h4>
+            {selectedMode && (
+              <span className="text-[10px] bg-muted text-muted-foreground px-1.5 py-0.5 rounded">
+                Selected: {modeLabels[selectedMode] || selectedMode}
+              </span>
+            )}
+            <span className={`text-[10px] px-1.5 py-0.5 rounded font-semibold ${isLive ? 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400' : 'bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400'}`}>
+              {isLive ? 'LIVE' : 'MODELED'}
+            </span>
+          </div>
+          <p className={`text-xs mt-1 ${isLive ? 'text-green-600/80 dark:text-green-400/70' : 'text-amber-600/80 dark:text-amber-400/70'}`}>
+            {sourceNote || (isLive
+              ? 'Competitors identified from live Google search results via SerpAPI.'
+              : 'Using modeled industry pools. Configure SerpAPI to enable live results.')}
+          </p>
+        </div>
       </div>
+      {isFallback && (
+        <div className="flex items-center gap-2 ml-9 pt-1 border-t border-amber-200/50 dark:border-amber-800/50">
+          <AlertTriangle className="h-3 w-3 text-amber-500 shrink-0" />
+          <p className="text-[11px] text-amber-600/80 dark:text-amber-400/70">
+            Mode was set to Auto but live search was unavailable or failed. Results were generated using modeled industry pools instead. Check your SerpAPI configuration to enable live results.
+          </p>
+        </div>
+      )}
     </div>
   );
 }
