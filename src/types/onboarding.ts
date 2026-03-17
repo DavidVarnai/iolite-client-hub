@@ -17,6 +17,28 @@ export type BusinessModel = 'ecommerce' | 'lead_generation' | 'hybrid' | 'other'
 export type GrowthGoal = 'revenue_growth' | 'lead_volume' | 'market_expansion' | 'brand_awareness';
 export type PerformanceConfidence = 'high' | 'medium' | 'estimated' | 'unknown';
 
+export type RevenueModelType = 'one_time' | 'monthly_recurring' | 'annual_contract';
+export type RevenueUnit = 'per_deal' | 'per_month' | 'per_year';
+
+export interface RevenueModelConfig {
+  revenueModelType: RevenueModelType;
+  revenuePerConversion: number;
+  revenueUnit: RevenueUnit;
+  avgContractLengthMonths?: number;
+}
+
+export const REVENUE_MODEL_TYPE_LABELS: Record<RevenueModelType, string> = {
+  one_time: 'One-time',
+  monthly_recurring: 'Monthly recurring',
+  annual_contract: 'Annual contract',
+};
+
+export const REVENUE_UNIT_LABELS: Record<RevenueUnit, string> = {
+  per_deal: 'Per deal',
+  per_month: 'Per month',
+  per_year: 'Per year',
+};
+
 export const BOTTLENECK_OPTIONS = [
   'Low website conversion',
   'Weak traffic volume',
