@@ -216,6 +216,7 @@ export const c5Onboarding: OnboardingData = {
     primaryProducts: 'IT Services, IAM, Managed Service Provider',
     revenueStreams: 'Managed IT service contracts',
     avgOrderValue: '$5,000/month managed service contract',
+    revenueModel: { revenueModelType: 'monthly_recurring', revenuePerConversion: 5000, revenueUnit: 'per_month', avgContractLengthMonths: 12 },
     coreCustomerSegments: 'Mid-market companies, 20-500 employees, $2M-$100M revenue. Industries: healthcare, manufacturing, professional services.',
     revenueTargets: 'New MSP client acquisition',
     customerLeadTargets: 'Qualified MSP leads',
