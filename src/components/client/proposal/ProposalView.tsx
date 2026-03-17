@@ -27,7 +27,7 @@ import ProposalConfigPanel from './ProposalConfigPanel';
 import RevenueModelDisplay from '../RevenueModelDisplay';
 
 export default function ProposalView({ proposalMode = false }: { proposalMode?: boolean }) {
-  const { client, growthModel: contextGrowthModel } = useClientContext();
+  const { client, growthModel: contextGrowthModel, onboarding } = useClientContext();
   const [proposals, setProposals] = useState<Proposal[]>(() => repository.proposals.getByClient(client.id));
   const [activeProposalId, setActiveProposalId] = useState<string | null>(proposals[0]?.id || null);
   const [showConfig, setShowConfig] = useState(false);
