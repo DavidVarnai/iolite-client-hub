@@ -256,4 +256,6 @@ export interface MarketIntelligenceDefaults {
     benchmarkAssumptions: boolean;
     researchSummary: boolean;
   };
+  /** Admin-level competitor research mode preference */
+  competitorResearchMode?: CompetitorResearchPreference;
 }
