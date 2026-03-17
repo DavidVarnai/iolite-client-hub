@@ -305,9 +305,11 @@ export function computeStageReadiness(
   // Discovery
   const d = onboarding.discovery;
   const revenueModelSet = d.revenueModel && d.revenueModel.revenuePerConversion > 0 ? 'set' : '';
+  const revenueTargetSet = d.revenueTarget > 0 ? 'set' : (d.revenueTargets || '');
+  const customersTargetSet = d.newCustomersTarget > 0 ? 'set' : (d.customerLeadTargets || '');
   const discoveryFields = [
     d.primaryProducts, d.revenueStreams, revenueModelSet, d.coreCustomerSegments,
-    d.revenueTargets, d.customerLeadTargets, d.timeHorizon,
+    revenueTargetSet, customersTargetSet, d.timeHorizon,
     d.funnelType, d.closeRate, d.salesCycleLength,
     d.monthlyVisitors || d.currentTraffic, d.monthlyLeads || d.currentLeadsOrders,
   ];
