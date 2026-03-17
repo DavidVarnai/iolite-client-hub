@@ -765,9 +765,9 @@ function StrategyDraftStep({ onNavigateTab }: { onNavigateTab: (tab: string) => 
 // ---------- STEP 4: Growth Model ----------
 function GrowthModelStep({ onNavigateTab }: { onNavigateTab: (tab: string) => void }) {
   return (
-    <div className="space-y-6">
+    <div className="space-y-8">
       <div>
-        <h3 className="text-base font-semibold mb-1">Growth Model</h3>
+        <h3 className="text-lg font-semibold mb-1">Growth Model</h3>
         <p className="text-sm text-muted-foreground">Turn the strategy into investment and outcome planning.</p>
       </div>
 
