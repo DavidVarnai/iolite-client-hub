@@ -148,10 +148,25 @@ export default function RevenueModel({ model, scenario, onUpdate }: Props) {
             )}
           </div>
         </CardHeader>
-        <CardContent>
+        <CardContent className="space-y-4">
+          {/* Revenue per Conversion from Discovery — read-only */}
+          {revenueModel && <RevenueModelDisplay revenueModel={revenueModel} variant="inline" />}
+
           <div className="grid grid-cols-4 gap-3">
-            <EditableInputField label="Avg Deal Size" value={ra.avgDealSize} suffix="$"
-              onChange={(v) => updateAssumption({ avgDealSize: v })} />
+            {/* avgDealSize is now derived from Discovery — show read-only if revenueModel set */}
+            {revenueModel?.revenuePerConversion > 0 ? (
+              <div>
+                <label className="text-[10px] font-medium text-muted-foreground uppercase tracking-wider">Effective Deal Size</label>
+                <div className="relative">
+                  <Input type="number" value={effectiveDealSize} readOnly className="h-8 text-xs tabular-nums pr-8 bg-muted/50 cursor-not-allowed" />
+                  <span className="absolute right-2 top-1/2 -translate-y-1/2 text-[10px] text-muted-foreground">$</span>
+                </div>
+                <p className="text-[9px] text-muted-foreground mt-0.5">From Discovery</p>
+              </div>
+            ) : (
+              <EditableInputField label="Avg Deal Size" value={ra.avgDealSize} suffix="$"
+                onChange={(v) => updateAssumption({ avgDealSize: v })} />
+            )}
             <EditableInputField label="Close Rate" value={ra.closeRate} suffix="%"
               onChange={(v) => updateAssumption({ closeRate: v })} />
             <EditableInputField label="Sales Cycle Lag" value={ra.salesCycleLag} suffix="mo"
