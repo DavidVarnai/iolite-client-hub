@@ -405,7 +405,7 @@ function ChannelCard({ ca, avgBudget, output, model, onAssumptionChange, globalA
             <InputField label="LP Conv Rate" value={ca.lpConvRate} onChange={(v) => onAssumptionChange(ca.id, 'lpConvRate', v)} suffix="%"
               suggestion={suggestions.lpConvRate} onApply={(v) => applySuggestion('lpConvRate', v)} />
             <div>
-              <label className="text-[10px] font-medium text-muted-foreground uppercase tracking-wider">AOV / Deal</label>
+              <label className="text-[10px] font-medium text-muted-foreground uppercase tracking-wider">Rev / Conversion</label>
               <div className="relative">
                 <Input
                   type="number"
