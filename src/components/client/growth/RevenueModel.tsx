@@ -107,7 +107,7 @@ export default function RevenueModel({ model, scenario, onUpdate }: Props) {
       const lagIdx = Math.max(0, i - ra.salesCycleLag);
       const effectiveLeads = projections[lagIdx]?.totalLeads || 0;
       const customers = Math.round(effectiveLeads * (ra.closeRate / 100) * ramp);
-      const revenue = customers * ra.avgDealSize * ra.repeatMultiplier;
+      const revenue = customers * effectiveDealSize * ra.repeatMultiplier;
       cumRevenue += revenue;
       cumSpend += p.totalSpend;
       const margin = revenue * (ra.grossMarginPct / 100);
