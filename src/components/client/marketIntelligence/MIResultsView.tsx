@@ -176,8 +176,8 @@ export default function MIResultsView({ outputs, run, onRerun, onRefine, onAppro
         <div className="panel p-5 space-y-3">
           <div className="flex items-center gap-2">
             <Building2 className="h-4 w-4 text-primary" />
-            <h4 className="text-sm font-semibold">Direct Competitors ({realDirectCompetitors.length})</h4>
-            <span className="text-[10px] text-muted-foreground bg-muted px-1.5 py-0.5 rounded">Modeled SERP-based discovery</span>
+            <h4 className="text-sm font-semibold">Direct Competitors from Google Results ({realDirectCompetitors.length})</h4>
+            <span className="text-[10px] text-muted-foreground bg-muted px-1.5 py-0.5 rounded">Ranked by query frequency &amp; source</span>
           </div>
           <CompetitorTable competitors={realDirectCompetitors} />
         </div>
