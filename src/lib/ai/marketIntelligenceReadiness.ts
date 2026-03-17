@@ -38,7 +38,7 @@ export function checkMIReadiness(
     {
       key: 'primary_goal',
       label: 'Primary growth goal defined',
-      met: !!(d.majorGrowthPriorities?.trim() || onboarding.primaryGrowthGoal),
+      met: !!(d.primaryGrowthObjective?.trim() || d.majorGrowthPriorities?.trim() || onboarding.primaryGrowthGoal),
     },
   ];
 
