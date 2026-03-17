@@ -21,6 +21,7 @@ import type {
   SourceConfidence,
   CompetitorType,
   SERPSource,
+  ResearchSourceMode,
 } from '@/types/marketIntelligence';
 import { Textarea } from '@/components/ui/textarea';
 import { format } from 'date-fns';
@@ -94,13 +95,18 @@ export default function MIResultsView({ outputs, run, onRerun, onRefine, onAppro
         </div>
       </div>
 
+      {/* ─── RESEARCH SOURCE MODE ─── */}
+      <ResearchSourceBanner sourceMode={outputs.researchSourceMode} sourceNote={outputs.researchSourceNote} />
+
       {/* ─── DISCOVERY QUERIES ─── */}
       {outputs.discoveryQueries && outputs.discoveryQueries.length > 0 && (
         <div className="panel p-5 space-y-3">
           <div className="flex items-center gap-2">
             <Search className="h-4 w-4 text-primary" />
             <h4 className="text-sm font-semibold">Discovery Queries</h4>
-            <span className="text-[10px] text-muted-foreground bg-muted px-1.5 py-0.5 rounded">Modeled from search intent patterns</span>
+            <span className="text-[10px] text-muted-foreground bg-muted px-1.5 py-0.5 rounded">
+              {outputs.researchSourceMode === 'live_search' ? 'Used for live Google search' : 'Modeled from search intent patterns'}
+            </span>
           </div>
           <div className="flex flex-wrap gap-2">
             {outputs.discoveryQueries.map((q, i) => (
@@ -177,11 +183,17 @@ export default function MIResultsView({ outputs, run, onRerun, onRefine, onAppro
           <div className="flex items-center gap-2">
             <Building2 className="h-4 w-4 text-primary" />
             <h4 className="text-sm font-semibold">Direct Competitors ({realDirectCompetitors.length})</h4>
-            <span className="text-[10px] text-muted-foreground bg-muted px-1.5 py-0.5 rounded">Modeled from discovery queries &amp; industry pools</span>
+            <span className="text-[10px] text-muted-foreground bg-muted px-1.5 py-0.5 rounded">
+              {outputs.researchSourceMode === 'live_search'
+                ? 'From live Google search results'
+                : 'Modeled from discovery queries & industry pools'}
+            </span>
           </div>
           <CompetitorTable competitors={realDirectCompetitors} />
           <p className="text-[10px] text-muted-foreground mt-2 italic">
-            Methodology: Competitors are identified using generated discovery queries matched against modeled industry pools. Rankings reflect query frequency and organic/paid weighting. This is not live Google SERP data — results are modeled estimates.
+            {outputs.researchSourceMode === 'live_search'
+              ? 'Competitors identified from live Google search results for the discovery queries above. Rankings reflect frequency across queries and organic/paid presence.'
+              : 'Methodology: Competitors are identified using generated discovery queries matched against modeled industry pools. Rankings reflect query frequency and organic/paid weighting. This is not live Google SERP data — results are modeled estimates.'}
           </p>
         </div>
       )}
@@ -578,6 +590,29 @@ function SourceBadge({ type, confidence }: { type?: SourceType; confidence?: Sou
       {confidence && (
         <span className="text-[9px] text-muted-foreground">{confidence} conf.</span>
       )}
+    </div>
+  );
+}
+
+function ResearchSourceBanner({ sourceMode, sourceNote }: { sourceMode?: ResearchSourceMode; sourceNote?: string }) {
+  const isLive = sourceMode === 'live_search';
+  return (
+    <div className={`panel p-4 flex items-start gap-3 ${isLive ? 'border-green-200 dark:border-green-800 bg-green-50 dark:bg-green-900/10' : 'border-amber-200 dark:border-amber-800 bg-amber-50 dark:bg-amber-900/10'}`}>
+      <div className={`w-6 h-6 rounded-full flex items-center justify-center flex-shrink-0 ${isLive ? 'bg-green-100 dark:bg-green-900/30' : 'bg-amber-100 dark:bg-amber-900/30'}`}>
+        {isLive
+          ? <Globe className="h-3 w-3 text-green-600 dark:text-green-400" />
+          : <AlertTriangle className="h-3 w-3 text-amber-600 dark:text-amber-400" />}
+      </div>
+      <div>
+        <h4 className={`text-xs font-semibold ${isLive ? 'text-green-700 dark:text-green-400' : 'text-amber-700 dark:text-amber-400'}`}>
+          {isLive ? 'Live Search Results' : 'Modeled Fallback Results'}
+        </h4>
+        <p className={`text-xs mt-0.5 ${isLive ? 'text-green-600/80 dark:text-green-400/70' : 'text-amber-600/80 dark:text-amber-400/70'}`}>
+          {sourceNote || (isLive
+            ? 'Competitors identified from live Google search results via Firecrawl.'
+            : 'Live search not configured. Using modeled industry pools as fallback. Connect Firecrawl to enable live results.')}
+        </p>
+      </div>
     </div>
   );
 }

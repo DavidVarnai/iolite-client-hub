@@ -18,6 +18,10 @@ export type {
   MarketIntelligenceStatus,
   MarketIntelligenceRun,
   MarketIntelligenceDefaults,
+  ResearchSourceMode,
 } from '@/types/marketIntelligence';
 
 export { CHANNEL_TYPE_MAP, getChannelType, SOURCE_TRUST_ORDER, getTrustRank } from '@/types/marketIntelligence';
+
+export type { CompetitorSearchResult, CompetitorSearchContext } from '@/lib/ai/competitorSearchProvider';
+export { searchCompetitors } from '@/lib/ai/competitorSearchProvider';
