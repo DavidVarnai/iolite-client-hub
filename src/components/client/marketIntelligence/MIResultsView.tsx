@@ -608,35 +608,49 @@ function ResearchSourceBanner({
   selectedMode?: 'auto' | 'live_only' | 'modeled_only';
 }) {
   const isLive = sourceMode === 'live_search';
+  const isFallback = selectedMode === 'auto' && sourceMode === 'modeled_fallback';
   const modeLabels: Record<string, string> = {
     auto: 'Auto',
     live_only: 'Live Only',
     modeled_only: 'Modeled Only',
   };
   return (
-    <div className={`panel p-4 flex items-start gap-3 ${isLive ? 'border-green-200 dark:border-green-800 bg-green-50 dark:bg-green-900/10' : 'border-amber-200 dark:border-amber-800 bg-amber-50 dark:bg-amber-900/10'}`}>
-      <div className={`w-6 h-6 rounded-full flex items-center justify-center flex-shrink-0 ${isLive ? 'bg-green-100 dark:bg-green-900/30' : 'bg-amber-100 dark:bg-amber-900/30'}`}>
-        {isLive
-          ? <Globe className="h-3 w-3 text-green-600 dark:text-green-400" />
-          : <AlertTriangle className="h-3 w-3 text-amber-600 dark:text-amber-400" />}
-      </div>
-      <div className="flex-1">
-        <div className="flex items-center gap-2">
-          <h4 className={`text-xs font-semibold ${isLive ? 'text-green-700 dark:text-green-400' : 'text-amber-700 dark:text-amber-400'}`}>
-            {isLive ? 'Live Search Results' : 'Modeled Results'}
-          </h4>
-          {selectedMode && (
-            <span className="text-[10px] bg-muted text-muted-foreground px-1.5 py-0.5 rounded">
-              Mode: {modeLabels[selectedMode] || selectedMode}
-            </span>
-          )}
+    <div className={`panel p-4 space-y-2 ${isLive ? 'border-green-200 dark:border-green-800 bg-green-50 dark:bg-green-900/10' : 'border-amber-200 dark:border-amber-800 bg-amber-50 dark:bg-amber-900/10'}`}>
+      <div className="flex items-start gap-3">
+        <div className={`w-6 h-6 rounded-full flex items-center justify-center flex-shrink-0 ${isLive ? 'bg-green-100 dark:bg-green-900/30' : 'bg-amber-100 dark:bg-amber-900/30'}`}>
+          {isLive
+            ? <Globe className="h-3 w-3 text-green-600 dark:text-green-400" />
+            : <AlertTriangle className="h-3 w-3 text-amber-600 dark:text-amber-400" />}
         </div>
-        <p className={`text-xs mt-0.5 ${isLive ? 'text-green-600/80 dark:text-green-400/70' : 'text-amber-600/80 dark:text-amber-400/70'}`}>
-          {sourceNote || (isLive
-            ? 'Competitors identified from live Google search results via SerpAPI.'
-            : 'Using modeled industry pools. Configure SerpAPI to enable live results.')}
-        </p>
+        <div className="flex-1">
+          <div className="flex items-center gap-2 flex-wrap">
+            <h4 className={`text-xs font-semibold ${isLive ? 'text-green-700 dark:text-green-400' : 'text-amber-700 dark:text-amber-400'}`}>
+              {isLive ? 'Live Search Results' : 'Modeled Results'}
+            </h4>
+            {selectedMode && (
+              <span className="text-[10px] bg-muted text-muted-foreground px-1.5 py-0.5 rounded">
+                Selected: {modeLabels[selectedMode] || selectedMode}
+              </span>
+            )}
+            <span className={`text-[10px] px-1.5 py-0.5 rounded font-semibold ${isLive ? 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400' : 'bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400'}`}>
+              {isLive ? 'LIVE' : 'MODELED'}
+            </span>
+          </div>
+          <p className={`text-xs mt-1 ${isLive ? 'text-green-600/80 dark:text-green-400/70' : 'text-amber-600/80 dark:text-amber-400/70'}`}>
+            {sourceNote || (isLive
+              ? 'Competitors identified from live Google search results via SerpAPI.'
+              : 'Using modeled industry pools. Configure SerpAPI to enable live results.')}
+          </p>
+        </div>
       </div>
+      {isFallback && (
+        <div className="flex items-center gap-2 ml-9 pt-1 border-t border-amber-200/50 dark:border-amber-800/50">
+          <AlertTriangle className="h-3 w-3 text-amber-500 shrink-0" />
+          <p className="text-[11px] text-amber-600/80 dark:text-amber-400/70">
+            Mode was set to Auto but live search was unavailable or failed. Results were generated using modeled industry pools instead. Check your SerpAPI configuration to enable live results.
+          </p>
+        </div>
+      )}
     </div>
   );
 }
