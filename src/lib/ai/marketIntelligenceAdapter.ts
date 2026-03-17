@@ -1,10 +1,8 @@
 /**
  * Channel-aware Market Intelligence adapter.
- * Uses modeled SERP-based competitor discovery: generates core keywords first,
- * then matches against curated industry competitor pools.
+ * Uses provider-based competitor discovery: live search (when available)
+ * with automatic fallback to modeled industry pools.
  * All outputs carry source metadata (sourceType, sourceConfidence).
- *
- * NOTE: Competitor discovery uses modeled pools, not live Google search results.
  */
 import type {
   MarketIntelligenceInputs,
@@ -18,8 +16,10 @@ import type {
   ChannelType,
   SourceType,
   SERPSource,
+  ResearchSourceMode,
 } from '@/types/marketIntelligence';
 import { getChannelType } from '@/types/marketIntelligence';
+import { searchCompetitors, type CompetitorSearchContext } from './competitorSearchProvider';
 
 const delay = (ms: number) => new Promise(r => setTimeout(r, ms));
 
