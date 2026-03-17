@@ -95,13 +95,18 @@ export default function MIResultsView({ outputs, run, onRerun, onRefine, onAppro
         </div>
       </div>
 
+      {/* ─── RESEARCH SOURCE MODE ─── */}
+      <ResearchSourceBanner sourceMode={outputs.researchSourceMode} sourceNote={outputs.researchSourceNote} />
+
       {/* ─── DISCOVERY QUERIES ─── */}
       {outputs.discoveryQueries && outputs.discoveryQueries.length > 0 && (
         <div className="panel p-5 space-y-3">
           <div className="flex items-center gap-2">
             <Search className="h-4 w-4 text-primary" />
             <h4 className="text-sm font-semibold">Discovery Queries</h4>
-            <span className="text-[10px] text-muted-foreground bg-muted px-1.5 py-0.5 rounded">Modeled from search intent patterns</span>
+            <span className="text-[10px] text-muted-foreground bg-muted px-1.5 py-0.5 rounded">
+              {outputs.researchSourceMode === 'live_search' ? 'Used for live Google search' : 'Modeled from search intent patterns'}
+            </span>
           </div>
           <div className="flex flex-wrap gap-2">
             {outputs.discoveryQueries.map((q, i) => (
