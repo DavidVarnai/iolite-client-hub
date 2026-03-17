@@ -53,7 +53,7 @@ function migrateDiscovery(raw: OnboardingData): OnboardingData {
     d.revenueModel = {
       revenueModelType: isMonthly ? 'monthly_recurring' : isAnnual ? 'annual_contract' : 'one_time',
       revenuePerConversion: value,
-      revenueUnit: isMonthly ? 'per_month' : isAnnual ? 'per_year' : 'per_deal',
+      revenueUnit: isMonthly ? 'per_month' : isAnnual ? 'per_year' : 'per_deal', // kept for compat; derived from type
     };
   }
   return raw;

@@ -20,11 +20,40 @@ export type PerformanceConfidence = 'high' | 'medium' | 'estimated' | 'unknown';
 export type RevenueModelType = 'one_time' | 'monthly_recurring' | 'annual_contract';
 export type RevenueUnit = 'per_deal' | 'per_month' | 'per_year';
 
+/** Canonical mapping: revenueModelType → revenueUnit. Unit is fully derived. */
+export const REVENUE_MODEL_UNIT_MAP: Record<RevenueModelType, RevenueUnit> = {
+  one_time: 'per_deal',
+  monthly_recurring: 'per_month',
+  annual_contract: 'per_year',
+};
+
 export interface RevenueModelConfig {
   revenueModelType: RevenueModelType;
   revenuePerConversion: number;
+  /** @deprecated — now derived from revenueModelType via REVENUE_MODEL_UNIT_MAP */
   revenueUnit: RevenueUnit;
   avgContractLengthMonths?: number;
+}
+
+/** Derive the canonical unit for a given model type */
+export function deriveRevenueUnit(type: RevenueModelType): RevenueUnit {
+  return REVENUE_MODEL_UNIT_MAP[type];
+}
+
+/**
+ * For recurring models, compute the estimated total contract value.
+ * Returns null for one-time models or when contract length is missing.
+ */
+export function estimatedContractValue(model: RevenueModelConfig): number | null {
+  const { revenueModelType, revenuePerConversion, avgContractLengthMonths } = model;
+  if (revenuePerConversion <= 0) return null;
+  if (revenueModelType === 'monthly_recurring' && avgContractLengthMonths && avgContractLengthMonths > 0) {
+    return revenuePerConversion * avgContractLengthMonths;
+  }
+  if (revenueModelType === 'annual_contract' && avgContractLengthMonths && avgContractLengthMonths > 0) {
+    return revenuePerConversion * Math.ceil(avgContractLengthMonths / 12);
+  }
+  return null;
 }
 
 export const REVENUE_MODEL_TYPE_LABELS: Record<RevenueModelType, string> = {
