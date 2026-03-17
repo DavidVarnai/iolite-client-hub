@@ -3,7 +3,7 @@
  * Steps: setup → generating → results (with refinement & approval).
  */
 import { useState, useCallback } from 'react';
-import { X, Loader2 } from 'lucide-react';
+import { X, Loader2, AlertTriangle } from 'lucide-react';
 import { useClientContext } from '@/contexts/ClientContext';
 import { collectMIInputs } from '@/lib/ai/marketIntelligenceReadiness';
 import { generateMarketIntelligence } from '@/lib/ai/marketIntelligenceAdapter';
