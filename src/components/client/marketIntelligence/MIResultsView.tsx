@@ -21,6 +21,7 @@ import type {
   SourceConfidence,
   CompetitorType,
   SERPSource,
+  ResearchSourceMode,
 } from '@/types/marketIntelligence';
 import { Textarea } from '@/components/ui/textarea';
 import { format } from 'date-fns';

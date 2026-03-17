@@ -608,6 +608,7 @@ function generateSummary(
   recs: ChannelRecommendation[],
   audiences: AudienceModel[],
   competitors: CompetitorProfile[],
+  sourceMode?: ResearchSourceMode,
 ): string {
   const searchChannels = recs.filter(r => r.channelType === 'search');
   const audienceChannels = recs.filter(r => r.channelType === 'audience');
@@ -628,7 +629,9 @@ function generateSummary(
   }
 
   summary += `High-priority channels: ${highPriority}. `;
-  summary += `Identified ${directCount} direct competitor${directCount !== 1 ? 's' : ''} from Google results`;
+
+  const sourceLabel = sourceMode === 'live_search' ? 'live Google search' : 'modeled industry pools';
+  summary += `Identified ${directCount} direct competitor${directCount !== 1 ? 's' : ''} via ${sourceLabel}`;
   if (bothCount > 0) summary += ` (${bothCount} in both organic + paid)`;
   if (organicOnly > 0) summary += `, ${organicOnly} organic-only`;
   if (paidOnly > 0) summary += `, ${paidOnly} paid-only`;
