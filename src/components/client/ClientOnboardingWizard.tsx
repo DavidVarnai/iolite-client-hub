@@ -1,5 +1,6 @@
 import { useState, useCallback, useMemo } from 'react';
-import { ClientDiscovery, EMPTY_DISCOVERY, BusinessModel, GrowthGoal, PerformanceConfidence, BOTTLENECK_OPTIONS, DiscoveryCompetitor, AiDiscoveredCompetitor, FunnelStage, FunnelStageCategory, FUNNEL_STAGE_OPTIONS, FUNNEL_CATEGORY_ORDER } from '@/types/onboarding';
+import { ClientDiscovery, EMPTY_DISCOVERY, BusinessModel, GrowthGoal, PerformanceConfidence, BOTTLENECK_OPTIONS, DiscoveryCompetitor, AiDiscoveredCompetitor, FunnelStage, FunnelStageCategory, FUNNEL_STAGE_OPTIONS, FUNNEL_CATEGORY_ORDER, deriveRevenueUnit } from '@/types/onboarding';
+import type { RevenueModelType } from '@/types/onboarding';
 import { ServiceChannel, SERVICE_CHANNEL_LABELS } from '@/types';
 import { Check, ChevronLeft, ChevronRight, X, Loader2, Sparkles, Plus, Trash2, ArrowRight, Download, Pause } from 'lucide-react';
 import { AnimatePresence, motion } from 'framer-motion';
@@ -293,12 +294,15 @@ function DiscoveryStep() {
               <label className="text-[10px] font-medium text-muted-foreground uppercase tracking-wider">Model Type</label>
               <select
                 value={d.revenueModel?.revenueModelType || 'one_time'}
-                onChange={(e) => updateD({ revenueModel: { ...d.revenueModel, revenueModelType: e.target.value as any } })}
+                onChange={(e) => {
+                  const type = e.target.value as RevenueModelType;
+                  updateD({ revenueModel: { ...d.revenueModel, revenueModelType: type, revenueUnit: deriveRevenueUnit(type) } });
+                }}
                 className="w-full rounded-md border bg-background px-3 py-2 text-sm"
               >
-                <option value="one_time">One-time</option>
-                <option value="monthly_recurring">Monthly recurring</option>
-                <option value="annual_contract">Annual contract</option>
+                <option value="one_time">One-time (per deal)</option>
+                <option value="monthly_recurring">Monthly recurring (per month)</option>
+                <option value="annual_contract">Annual contract (per year)</option>
               </select>
             </div>
             <div>
@@ -310,18 +314,6 @@ function DiscoveryStep() {
                 className="w-full rounded-md border bg-background px-3 py-2 text-sm"
                 placeholder="e.g. 5000"
               />
-            </div>
-            <div>
-              <label className="text-[10px] font-medium text-muted-foreground uppercase tracking-wider">Unit</label>
-              <select
-                value={d.revenueModel?.revenueUnit || 'per_deal'}
-                onChange={(e) => updateD({ revenueModel: { ...d.revenueModel, revenueUnit: e.target.value as any } })}
-                className="w-full rounded-md border bg-background px-3 py-2 text-sm"
-              >
-                <option value="per_deal">Per deal</option>
-                <option value="per_month">Per month</option>
-                <option value="per_year">Per year</option>
-              </select>
             </div>
             {(d.revenueModel?.revenueModelType === 'monthly_recurring' || d.revenueModel?.revenueModelType === 'annual_contract') && (
               <div>

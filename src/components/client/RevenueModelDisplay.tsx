@@ -1,9 +1,15 @@
 /**
  * RevenueModelDisplay — read-only structured display of the Revenue per Conversion
  * sourced from Discovery. Used in Strategy, Growth Model, and Proposal views.
+ *
+ * Revenue interpretation for Growth Model calculations:
+ *   - one_time: revenue = conversions × revenuePerConversion
+ *   - monthly_recurring: revenue per conversion = value × min(avgContractLengthMonths, modelWindowMonths)
+ *     i.e. revenue *recognised within the model window*, not the full contract value.
+ *   - annual_contract: revenue = conversions × revenuePerConversion (the annual value)
  */
-import type { RevenueModelConfig } from '@/types/onboarding';
-import { REVENUE_MODEL_TYPE_LABELS } from '@/types/onboarding';
+import type { RevenueModelConfig, RevenueModelType } from '@/types/onboarding';
+import { REVENUE_MODEL_TYPE_LABELS, estimatedContractValue, deriveRevenueUnit, REVENUE_UNIT_LABELS } from '@/types/onboarding';
 import { Info, Pencil } from 'lucide-react';
 
 interface Props {
@@ -22,14 +28,20 @@ function fmtCurrency(value: number): string {
     : 'Not set';
 }
 
+/** Human-readable unit suffix, e.g. "per month" */
+function unitSuffix(type: RevenueModelType): string {
+  return REVENUE_UNIT_LABELS[deriveRevenueUnit(type)].toLowerCase();
+}
+
 export default function RevenueModelDisplay({
   revenueModel,
   showEditHint = true,
   onEditClick,
   variant = 'card',
 }: Props) {
-  const { revenueModelType, revenuePerConversion, revenueUnit, avgContractLengthMonths } = revenueModel;
+  const { revenueModelType, revenuePerConversion, avgContractLengthMonths } = revenueModel;
   const hasValue = revenuePerConversion > 0;
+  const ecv = estimatedContractValue(revenueModel);
 
   if (variant === 'inline') {
     return (
@@ -37,10 +49,13 @@ export default function RevenueModelDisplay({
         <span className="text-muted-foreground">Revenue per Conversion:</span>
         <span className="font-semibold text-primary">{fmtCurrency(revenuePerConversion)}</span>
         {hasValue && (
-          <span className="text-muted-foreground">· {REVENUE_MODEL_TYPE_LABELS[revenueModelType]}</span>
+          <span className="text-muted-foreground">· {unitSuffix(revenueModelType)}</span>
         )}
         {avgContractLengthMonths && avgContractLengthMonths > 0 && (
           <span className="text-muted-foreground">· {avgContractLengthMonths}mo contract</span>
+        )}
+        {ecv !== null && (
+          <span className="text-muted-foreground">· est. {fmtCurrency(ecv)}</span>
         )}
       </div>
     );
@@ -65,6 +80,7 @@ export default function RevenueModelDisplay({
         </div>
         <p className={`text-lg font-semibold tabular-nums ${hasValue ? 'text-primary' : 'text-muted-foreground'}`}>
           {fmtCurrency(revenuePerConversion)}
+          {hasValue && <span className="text-sm font-normal text-muted-foreground ml-1">{unitSuffix(revenueModelType)}</span>}
         </p>
         {hasValue && (
           <div className="flex flex-wrap gap-2">
@@ -73,7 +89,12 @@ export default function RevenueModelDisplay({
             </span>
             {avgContractLengthMonths && avgContractLengthMonths > 0 && (
               <span className="text-[10px] px-1.5 py-0.5 rounded bg-muted text-muted-foreground">
-                Contract: {avgContractLengthMonths} months
+                {avgContractLengthMonths}-month avg contract
+              </span>
+            )}
+            {ecv !== null && (
+              <span className="text-[10px] px-1.5 py-0.5 rounded bg-accent text-accent-foreground font-medium">
+                Est. contract value: {fmtCurrency(ecv)}
               </span>
             )}
           </div>
@@ -88,10 +109,21 @@ export default function RevenueModelDisplay({
   );
 }
 
-/** Calculate effective revenue per conversion for Growth Model calculations */
+/**
+ * Calculate effective revenue per conversion for Growth Model calculations.
+ *
+ * Interpretation:
+ *   - one_time: full value per conversion
+ *   - monthly_recurring: value × min(contractLength, modelWindowMonths)
+ *     → revenue *recognised within the model time window*
+ *   - annual_contract: full annual value per conversion
+ *
+ * @param revenueModel  The structured revenue config from Discovery
+ * @param modelWindowMonths  How many months the growth model covers (e.g. 12)
+ */
 export function getEffectiveRevenuePerConversion(
   revenueModel: RevenueModelConfig,
-  monthCount?: number,
+  modelWindowMonths?: number,
 ): number {
   const { revenueModelType, revenuePerConversion, avgContractLengthMonths } = revenueModel;
   if (revenuePerConversion <= 0) return 0;
@@ -99,9 +131,13 @@ export function getEffectiveRevenuePerConversion(
   switch (revenueModelType) {
     case 'one_time':
       return revenuePerConversion;
-    case 'monthly_recurring':
-      // revenue = value × months (use contract length or model month count)
-      return revenuePerConversion * (avgContractLengthMonths || monthCount || 1);
+    case 'monthly_recurring': {
+      // Revenue recognised within the model window
+      const months = avgContractLengthMonths && modelWindowMonths
+        ? Math.min(avgContractLengthMonths, modelWindowMonths)
+        : avgContractLengthMonths || modelWindowMonths || 1;
+      return revenuePerConversion * months;
+    }
     case 'annual_contract':
       return revenuePerConversion;
     default:
