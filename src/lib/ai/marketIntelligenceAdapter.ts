@@ -174,6 +174,7 @@ export async function generateMarketIntelligence(
     discoveryQueries,
     researchSourceMode,
     researchSourceNote,
+    selectedResearchMode: inputs.competitorResearchMode || 'auto',
   };
 }
 

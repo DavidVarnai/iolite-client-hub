@@ -107,10 +107,24 @@ export default function MarketIntelligenceWorkflow({ onClose }: Props) {
         {/* Content */}
         <div className="flex-1 overflow-y-auto p-6">
           {phase === 'setup' && (
-            <ResearchSetupStep
-              initialInputs={currentInputs}
-              onRun={runGeneration}
-            />
+            <>
+              {runError && (
+                <div className="mb-4 panel border-destructive/30 bg-destructive/5 p-4 flex items-start gap-3">
+                  <AlertTriangle className="h-4 w-4 text-destructive mt-0.5 shrink-0" />
+                  <div>
+                    <h4 className="text-xs font-semibold text-destructive">Research Failed</h4>
+                    <p className="text-xs text-destructive/80 mt-1">{runError}</p>
+                    <p className="text-[10px] text-muted-foreground mt-1">
+                      Try switching to "Auto" or "Modeled" mode, or check your API configuration.
+                    </p>
+                  </div>
+                </div>
+              )}
+              <ResearchSetupStep
+                initialInputs={currentInputs}
+                onRun={runGeneration}
+              />
+            </>
           )}
 
           {phase === 'generating' && (
