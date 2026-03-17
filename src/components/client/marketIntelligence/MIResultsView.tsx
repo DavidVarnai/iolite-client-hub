@@ -593,3 +593,26 @@ function SourceBadge({ type, confidence }: { type?: SourceType; confidence?: Sou
     </div>
   );
 }
+
+function ResearchSourceBanner({ sourceMode, sourceNote }: { sourceMode?: ResearchSourceMode; sourceNote?: string }) {
+  const isLive = sourceMode === 'live_search';
+  return (
+    <div className={`panel p-4 flex items-start gap-3 ${isLive ? 'border-green-200 dark:border-green-800 bg-green-50 dark:bg-green-900/10' : 'border-amber-200 dark:border-amber-800 bg-amber-50 dark:bg-amber-900/10'}`}>
+      <div className={`w-6 h-6 rounded-full flex items-center justify-center flex-shrink-0 ${isLive ? 'bg-green-100 dark:bg-green-900/30' : 'bg-amber-100 dark:bg-amber-900/30'}`}>
+        {isLive
+          ? <Globe className="h-3 w-3 text-green-600 dark:text-green-400" />
+          : <AlertTriangle className="h-3 w-3 text-amber-600 dark:text-amber-400" />}
+      </div>
+      <div>
+        <h4 className={`text-xs font-semibold ${isLive ? 'text-green-700 dark:text-green-400' : 'text-amber-700 dark:text-amber-400'}`}>
+          {isLive ? 'Live Search Results' : 'Modeled Fallback Results'}
+        </h4>
+        <p className={`text-xs mt-0.5 ${isLive ? 'text-green-600/80 dark:text-green-400/70' : 'text-amber-600/80 dark:text-amber-400/70'}`}>
+          {sourceNote || (isLive
+            ? 'Competitors identified from live Google search results via Firecrawl.'
+            : 'Live search not configured. Using modeled industry pools as fallback. Connect Firecrawl to enable live results.')}
+        </p>
+      </div>
+    </div>
+  );
+}
