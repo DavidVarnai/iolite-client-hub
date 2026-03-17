@@ -193,6 +193,8 @@ export interface MarketIntelligenceOutputs {
   researchSummary: string;
   /** Core keywords used to drive competitor discovery */
   coreSearchKeywords?: string[];
+  /** Search queries used for SERP-based competitor discovery */
+  discoveryQueries?: string[];
 }
 
 /* ── Approved Research ── */
