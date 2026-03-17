@@ -269,9 +269,9 @@ function DiscoveryStep() {
   };
 
   return (
-    <div className="space-y-8">
+    <div className="space-y-10">
       <div>
-        <h3 className="text-base font-semibold mb-1">Discovery</h3>
+        <h3 className="text-lg font-semibold mb-1">Discovery</h3>
         <p className="text-sm text-muted-foreground">Capture structured discovery inputs that will feed Strategy and Growth Model.</p>
       </div>
 
