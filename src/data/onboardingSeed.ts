@@ -26,6 +26,7 @@ export const c1Onboarding: OnboardingData = {
     primaryProducts: 'Premium home goods, kitchenware, sustainable living products',
     revenueStreams: 'DTC ecommerce (85%), wholesale (15%)',
     avgOrderValue: '$78',
+    revenueModel: { revenueModelType: 'one_time', revenuePerConversion: 78, revenueUnit: 'per_deal' },
     coreCustomerSegments: 'Women 25-45, HHI $75k+, urban/suburban, sustainability-conscious',
     revenueTargets: '$12M annual revenue (up from $9.2M)',
     customerLeadTargets: '35,000 new customers, 55% repeat rate',
