@@ -139,6 +139,7 @@ export async function generateMarketIntelligence(
     isLocal: ctx.isLocal,
     localArea: ctx.localArea,
     area: ctx.area,
+    researchModePreference: inputs.competitorResearchMode,
   };
   const competitorResult = await searchCompetitors(searchCtx);
   const competitorProfiles = competitorResult.competitors;

@@ -2,12 +2,13 @@
  * ResearchSetupStep — editable research scope before running MI.
  */
 import { useState } from 'react';
-import { Sparkles, MapPin } from 'lucide-react';
+import { Sparkles, MapPin, Globe, Database } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
-import type { MarketIntelligenceInputs, LocalRadius } from '@/types/marketIntelligence';
+import type { MarketIntelligenceInputs, LocalRadius, CompetitorResearchPreference } from '@/types/marketIntelligence';
 import { LOCAL_RADIUS_OPTIONS, CHANNEL_TYPE_MAP } from '@/types/marketIntelligence';
+import { repository } from '@/lib/repository';
 
 interface Props {
   initialInputs: MarketIntelligenceInputs;
@@ -16,8 +17,21 @@ interface Props {
 
 const ALL_CHANNELS = Object.keys(CHANNEL_TYPE_MAP);
 
+const RESEARCH_MODE_OPTIONS: { value: CompetitorResearchPreference; label: string; icon: typeof Globe; description: string }[] = [
+  { value: 'auto', label: 'Auto', icon: Sparkles, description: 'Try live search, fall back to modeled' },
+  { value: 'live_only', label: 'Live Search', icon: Globe, description: 'Real Google results via SerpAPI' },
+  { value: 'modeled_only', label: 'Modeled', icon: Database, description: 'Modeled industry pools (no API cost)' },
+];
+
 export default function ResearchSetupStep({ initialInputs, onRun }: Props) {
-  const [inputs, setInputs] = useState<MarketIntelligenceInputs>(initialInputs);
+  const [inputs, setInputs] = useState<MarketIntelligenceInputs>(() => {
+    const defaults = repository.marketIntelligenceDefaults.get();
+    const adminMode = defaults.competitorResearchMode || 'auto';
+    return {
+      ...initialInputs,
+      competitorResearchMode: initialInputs.competitorResearchMode || adminMode,
+    };
+  });
 
   const update = (patch: Partial<MarketIntelligenceInputs>) =>
     setInputs(prev => ({ ...prev, ...patch }));
@@ -33,6 +47,8 @@ export default function ResearchSetupStep({ initialInputs, onRun }: Props) {
     });
   };
 
+  const activeMode = inputs.competitorResearchMode || 'auto';
+
   return (
     <div className="space-y-6 max-w-2xl mx-auto py-4">
       <div className="text-center space-y-1">
@@ -40,6 +56,35 @@ export default function ResearchSetupStep({ initialInputs, onRun }: Props) {
         <p className="text-xs text-muted-foreground">
           Review and adjust inputs before running Market Intelligence.
         </p>
+      </div>
+
+      {/* Competitor Research Mode */}
+      <div className="panel p-4 space-y-3">
+        <div className="flex items-center gap-2">
+          <Globe className="h-4 w-4 text-primary" />
+          <span className="text-xs font-semibold">Competitor Research Mode</span>
+        </div>
+        <div className="grid grid-cols-3 gap-2">
+          {RESEARCH_MODE_OPTIONS.map(opt => {
+            const Icon = opt.icon;
+            const isActive = activeMode === opt.value;
+            return (
+              <button
+                key={opt.value}
+                onClick={() => update({ competitorResearchMode: opt.value })}
+                className={`flex flex-col items-center gap-1.5 p-3 rounded-lg text-center transition-colors border ${
+                  isActive
+                    ? 'bg-primary/10 border-primary text-primary'
+                    : 'bg-muted/50 border-transparent hover:bg-muted text-foreground'
+                }`}
+              >
+                <Icon className="h-4 w-4" />
+                <span className="text-xs font-medium">{opt.label}</span>
+                <span className="text-[10px] text-muted-foreground leading-tight">{opt.description}</span>
+              </button>
+            );
+          })}
+        </div>
       </div>
 
       {/* Grid of editable fields */}

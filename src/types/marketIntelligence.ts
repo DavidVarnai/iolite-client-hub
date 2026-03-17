@@ -182,10 +182,15 @@ export interface MarketIntelligenceInputs {
   customRadiusMiles?: number;
   /* Refinement */
   refinementNote?: string;
+  /** Per-run override of competitor research mode */
+  competitorResearchMode?: CompetitorResearchPreference;
 }
 
 /** How competitor research was conducted */
 export type ResearchSourceMode = 'live_search' | 'modeled_fallback';
+
+/** Admin-controlled preference for competitor research mode */
+export type CompetitorResearchPreference = 'auto' | 'live_only' | 'modeled_only';
 
 export interface MarketIntelligenceOutputs {
   keywordThemes: KeywordTheme[];
@@ -253,4 +258,6 @@ export interface MarketIntelligenceDefaults {
     benchmarkAssumptions: boolean;
     researchSummary: boolean;
   };
+  /** Admin-level competitor research mode preference */
+  competitorResearchMode?: CompetitorResearchPreference;
 }
