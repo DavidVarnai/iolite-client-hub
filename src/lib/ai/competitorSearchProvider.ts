@@ -177,7 +177,11 @@ export async function searchCompetitorsLive(
 
   // Exclude the client's own domain
   const clientDomain = extractClientDomain(ctx.inputs.website);
-  if (clientDomain) domainMap.delete(clientDomain);
+  if (clientDomain) {
+    const hadOwn = domainMap.has(clientDomain);
+    domainMap.delete(clientDomain);
+    if (hadOwn) console.log(`[MI-Live] Excluded client's own domain: ${clientDomain}`);
+  }
 
   // Score and sort
   const totalQueries = queries.length;
@@ -277,6 +281,7 @@ export async function searchCompetitorsLive(
   }
 
   console.log(`[MI-Live] Final: ${profiles.length} competitors (${directCompetitors.length} direct candidates, ${directoryResults.length} directories)`);
+  console.log(`[MI-Live] Source mode: live_search | Top domains: ${directCompetitors.slice(0, 5).map(e => e.domain).join(', ')}`);
 
   return {
     competitors: profiles,
@@ -303,7 +308,7 @@ export async function searchCompetitors(
   if (isLiveSearchAvailable()) {
     try {
       const liveResult = await searchCompetitorsLive(ctx);
-      console.log('[MI] Live search succeeded:', liveResult.competitors.length, 'competitors');
+      console.log('[MI] ✅ Live search succeeded:', liveResult.competitors.length, 'competitors | sourceMode:', liveResult.sourceMode);
       return liveResult;
     } catch (err) {
       const message = err instanceof Error ? err.message : 'Unknown error';

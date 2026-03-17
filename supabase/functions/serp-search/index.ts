@@ -2,7 +2,7 @@ import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
+  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version',
 };
 
 interface SerpSearchRequest {
@@ -39,10 +39,11 @@ serve(async (req) => {
   }
 
   try {
-    const apiKey = Deno.env.get('SERPAPI_KEY');
+    const apiKey = Deno.env.get('SerpAPI');
     if (!apiKey) {
+      console.error('[serp-search] SerpAPI secret not found. Expected env var: SerpAPI');
       return new Response(
-        JSON.stringify({ error: 'SERPAPI_KEY not configured' }),
+        JSON.stringify({ error: 'SerpAPI secret not configured' }),
         { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } },
       );
     }
