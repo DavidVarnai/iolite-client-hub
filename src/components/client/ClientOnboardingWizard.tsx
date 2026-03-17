@@ -295,8 +295,7 @@ function DiscoveryStep() {
               <select
                 value={d.revenueModel?.revenueModelType || 'one_time'}
                 onChange={(e) => {
-                  const type = e.target.value as import('@/types/onboarding').RevenueModelType;
-                  const { deriveRevenueUnit } = require('@/types/onboarding') as typeof import('@/types/onboarding');
+                  const type = e.target.value as RevenueModelType;
                   updateD({ revenueModel: { ...d.revenueModel, revenueModelType: type, revenueUnit: deriveRevenueUnit(type) } });
                 }}
                 className="w-full rounded-md border bg-background px-3 py-2 text-sm"
