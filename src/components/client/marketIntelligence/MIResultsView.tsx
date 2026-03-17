@@ -100,7 +100,7 @@ export default function MIResultsView({ outputs, run, onRerun, onRefine, onAppro
           <div className="flex items-center gap-2">
             <Search className="h-4 w-4 text-primary" />
             <h4 className="text-sm font-semibold">Discovery Queries</h4>
-            <span className="text-[10px] text-muted-foreground bg-muted px-1.5 py-0.5 rounded">Used to find competitors from Google results</span>
+            <span className="text-[10px] text-muted-foreground bg-muted px-1.5 py-0.5 rounded">Modeled from search intent patterns</span>
           </div>
           <div className="flex flex-wrap gap-2">
             {outputs.discoveryQueries.map((q, i) => (
