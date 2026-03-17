@@ -39,7 +39,7 @@ serve(async (req) => {
   }
 
   try {
-    const apiKey = Deno.env.get('SERPAPI_KEY');
+    const apiKey = Deno.env.get('SerpAPI');
     if (!apiKey) {
       return new Response(
         JSON.stringify({ error: 'SERPAPI_KEY not configured' }),
