@@ -4,6 +4,9 @@ import { calcFunnelOutputs, calcBreakEven, calcROM } from '@/lib/growthModelCalc
 import { generateMonths, formatMonth } from '@/lib/growthModelTransformers';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
+import { useClientContext } from '@/contexts/ClientContext';
+import RevenueModelDisplay from '@/components/client/RevenueModelDisplay';
+import { getEffectiveRevenuePerConversion } from '@/components/client/RevenueModelDisplay';
 
 interface Props {
   model: GrowthModel;
@@ -48,8 +51,18 @@ function fmt(n: number): string {
 }
 
 export default function RevenueModel({ model, scenario, onUpdate }: Props) {
+  const { onboarding } = useClientContext();
+  const revenueModel = onboarding.discovery.revenueModel;
   const months = useMemo(() => generateMonths(model.startMonth, model.monthCount), [model]);
   const ra = scenario.revenueAssumption;
+
+  // Use discovery revenue model for deal size if available
+  const effectiveDealSize = useMemo(() => {
+    if (revenueModel?.revenuePerConversion > 0) {
+      return getEffectiveRevenuePerConversion(revenueModel);
+    }
+    return ra.avgDealSize;
+  }, [revenueModel, ra.avgDealSize]);
 
   const updateAssumption = useCallback((patch: Partial<RevenueAssumption>) => {
     if (!onUpdate) return;
@@ -94,7 +107,7 @@ export default function RevenueModel({ model, scenario, onUpdate }: Props) {
       const lagIdx = Math.max(0, i - ra.salesCycleLag);
       const effectiveLeads = projections[lagIdx]?.totalLeads || 0;
       const customers = Math.round(effectiveLeads * (ra.closeRate / 100) * ramp);
-      const revenue = customers * ra.avgDealSize * ra.repeatMultiplier;
+      const revenue = customers * effectiveDealSize * ra.repeatMultiplier;
       cumRevenue += revenue;
       cumSpend += p.totalSpend;
       const margin = revenue * (ra.grossMarginPct / 100);
@@ -135,10 +148,25 @@ export default function RevenueModel({ model, scenario, onUpdate }: Props) {
             )}
           </div>
         </CardHeader>
-        <CardContent>
+        <CardContent className="space-y-4">
+          {/* Revenue per Conversion from Discovery — read-only */}
+          {revenueModel && <RevenueModelDisplay revenueModel={revenueModel} variant="inline" />}
+
           <div className="grid grid-cols-4 gap-3">
-            <EditableInputField label="Avg Deal Size" value={ra.avgDealSize} suffix="$"
-              onChange={(v) => updateAssumption({ avgDealSize: v })} />
+            {/* avgDealSize is now derived from Discovery — show read-only if revenueModel set */}
+            {revenueModel?.revenuePerConversion > 0 ? (
+              <div>
+                <label className="text-[10px] font-medium text-muted-foreground uppercase tracking-wider">Effective Deal Size</label>
+                <div className="relative">
+                  <Input type="number" value={effectiveDealSize} readOnly className="h-8 text-xs tabular-nums pr-8 bg-muted/50 cursor-not-allowed" />
+                  <span className="absolute right-2 top-1/2 -translate-y-1/2 text-[10px] text-muted-foreground">$</span>
+                </div>
+                <p className="text-[9px] text-muted-foreground mt-0.5">From Discovery</p>
+              </div>
+            ) : (
+              <EditableInputField label="Avg Deal Size" value={ra.avgDealSize} suffix="$"
+                onChange={(v) => updateAssumption({ avgDealSize: v })} />
+            )}
             <EditableInputField label="Close Rate" value={ra.closeRate} suffix="%"
               onChange={(v) => updateAssumption({ closeRate: v })} />
             <EditableInputField label="Sales Cycle Lag" value={ra.salesCycleLag} suffix="mo"

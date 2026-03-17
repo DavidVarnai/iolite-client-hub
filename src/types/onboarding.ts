@@ -17,6 +17,28 @@ export type BusinessModel = 'ecommerce' | 'lead_generation' | 'hybrid' | 'other'
 export type GrowthGoal = 'revenue_growth' | 'lead_volume' | 'market_expansion' | 'brand_awareness';
 export type PerformanceConfidence = 'high' | 'medium' | 'estimated' | 'unknown';
 
+export type RevenueModelType = 'one_time' | 'monthly_recurring' | 'annual_contract';
+export type RevenueUnit = 'per_deal' | 'per_month' | 'per_year';
+
+export interface RevenueModelConfig {
+  revenueModelType: RevenueModelType;
+  revenuePerConversion: number;
+  revenueUnit: RevenueUnit;
+  avgContractLengthMonths?: number;
+}
+
+export const REVENUE_MODEL_TYPE_LABELS: Record<RevenueModelType, string> = {
+  one_time: 'One-time',
+  monthly_recurring: 'Monthly recurring',
+  annual_contract: 'Annual contract',
+};
+
+export const REVENUE_UNIT_LABELS: Record<RevenueUnit, string> = {
+  per_deal: 'Per deal',
+  per_month: 'Per month',
+  per_year: 'Per year',
+};
+
 export const BOTTLENECK_OPTIONS = [
   'Low website conversion',
   'Weak traffic volume',
@@ -64,7 +86,9 @@ export interface ClientDiscovery {
   businessModel: BusinessModel;
   primaryProducts: string;
   revenueStreams: string;
+  /** @deprecated use revenueModel */
   avgOrderValue: string;
+  revenueModel: RevenueModelConfig;
   coreCustomerSegments: string;
 
   // B. Growth Targets
@@ -121,6 +145,7 @@ export const EMPTY_DISCOVERY: ClientDiscovery = {
   primaryProducts: '',
   revenueStreams: '',
   avgOrderValue: '',
+  revenueModel: { revenueModelType: 'one_time', revenuePerConversion: 0, revenueUnit: 'per_deal' },
   coreCustomerSegments: '',
   revenueTargets: '',
   customerLeadTargets: '',
@@ -222,8 +247,9 @@ export function computeStageReadiness(
 
   // Discovery
   const d = onboarding.discovery;
+  const revenueModelSet = d.revenueModel && d.revenueModel.revenuePerConversion > 0 ? 'set' : '';
   const discoveryFields = [
-    d.primaryProducts, d.revenueStreams, d.avgOrderValue, d.coreCustomerSegments,
+    d.primaryProducts, d.revenueStreams, revenueModelSet, d.coreCustomerSegments,
     d.revenueTargets, d.customerLeadTargets, d.timeHorizon,
     d.funnelType, d.closeRate, d.salesCycleLength,
     d.monthlyVisitors || d.currentTraffic, d.monthlyLeads || d.currentLeadsOrders,
@@ -280,7 +306,8 @@ export function getProposalChecklist(
   hasGrowthModel: boolean,
 ): ProposalChecklistItem[] {
   const d = onboarding.discovery;
-  const dFields = [d.primaryProducts, d.revenueStreams, d.avgOrderValue, d.revenueTargets, d.customerLeadTargets];
+  const revenueModelSet = d.revenueModel && d.revenueModel.revenuePerConversion > 0 ? 'set' : '';
+  const dFields = [d.primaryProducts, d.revenueStreams, revenueModelSet, d.revenueTargets, d.customerLeadTargets];
   const dFilled = dFields.filter(f => f && f.trim().length > 0).length;
 
   return [

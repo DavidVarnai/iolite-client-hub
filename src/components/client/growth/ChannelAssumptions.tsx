@@ -10,6 +10,7 @@ import { useClientContext } from '@/contexts/ClientContext';
 import { repository } from '@/lib/repository';
 import { Info, Sparkles, ChevronDown, ChevronUp, Check, ExternalLink } from 'lucide-react';
 import { toast } from 'sonner';
+import RevenueModelDisplay from '@/components/client/RevenueModelDisplay';
 
 interface Props {
   model: GrowthModel;
@@ -133,11 +134,13 @@ export default function ChannelAssumptions({ model, scenario, onUpdate }: Props)
   const { client, onboarding } = useClientContext();
   const [showMIBanner, setShowMIBanner] = useState(true);
 
+  const revenueModel = onboarding.discovery.revenueModel;
   const globalAov = useMemo(() => {
+    if (revenueModel?.revenuePerConversion > 0) return revenueModel.revenuePerConversion;
     const raw = onboarding.discovery.avgOrderValue || '';
     const parsed = parseFloat(raw.replace(/[^0-9.]/g, ''));
     return isNaN(parsed) ? 0 : parsed;
-  }, [onboarding.discovery.avgOrderValue]);
+  }, [revenueModel, onboarding.discovery.avgOrderValue]);
 
   // Fetch latest MI run for this client
   const miRun = useMemo<MarketIntelligenceRun | null>(() => {
@@ -236,16 +239,8 @@ export default function ChannelAssumptions({ model, scenario, onUpdate }: Props)
         </div>
       )}
 
-      {/* Global AOV */}
-      <div className="panel p-4 flex items-center gap-3">
-        <Info className="h-4 w-4 text-primary shrink-0" />
-        <div className="flex-1">
-          <p className="text-xs font-medium text-foreground">
-            Global AOV / Deal Size: <span className="text-primary font-semibold">{globalAov > 0 ? `$${globalAov.toLocaleString()}` : 'Not set'}</span>
-          </p>
-          <p className="text-[10px] text-muted-foreground">Set in Client Discovery → Business Overview → Avg Order Value / Deal Size</p>
-        </div>
-      </div>
+      {/* Revenue per Conversion — read-only from Discovery */}
+      {revenueModel && <RevenueModelDisplay revenueModel={revenueModel} />}
 
       {/* Funnel type selector */}
       <div className="flex items-center gap-4">
@@ -410,7 +405,7 @@ function ChannelCard({ ca, avgBudget, output, model, onAssumptionChange, globalA
             <InputField label="LP Conv Rate" value={ca.lpConvRate} onChange={(v) => onAssumptionChange(ca.id, 'lpConvRate', v)} suffix="%"
               suggestion={suggestions.lpConvRate} onApply={(v) => applySuggestion('lpConvRate', v)} />
             <div>
-              <label className="text-[10px] font-medium text-muted-foreground uppercase tracking-wider">AOV / Deal</label>
+              <label className="text-[10px] font-medium text-muted-foreground uppercase tracking-wider">Rev / Conversion</label>
               <div className="relative">
                 <Input
                   type="number"

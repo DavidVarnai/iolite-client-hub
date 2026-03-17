@@ -43,6 +43,19 @@ function migrateDiscovery(raw: OnboardingData): OnboardingData {
   if (d.bottleneckNotes === undefined) d.bottleneckNotes = '';
   // Structured competitors
   if (!Array.isArray(d.competitors)) d.competitors = [];
+  // Revenue model migration: infer from legacy avgOrderValue
+  if (!d.revenueModel) {
+    const raw = d.avgOrderValue || '';
+    const parsed = parseFloat(raw.replace(/[^0-9.]/g, ''));
+    const value = isNaN(parsed) ? 0 : parsed;
+    const isMonthly = /month|\/mo/i.test(raw);
+    const isAnnual = /annual|year|\/yr/i.test(raw);
+    d.revenueModel = {
+      revenueModelType: isMonthly ? 'monthly_recurring' : isAnnual ? 'annual_contract' : 'one_time',
+      revenuePerConversion: value,
+      revenueUnit: isMonthly ? 'per_month' : isAnnual ? 'per_year' : 'per_deal',
+    };
+  }
   return raw;
 }
 

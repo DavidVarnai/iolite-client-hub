@@ -285,7 +285,58 @@ function DiscoveryStep() {
           onChange={(v) => updateD({ businessModel: v as BusinessModel })} />
         <ExpandableField label="Primary Products / Services" value={d.primaryProducts} onChange={(v) => updateD({ primaryProducts: v })} />
         <ExpandableField label="Revenue Streams" value={d.revenueStreams} onChange={(v) => updateD({ revenueStreams: v })} />
-        <Field label="Avg Order Value / Deal Size" value={d.avgOrderValue} onChange={(v) => updateD({ avgOrderValue: v })} />
+        <Field label="Avg Order Value / Deal Size (legacy)" value={d.avgOrderValue} onChange={(v) => updateD({ avgOrderValue: v })} />
+        <div className="space-y-3 py-2">
+          <p className="text-xs font-semibold text-foreground">Revenue per Conversion</p>
+          <div className="grid grid-cols-2 gap-3">
+            <div>
+              <label className="text-[10px] font-medium text-muted-foreground uppercase tracking-wider">Model Type</label>
+              <select
+                value={d.revenueModel?.revenueModelType || 'one_time'}
+                onChange={(e) => updateD({ revenueModel: { ...d.revenueModel, revenueModelType: e.target.value as any } })}
+                className="w-full rounded-md border bg-background px-3 py-2 text-sm"
+              >
+                <option value="one_time">One-time</option>
+                <option value="monthly_recurring">Monthly recurring</option>
+                <option value="annual_contract">Annual contract</option>
+              </select>
+            </div>
+            <div>
+              <label className="text-[10px] font-medium text-muted-foreground uppercase tracking-wider">Amount ($)</label>
+              <input
+                type="number"
+                value={d.revenueModel?.revenuePerConversion || ''}
+                onChange={(e) => updateD({ revenueModel: { ...d.revenueModel, revenuePerConversion: parseFloat(e.target.value) || 0 } })}
+                className="w-full rounded-md border bg-background px-3 py-2 text-sm"
+                placeholder="e.g. 5000"
+              />
+            </div>
+            <div>
+              <label className="text-[10px] font-medium text-muted-foreground uppercase tracking-wider">Unit</label>
+              <select
+                value={d.revenueModel?.revenueUnit || 'per_deal'}
+                onChange={(e) => updateD({ revenueModel: { ...d.revenueModel, revenueUnit: e.target.value as any } })}
+                className="w-full rounded-md border bg-background px-3 py-2 text-sm"
+              >
+                <option value="per_deal">Per deal</option>
+                <option value="per_month">Per month</option>
+                <option value="per_year">Per year</option>
+              </select>
+            </div>
+            {(d.revenueModel?.revenueModelType === 'monthly_recurring' || d.revenueModel?.revenueModelType === 'annual_contract') && (
+              <div>
+                <label className="text-[10px] font-medium text-muted-foreground uppercase tracking-wider">Avg Contract Length (months)</label>
+                <input
+                  type="number"
+                  value={d.revenueModel?.avgContractLengthMonths || ''}
+                  onChange={(e) => updateD({ revenueModel: { ...d.revenueModel, avgContractLengthMonths: parseInt(e.target.value) || undefined } })}
+                  className="w-full rounded-md border bg-background px-3 py-2 text-sm"
+                  placeholder="e.g. 12"
+                />
+              </div>
+            )}
+          </div>
+        </div>
         <ExpandableField label="Core Customer Segments" value={d.coreCustomerSegments} onChange={(v) => updateD({ coreCustomerSegments: v })} />
       </DiscoverySection>
 
