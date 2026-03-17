@@ -17,6 +17,7 @@ import type {
   BenchmarkAssumption,
   ChannelType,
   SourceType,
+  SERPSource,
 } from '@/types/marketIntelligence';
 import { getChannelType } from '@/types/marketIntelligence';
 
