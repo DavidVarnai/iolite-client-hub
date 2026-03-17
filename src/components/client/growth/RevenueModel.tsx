@@ -4,6 +4,9 @@ import { calcFunnelOutputs, calcBreakEven, calcROM } from '@/lib/growthModelCalc
 import { generateMonths, formatMonth } from '@/lib/growthModelTransformers';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
+import { useClientContext } from '@/contexts/ClientContext';
+import RevenueModelDisplay from '@/components/client/RevenueModelDisplay';
+import { getEffectiveRevenuePerConversion } from '@/components/client/RevenueModelDisplay';
 
 interface Props {
   model: GrowthModel;
