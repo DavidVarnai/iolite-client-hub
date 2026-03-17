@@ -96,7 +96,11 @@ export default function MIResultsView({ outputs, run, onRerun, onRefine, onAppro
       </div>
 
       {/* ─── RESEARCH SOURCE MODE ─── */}
-      <ResearchSourceBanner sourceMode={outputs.researchSourceMode} sourceNote={outputs.researchSourceNote} />
+      <ResearchSourceBanner
+        sourceMode={outputs.researchSourceMode}
+        sourceNote={outputs.researchSourceNote}
+        selectedMode={outputs.selectedResearchMode}
+      />
 
       {/* ─── DISCOVERY QUERIES ─── */}
       {outputs.discoveryQueries && outputs.discoveryQueries.length > 0 && (
