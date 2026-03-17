@@ -1,7 +1,7 @@
 import { useState, useCallback, useMemo } from 'react';
 import { ClientDiscovery, EMPTY_DISCOVERY, BusinessModel, GrowthGoal, PerformanceConfidence, BOTTLENECK_OPTIONS, DiscoveryCompetitor, AiDiscoveredCompetitor, FunnelStage, FunnelStageCategory, FUNNEL_STAGE_OPTIONS, FUNNEL_CATEGORY_ORDER } from '@/types/onboarding';
 import { ServiceChannel, SERVICE_CHANNEL_LABELS } from '@/types';
-import { Check, ChevronLeft, ChevronRight, X, Loader2, Sparkles, Plus, Trash2, ArrowRight, Download } from 'lucide-react';
+import { Check, ChevronLeft, ChevronRight, X, Loader2, Sparkles, Plus, Trash2, ArrowRight, Download, Pause } from 'lucide-react';
 import { AnimatePresence, motion } from 'framer-motion';
 import { useClientContext } from '@/contexts/ClientContext';
 import { runMarketResearch } from '@/lib/ai/aiActions';
@@ -972,8 +972,9 @@ export default function ClientOnboardingWizard({ onClose, onNavigateTab, initial
             <h2 className="text-base font-semibold">Client Onboarding</h2>
             <p className="text-xs text-muted-foreground">Step {stepIdx + 1} of {STEPS.length}</p>
           </div>
-          <button onClick={onClose} className="p-2 hover:bg-muted rounded-md transition-colors">
-            <X className="h-4 w-4 text-muted-foreground" />
+          <button onClick={onClose} className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-muted-foreground hover:text-foreground hover:bg-muted rounded-md transition-colors">
+            <Pause className="h-3 w-3" />
+            Save &amp; Exit
           </button>
         </div>
 
