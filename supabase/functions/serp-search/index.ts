@@ -41,8 +41,9 @@ serve(async (req) => {
   try {
     const apiKey = Deno.env.get('SerpAPI');
     if (!apiKey) {
+      console.error('[serp-search] SerpAPI secret not found. Expected env var: SerpAPI');
       return new Response(
-        JSON.stringify({ error: 'SERPAPI_KEY not configured' }),
+        JSON.stringify({ error: 'SerpAPI secret not configured' }),
         { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } },
       );
     }
