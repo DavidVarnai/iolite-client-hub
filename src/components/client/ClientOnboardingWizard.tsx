@@ -652,9 +652,9 @@ function DiscoveryStep() {
               className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded-md bg-primary/10 text-primary hover:bg-primary/20 transition-colors disabled:opacity-50"
             >
               {aiStatus === 'loading' ? (
-                <><Loader2 className="h-3.5 w-3.5 animate-spin" /> Researching…</>
+                <><Loader2 className="h-3.5 w-3.5 animate-spin" /> Searching…</>
               ) : (
-                <><Sparkles className="h-3.5 w-3.5" /> Research Competitors</>
+                <><Sparkles className="h-3.5 w-3.5" /> Find Competitors from Google Results</>
               )}
             </button>
           </div>

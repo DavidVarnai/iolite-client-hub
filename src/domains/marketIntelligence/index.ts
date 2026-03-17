@@ -7,6 +7,7 @@ export type {
   SourceConfidence,
   EvidenceMetadata,
   CompetitorType,
+  SERPSource,
   KeywordTheme,
   CompetitorProfile,
   AudienceModel,

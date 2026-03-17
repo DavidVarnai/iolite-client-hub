@@ -20,6 +20,7 @@ import type {
   SourceType,
   SourceConfidence,
   CompetitorType,
+  SERPSource,
 } from '@/types/marketIntelligence';
 import { Textarea } from '@/components/ui/textarea';
 import { format } from 'date-fns';
@@ -93,13 +94,29 @@ export default function MIResultsView({ outputs, run, onRerun, onRefine, onAppro
         </div>
       </div>
 
+      {/* ─── DISCOVERY QUERIES ─── */}
+      {outputs.discoveryQueries && outputs.discoveryQueries.length > 0 && (
+        <div className="panel p-5 space-y-3">
+          <div className="flex items-center gap-2">
+            <Search className="h-4 w-4 text-primary" />
+            <h4 className="text-sm font-semibold">Discovery Queries</h4>
+            <span className="text-[10px] text-muted-foreground bg-muted px-1.5 py-0.5 rounded">Used to find competitors from Google results</span>
+          </div>
+          <div className="flex flex-wrap gap-2">
+            {outputs.discoveryQueries.map((q, i) => (
+              <span key={i} className="text-xs bg-accent/50 text-accent-foreground px-2.5 py-1 rounded-md font-medium">"{q}"</span>
+            ))}
+          </div>
+        </div>
+      )}
+
       {/* ─── CORE SEARCH KEYWORDS ─── */}
       {outputs.coreSearchKeywords && outputs.coreSearchKeywords.length > 0 && (
         <div className="panel p-5 space-y-3">
           <div className="flex items-center gap-2">
             <Zap className="h-4 w-4 text-primary" />
             <h4 className="text-sm font-semibold">Core Search Keywords</h4>
-            <span className="text-[10px] text-muted-foreground bg-muted px-1.5 py-0.5 rounded">Used for competitor discovery</span>
+            <span className="text-[10px] text-muted-foreground bg-muted px-1.5 py-0.5 rounded">Keyword themes for targeting</span>
           </div>
           <div className="flex flex-wrap gap-2">
             {outputs.coreSearchKeywords.map((kw, i) => (
@@ -159,8 +176,8 @@ export default function MIResultsView({ outputs, run, onRerun, onRefine, onAppro
         <div className="panel p-5 space-y-3">
           <div className="flex items-center gap-2">
             <Building2 className="h-4 w-4 text-primary" />
-            <h4 className="text-sm font-semibold">Direct Competitors ({realDirectCompetitors.length})</h4>
-            <span className="text-[10px] text-muted-foreground bg-muted px-1.5 py-0.5 rounded">Modeled SERP-based discovery</span>
+            <h4 className="text-sm font-semibold">Direct Competitors from Google Results ({realDirectCompetitors.length})</h4>
+            <span className="text-[10px] text-muted-foreground bg-muted px-1.5 py-0.5 rounded">Ranked by query frequency &amp; source</span>
           </div>
           <CompetitorTable competitors={realDirectCompetitors} />
         </div>
@@ -360,8 +377,9 @@ function CompetitorTable({ competitors }: { competitors: CompetitorProfile[] }) 
           <tr className="border-b text-left">
             <th className="py-2 pr-3 text-xs font-medium text-muted-foreground">Business</th>
             <th className="py-2 pr-3 text-xs font-medium text-muted-foreground">Website</th>
+            <th className="py-2 pr-3 text-xs font-medium text-muted-foreground">SERP Source</th>
+            <th className="py-2 pr-3 text-xs font-medium text-muted-foreground">Confidence</th>
             <th className="py-2 pr-3 text-xs font-medium text-muted-foreground">Source</th>
-            <th className="py-2 pr-3 text-xs font-medium text-muted-foreground">Relevance</th>
             <th className="py-2 text-xs font-medium text-muted-foreground">Details</th>
           </tr>
         </thead>
@@ -383,9 +401,31 @@ function CompetitorTable({ competitors }: { competitors: CompetitorProfile[] }) 
                 )}
               </td>
               <td className="py-2 pr-3">
+                <SERPSourceBadge source={cp.serpSource} />
+                {cp.queryFrequency != null && cp.totalQueries != null && (
+                  <span className="text-[9px] text-muted-foreground block mt-0.5">
+                    {cp.queryFrequency}/{cp.totalQueries} queries
+                  </span>
+                )}
+              </td>
+              <td className="py-2 pr-3">
+                {cp.confidenceScore != null ? (
+                  <div className="flex items-center gap-1.5">
+                    <div className="w-12 h-1.5 bg-muted rounded-full overflow-hidden">
+                      <div
+                        className={`h-full rounded-full ${cp.confidenceScore >= 60 ? 'bg-green-500' : cp.confidenceScore >= 30 ? 'bg-blue-500' : 'bg-muted-foreground'}`}
+                        style={{ width: `${cp.confidenceScore}%` }}
+                      />
+                    </div>
+                    <span className="text-[10px] font-medium">{cp.confidenceScore}%</span>
+                  </div>
+                ) : (
+                  <span className="text-[10px] text-muted-foreground">—</span>
+                )}
+              </td>
+              <td className="py-2 pr-3">
                 <SourceBadge type={cp.sourceType} confidence={cp.sourceConfidence} />
               </td>
-              <td className="py-2 pr-3"><RelevanceBadge value={cp.relevance || 'medium'} /></td>
               <td className="py-2 text-[11px] text-muted-foreground max-w-[250px]">
                 <div>{cp.positioning}</div>
                 {cp.rankingKeywords && cp.rankingKeywords.length > 0 && (
@@ -397,9 +437,6 @@ function CompetitorTable({ competitors }: { competitors: CompetitorProfile[] }) 
                 )}
                 {cp.estimatedDomainAuthority != null && (
                   <span className="text-[10px] text-muted-foreground">DA ~{cp.estimatedDomainAuthority}</span>
-                )}
-                {cp.paidAdsPresence && (
-                  <span className="text-[10px] text-primary ml-1">• Paid Ads</span>
                 )}
               </td>
             </tr>
@@ -505,6 +542,17 @@ function formatBenchmarkValue(value: number, unit: string): string {
   if (unit === '$') return `$${value.toLocaleString(undefined, { minimumFractionDigits: value < 1 ? 2 : 0, maximumFractionDigits: 2 })}`;
   if (unit === '%' || unit === '%/mo') return `${value}${unit}`;
   return `${value} ${unit}`;
+}
+
+function SERPSourceBadge({ source }: { source?: SERPSource }) {
+  if (!source) return <span className="text-[10px] text-muted-foreground">—</span>;
+  const config: Record<SERPSource, { label: string; cls: string }> = {
+    organic: { label: 'Organic', cls: 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400' },
+    paid: { label: 'Paid', cls: 'bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400' },
+    both: { label: 'Organic + Paid', cls: 'bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400' },
+  };
+  const { label, cls } = config[source];
+  return <span className={`text-[10px] px-1.5 py-0.5 rounded font-semibold whitespace-nowrap ${cls}`}>{label}</span>;
 }
 
 function SourceBadge({ type, confidence }: { type?: SourceType; confidence?: SourceConfidence }) {
