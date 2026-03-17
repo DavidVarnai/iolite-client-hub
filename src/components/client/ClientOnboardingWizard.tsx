@@ -992,9 +992,9 @@ function SelectField({ label, value, options, onChange }: {
 
 function DiscoverySection({ title, children }: { title: string; children: React.ReactNode }) {
   return (
-    <div className="space-y-4">
+    <div className="space-y-5">
       <h4 className="text-sm font-semibold border-b pb-2">{title}</h4>
-      <div className="grid grid-cols-2 gap-4">{children}</div>
+      <div className="grid grid-cols-2 gap-5">{children}</div>
     </div>
   );
 }
