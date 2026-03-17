@@ -239,16 +239,8 @@ export default function ChannelAssumptions({ model, scenario, onUpdate }: Props)
         </div>
       )}
 
-      {/* Global AOV */}
-      <div className="panel p-4 flex items-center gap-3">
-        <Info className="h-4 w-4 text-primary shrink-0" />
-        <div className="flex-1">
-          <p className="text-xs font-medium text-foreground">
-            Global AOV / Deal Size: <span className="text-primary font-semibold">{globalAov > 0 ? `$${globalAov.toLocaleString()}` : 'Not set'}</span>
-          </p>
-          <p className="text-[10px] text-muted-foreground">Set in Client Discovery → Business Overview → Avg Order Value / Deal Size</p>
-        </div>
-      </div>
+      {/* Revenue per Conversion — read-only from Discovery */}
+      {revenueModel && <RevenueModelDisplay revenueModel={revenueModel} />}
 
       {/* Funnel type selector */}
       <div className="flex items-center gap-4">
