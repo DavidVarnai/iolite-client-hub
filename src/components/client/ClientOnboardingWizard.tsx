@@ -654,7 +654,7 @@ function DiscoveryStep() {
               {aiStatus === 'loading' ? (
                 <><Loader2 className="h-3.5 w-3.5 animate-spin" /> Searching…</>
               ) : (
-                <><Sparkles className="h-3.5 w-3.5" /> Find Competitors from Google Results</>
+                <><Sparkles className="h-3.5 w-3.5" /> Research Competitors</>
               )}
             </button>
           </div>
