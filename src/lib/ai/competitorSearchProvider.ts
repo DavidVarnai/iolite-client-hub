@@ -35,6 +35,8 @@ export interface CompetitorSearchContext {
   isLocal: boolean;
   localArea: string;
   area: string;
+  /** Resolved research mode preference (from admin default + per-run override) */
+  researchModePreference?: import('@/types/marketIntelligence').CompetitorResearchPreference;
 }
 
 /* ── Constants ── */
