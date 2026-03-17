@@ -135,10 +135,19 @@ export interface ClientDiscovery {
   revenueModel: RevenueModelConfig;
   coreCustomerSegments: string;
 
-  // B. Growth Targets
-  revenueTargets: string;
-  customerLeadTargets: string;
+  // B. Growth Targets — Business Outcomes
+  revenueTarget: number;
+  newCustomersTarget: number;
   timeHorizon: string;
+  // B. Growth Targets — Growth Strategy
+  primaryGrowthObjective: GrowthObjective | '';
+  primaryLeadType: string;
+
+  /** @deprecated use revenueTarget (number) */
+  revenueTargets: string;
+  /** @deprecated use newCustomersTarget + primaryLeadType */
+  customerLeadTargets: string;
+  /** @deprecated use primaryGrowthObjective */
   majorGrowthPriorities: string;
 
   // C. Sales Process
