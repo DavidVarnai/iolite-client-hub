@@ -95,6 +95,7 @@ export const c2Onboarding: OnboardingData = {
     primaryProducts: 'Corporate law, M&A advisory, IP protection',
     revenueStreams: 'Retainer fees (60%), project-based (40%)',
     avgOrderValue: '$25,000 avg engagement',
+    revenueModel: { revenueModelType: 'one_time', revenuePerConversion: 25000, revenueUnit: 'per_deal' },
     coreCustomerSegments: 'Mid-market companies $10M-$100M revenue, C-suite decision makers',
     revenueTargets: '40% increase in qualified leads',
     customerLeadTargets: '50 qualified leads/month (up from 30)',
