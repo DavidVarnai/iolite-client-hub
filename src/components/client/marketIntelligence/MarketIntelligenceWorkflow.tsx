@@ -35,6 +35,7 @@ export default function MarketIntelligenceWorkflow({ onClose }: Props) {
     setCurrentInputs(inputs);
     setPhase('generating');
     setProgress(0);
+    setRunError(null);
 
     try {
       const result = await generateMarketIntelligence(inputs, (pct, label) => {
@@ -56,7 +57,10 @@ export default function MarketIntelligenceWorkflow({ onClose }: Props) {
       repository.marketIntelligence.save(run);
       setSavedRun(run);
       setPhase('results');
-    } catch {
+    } catch (err) {
+      const message = err instanceof Error ? err.message : 'An unexpected error occurred.';
+      console.error('[MI-Workflow] Generation failed:', message);
+      setRunError(message);
       setPhase('setup');
     }
   }, [client.id]);
