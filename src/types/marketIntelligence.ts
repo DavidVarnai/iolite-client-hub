@@ -207,6 +207,8 @@ export interface MarketIntelligenceOutputs {
   researchSourceMode?: ResearchSourceMode;
   /** Human-readable note about the research source */
   researchSourceNote?: string;
+  /** Which mode was selected by the user for this run */
+  selectedResearchMode?: CompetitorResearchPreference;
 }
 
 /* ── Approved Research ── */

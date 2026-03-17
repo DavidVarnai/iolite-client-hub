@@ -139,7 +139,7 @@ export async function generateMarketIntelligence(
     isLocal: ctx.isLocal,
     localArea: ctx.localArea,
     area: ctx.area,
-    researchModePreference: inputs.competitorResearchMode,
+    competitorResearchMode: inputs.competitorResearchMode,
   };
   const competitorResult = await searchCompetitors(searchCtx);
   const competitorProfiles = competitorResult.competitors;
@@ -174,6 +174,7 @@ export async function generateMarketIntelligence(
     discoveryQueries,
     researchSourceMode,
     researchSourceNote,
+    selectedResearchMode: inputs.competitorResearchMode || 'auto',
   };
 }
 

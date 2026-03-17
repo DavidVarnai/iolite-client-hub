@@ -3,7 +3,7 @@
  * Steps: setup → generating → results (with refinement & approval).
  */
 import { useState, useCallback } from 'react';
-import { X, Loader2 } from 'lucide-react';
+import { X, Loader2, AlertTriangle } from 'lucide-react';
 import { useClientContext } from '@/contexts/ClientContext';
 import { collectMIInputs } from '@/lib/ai/marketIntelligenceReadiness';
 import { generateMarketIntelligence } from '@/lib/ai/marketIntelligenceAdapter';
@@ -24,6 +24,7 @@ export default function MarketIntelligenceWorkflow({ onClose }: Props) {
   const [phase, setPhase] = useState<Phase>('setup');
   const [progress, setProgress] = useState(0);
   const [progressLabel, setProgressLabel] = useState('');
+  const [runError, setRunError] = useState<string | null>(null);
   const [outputs, setOutputs] = useState<MarketIntelligenceOutputs | null>(null);
   const [savedRun, setSavedRun] = useState<MarketIntelligenceRun | null>(null);
   const [currentInputs, setCurrentInputs] = useState<MarketIntelligenceInputs>(() =>
@@ -34,6 +35,7 @@ export default function MarketIntelligenceWorkflow({ onClose }: Props) {
     setCurrentInputs(inputs);
     setPhase('generating');
     setProgress(0);
+    setRunError(null);
 
     try {
       const result = await generateMarketIntelligence(inputs, (pct, label) => {
@@ -55,7 +57,10 @@ export default function MarketIntelligenceWorkflow({ onClose }: Props) {
       repository.marketIntelligence.save(run);
       setSavedRun(run);
       setPhase('results');
-    } catch {
+    } catch (err) {
+      const message = err instanceof Error ? err.message : 'An unexpected error occurred.';
+      console.error('[MI-Workflow] Generation failed:', message);
+      setRunError(message);
       setPhase('setup');
     }
   }, [client.id]);
@@ -102,10 +107,24 @@ export default function MarketIntelligenceWorkflow({ onClose }: Props) {
         {/* Content */}
         <div className="flex-1 overflow-y-auto p-6">
           {phase === 'setup' && (
-            <ResearchSetupStep
-              initialInputs={currentInputs}
-              onRun={runGeneration}
-            />
+            <>
+              {runError && (
+                <div className="mb-4 panel border-destructive/30 bg-destructive/5 p-4 flex items-start gap-3">
+                  <AlertTriangle className="h-4 w-4 text-destructive mt-0.5 shrink-0" />
+                  <div>
+                    <h4 className="text-xs font-semibold text-destructive">Research Failed</h4>
+                    <p className="text-xs text-destructive/80 mt-1">{runError}</p>
+                    <p className="text-[10px] text-muted-foreground mt-1">
+                      Try switching to "Auto" or "Modeled" mode, or check your API configuration.
+                    </p>
+                  </div>
+                </div>
+              )}
+              <ResearchSetupStep
+                initialInputs={currentInputs}
+                onRun={runGeneration}
+              />
+            </>
           )}
 
           {phase === 'generating' && (
