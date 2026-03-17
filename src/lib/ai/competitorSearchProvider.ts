@@ -308,7 +308,7 @@ export async function searchCompetitors(
   if (isLiveSearchAvailable()) {
     try {
       const liveResult = await searchCompetitorsLive(ctx);
-      console.log('[MI] Live search succeeded:', liveResult.competitors.length, 'competitors');
+      console.log('[MI] ✅ Live search succeeded:', liveResult.competitors.length, 'competitors | sourceMode:', liveResult.sourceMode);
       return liveResult;
     } catch (err) {
       const message = err instanceof Error ? err.message : 'Unknown error';
