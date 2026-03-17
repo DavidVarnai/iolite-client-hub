@@ -306,7 +306,22 @@ export { generateCompetitorProfilesModeled } from './competitorModeledProvider';
 export async function searchCompetitors(
   ctx: CompetitorSearchContext,
 ): Promise<CompetitorSearchResult> {
-  // 1. Try live search if available
+  const mode = ctx.researchModePreference || 'auto';
+
+  // If explicitly set to modeled only, skip live search
+  if (mode === 'modeled_only') {
+    console.log('[MI] Research mode: modeled_only — skipping live search');
+    const { generateCompetitorProfilesModeled } = await import('./competitorModeledProvider');
+    const competitors = generateCompetitorProfilesModeled(ctx);
+    return {
+      competitors,
+      sourceMode: 'modeled_fallback',
+      sourceNote: 'Competitors identified using modeled industry pools. Live search was disabled by admin preference.',
+      discoveryQueries: ctx.discoveryQueries,
+    };
+  }
+
+  // Try live search if available (auto or live_only)
   if (isLiveSearchAvailable()) {
     try {
       const liveResult = await searchCompetitorsLive(ctx);
@@ -314,11 +329,18 @@ export async function searchCompetitors(
       return liveResult;
     } catch (err) {
       const message = err instanceof Error ? err.message : 'Unknown error';
+      if (mode === 'live_only') {
+        console.error('[MI] ❌ Live search failed and mode is live_only — no fallback:', message);
+        throw new Error(`Live search failed: ${message}. Mode is set to "live_only" so modeled fallback is disabled.`);
+      }
       console.warn('[MI] Live search failed, falling back to modeled:', message);
-      // Fall through to modeled
     }
   } else {
-    console.log('[MI] Live search not available (Supabase not configured), using modeled fallback');
+    if (mode === 'live_only') {
+      console.error('[MI] ❌ Live search not available but mode is live_only');
+      throw new Error('Live search is not available (backend not configured). Mode is set to "live_only" so modeled fallback is disabled.');
+    }
+    console.log('[MI] Live search not available (backend not configured), using modeled fallback');
   }
 
   // 2. Modeled fallback (always works)
