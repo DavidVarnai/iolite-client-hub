@@ -366,8 +366,9 @@ export function getProposalChecklist(
 ): ProposalChecklistItem[] {
   const d = onboarding.discovery;
   const revenueModelSet = d.revenueModel && d.revenueModel.revenuePerConversion > 0 ? 'set' : '';
-  const dFields = [d.primaryProducts, d.revenueStreams, revenueModelSet, d.revenueTargets, d.customerLeadTargets];
-  const dFilled = dFields.filter(f => f && f.trim().length > 0).length;
+  const revenueTargetSet = d.revenueTarget > 0 ? 'set' : (d.revenueTargets || '');
+  const dFields = [d.primaryProducts, d.revenueStreams, revenueModelSet, revenueTargetSet, d.newCustomersTarget > 0 ? 'set' : (d.customerLeadTargets || '')];
+  const dFilled = dFields.filter(f => f && String(f).trim().length > 0).length;
 
   return [
     { key: 'client_setup', label: 'Client setup complete', complete: true },
