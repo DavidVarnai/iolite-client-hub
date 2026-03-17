@@ -129,9 +129,21 @@ export async function generateMarketIntelligence(
   await delay(500);
   const keywordThemes = generateKeywordThemes(inputs, ctx);
 
-  onProgress?.(50, 'Searching Google results for competitors…');
-  await delay(600);
-  const competitorProfiles = generateCompetitorProfiles(inputs, ctx, coreSearchKeywords, keywordThemes, discoveryQueries);
+  onProgress?.(50, 'Searching for competitors…');
+  const searchCtx: CompetitorSearchContext = {
+    inputs,
+    discoveryQueries,
+    coreKeywords: coreSearchKeywords,
+    keywordThemes,
+    normalizedIndustry: ctx.normalizedIndustry,
+    isLocal: ctx.isLocal,
+    localArea: ctx.localArea,
+    area: ctx.area,
+  };
+  const competitorResult = await searchCompetitors(searchCtx);
+  const competitorProfiles = competitorResult.competitors;
+  const researchSourceMode: ResearchSourceMode = competitorResult.sourceMode;
+  const researchSourceNote = competitorResult.sourceNote;
 
   onProgress?.(65, 'Building audience models…');
   await delay(500);
@@ -143,7 +155,7 @@ export async function generateMarketIntelligence(
 
   onProgress?.(92, 'Synthesizing research summary…');
   await delay(400);
-  const researchSummary = generateSummary(inputs, ctx, channelRecommendations, audienceModels, competitorProfiles);
+  const researchSummary = generateSummary(inputs, ctx, channelRecommendations, audienceModels, competitorProfiles, researchSourceMode);
 
   // Wire evidenceRefs on channel recommendations
   wireEvidenceRefs(channelRecommendations, keywordThemes, competitorProfiles, audienceModels);
@@ -159,6 +171,8 @@ export async function generateMarketIntelligence(
     researchSummary,
     coreSearchKeywords,
     discoveryQueries,
+    researchSourceMode,
+    researchSourceNote,
   };
 }
 
