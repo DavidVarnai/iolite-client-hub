@@ -177,7 +177,11 @@ export async function searchCompetitorsLive(
 
   // Exclude the client's own domain
   const clientDomain = extractClientDomain(ctx.inputs.website);
-  if (clientDomain) domainMap.delete(clientDomain);
+  if (clientDomain) {
+    const hadOwn = domainMap.has(clientDomain);
+    domainMap.delete(clientDomain);
+    if (hadOwn) console.log(`[MI-Live] Excluded client's own domain: ${clientDomain}`);
+  }
 
   // Score and sort
   const totalQueries = queries.length;
