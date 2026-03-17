@@ -434,6 +434,35 @@ function buildSearchAudienceModel(channel: string, inputs: MarketIntelligenceInp
   };
 }
 
+/* ═══════════════════════════════════════════════════════
+   DISCOVERY QUERIES
+   ═══════════════════════════════════════════════════════ */
+
+/**
+ * Generate 3-5 discovery queries from client profile for competitor lookup.
+ */
+function generateDiscoveryQueries(inputs: MarketIntelligenceInputs, ctx: GenerationContext): string[] {
+  const product = ctx.product.toLowerCase();
+  const loc = ctx.isLocal ? ctx.localArea : '';
+  const queries: string[] = [];
+
+  queries.push(`${product} ${loc}`.trim());
+  queries.push(ctx.isLocal ? `best ${inputs.industry.toLowerCase()} ${loc}` : `best ${inputs.industry.toLowerCase()} companies`);
+
+  const segment = ctx.audience.toLowerCase().split(',')[0]?.trim();
+  if (segment) {
+    queries.push(`${product} for ${segment}`);
+  }
+
+  queries.push(`${product} services ${loc}`.trim());
+
+  if (ctx.isLocal) {
+    queries.push(`${inputs.industry.toLowerCase()} ${loc} reviews`);
+  }
+
+  return [...new Set(queries.map(q => q.trim()).filter(Boolean))].slice(0, 5);
+}
+
 /* Old competitor pool code removed — now in competitorModeledProvider.ts */
 
 /* ═══════════════════════════════════════════════════════
