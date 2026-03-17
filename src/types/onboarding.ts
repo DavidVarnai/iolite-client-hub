@@ -17,6 +17,21 @@ export type BusinessModel = 'ecommerce' | 'lead_generation' | 'hybrid' | 'other'
 export type GrowthGoal = 'revenue_growth' | 'lead_volume' | 'market_expansion' | 'brand_awareness';
 export type PerformanceConfidence = 'high' | 'medium' | 'estimated' | 'unknown';
 
+export type GrowthObjective =
+  | 'acquire_new_customers'
+  | 'increase_deal_size'
+  | 'improve_conversion_rate'
+  | 'expand_existing_customers'
+  | 'reduce_churn';
+
+export const GROWTH_OBJECTIVE_LABELS: Record<GrowthObjective, string> = {
+  acquire_new_customers: 'Acquire new customers',
+  increase_deal_size: 'Increase deal size',
+  improve_conversion_rate: 'Improve conversion rate',
+  expand_existing_customers: 'Expand existing customers',
+  reduce_churn: 'Reduce churn',
+};
+
 export type RevenueModelType = 'one_time' | 'monthly_recurring' | 'annual_contract';
 export type RevenueUnit = 'per_deal' | 'per_month' | 'per_year';
 
