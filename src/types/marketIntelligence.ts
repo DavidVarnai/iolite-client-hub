@@ -112,6 +112,9 @@ export interface AudienceModel {
 
 export type CompetitorType = 'direct' | 'indirect' | 'directory_platform';
 
+/** How a competitor was discovered in SERP results */
+export type SERPSource = 'organic' | 'paid' | 'both';
+
 export interface CompetitorProfile extends Partial<EvidenceMetadata> {
   id: string;
   name: string;
@@ -126,6 +129,14 @@ export interface CompetitorProfile extends Partial<EvidenceMetadata> {
   rankingKeywords?: string[];
   estimatedDomainAuthority?: number;
   paidAdsPresence?: boolean;
+  /** Whether found in organic results, paid ads, or both */
+  serpSource?: SERPSource;
+  /** Number of queries this competitor appeared in (frequency score) */
+  queryFrequency?: number;
+  /** Total queries searched */
+  totalQueries?: number;
+  /** Confidence score 0-100 based on frequency and source type */
+  confidenceScore?: number;
 }
 
 /* ── Channel Recommendations ── */
