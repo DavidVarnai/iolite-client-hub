@@ -192,6 +192,7 @@ export const c4Onboarding: OnboardingData = {
     primaryProducts: 'Private bilingual K-8 education',
     revenueStreams: 'Annual tuition',
     avgOrderValue: 'Annual tuition',
+    revenueModel: { revenueModelType: 'annual_contract', revenuePerConversion: 0, revenueUnit: 'per_year' },
     coreCustomerSegments: 'Parents with children ages 4-14 seeking bilingual private education',
     revenueTargets: 'Enrollment growth for school opening',
     customerLeadTargets: 'Student enrollment',
