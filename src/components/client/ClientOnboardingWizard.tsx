@@ -286,12 +286,14 @@ function DiscoveryStep() {
           onChange={(v) => updateD({ businessModel: v as BusinessModel })} />
         <ExpandableField label="Primary Products / Services" value={d.primaryProducts} onChange={(v) => updateD({ primaryProducts: v })} />
         <ExpandableField label="Revenue Streams" value={d.revenueStreams} onChange={(v) => updateD({ revenueStreams: v })} />
-        <Field label="Avg Order Value / Deal Size (legacy)" value={d.avgOrderValue} onChange={(v) => updateD({ avgOrderValue: v })} />
-        <div className="space-y-3 py-2">
-          <p className="text-xs font-semibold text-foreground">Revenue per Conversion</p>
+        <div className="space-y-4 py-2 border rounded-lg p-4 bg-muted/20">
+          <div>
+            <p className="text-xs font-semibold text-foreground">Revenue per Conversion</p>
+            <p className="text-[10px] text-muted-foreground mt-0.5">How much revenue does a single converted customer generate?</p>
+          </div>
           <div className="grid grid-cols-2 gap-3">
             <div>
-              <label className="text-[10px] font-medium text-muted-foreground uppercase tracking-wider">Model Type</label>
+              <label className="text-[10px] font-medium text-muted-foreground uppercase tracking-wider">Revenue Model</label>
               <select
                 value={d.revenueModel?.revenueModelType || 'one_time'}
                 onChange={(e) => {
@@ -300,13 +302,20 @@ function DiscoveryStep() {
                 }}
                 className="w-full rounded-md border bg-background px-3 py-2 text-sm"
               >
-                <option value="one_time">One-time (per deal)</option>
-                <option value="monthly_recurring">Monthly recurring (per month)</option>
-                <option value="annual_contract">Annual contract (per year)</option>
+                <option value="one_time">One-time purchase</option>
+                <option value="monthly_recurring">Monthly recurring</option>
+                <option value="annual_contract">Annual contract</option>
               </select>
+              <p className="text-[10px] text-muted-foreground mt-1">
+                {d.revenueModel?.revenueModelType === 'monthly_recurring'
+                  ? 'Monthly revenue per converted customer (e.g. subscription fee)'
+                  : d.revenueModel?.revenueModelType === 'annual_contract'
+                  ? 'Annual contract value per converted customer'
+                  : 'One-time revenue per converted customer (e.g. average order value)'}
+              </p>
             </div>
             <div>
-              <label className="text-[10px] font-medium text-muted-foreground uppercase tracking-wider">Amount ($)</label>
+              <label className="text-[10px] font-medium text-muted-foreground uppercase tracking-wider">Revenue per Conversion ($)</label>
               <input
                 type="number"
                 value={d.revenueModel?.revenuePerConversion || ''}
@@ -317,7 +326,7 @@ function DiscoveryStep() {
             </div>
             {(d.revenueModel?.revenueModelType === 'monthly_recurring' || d.revenueModel?.revenueModelType === 'annual_contract') && (
               <div>
-                <label className="text-[10px] font-medium text-muted-foreground uppercase tracking-wider">Avg Contract Length (months)</label>
+                <label className="text-[10px] font-medium text-muted-foreground uppercase tracking-wider">Average Contract Length (months)</label>
                 <input
                   type="number"
                   value={d.revenueModel?.avgContractLengthMonths || ''}
@@ -325,6 +334,7 @@ function DiscoveryStep() {
                   className="w-full rounded-md border bg-background px-3 py-2 text-sm"
                   placeholder="e.g. 12"
                 />
+                <p className="text-[10px] text-muted-foreground mt-1">Used to estimate total contract value</p>
               </div>
             )}
           </div>
