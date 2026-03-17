@@ -114,6 +114,10 @@ export async function generateMarketIntelligence(
   await delay(400);
   const coreSearchKeywords = generateCoreKeywords(inputs, ctx);
 
+  onProgress?.(10, 'Generating discovery queries…');
+  await delay(300);
+  const discoveryQueries = generateDiscoveryQueries(inputs, ctx);
+
   onProgress?.(15, 'Analyzing industry landscape…');
   await delay(400);
 
@@ -125,9 +129,9 @@ export async function generateMarketIntelligence(
   await delay(500);
   const keywordThemes = generateKeywordThemes(inputs, ctx);
 
-  onProgress?.(50, 'Running modeled SERP analysis…');
+  onProgress?.(50, 'Searching Google results for competitors…');
   await delay(600);
-  const competitorProfiles = generateCompetitorProfiles(inputs, ctx, coreSearchKeywords, keywordThemes);
+  const competitorProfiles = generateCompetitorProfiles(inputs, ctx, coreSearchKeywords, keywordThemes, discoveryQueries);
 
   onProgress?.(65, 'Building audience models…');
   await delay(500);
@@ -154,6 +158,7 @@ export async function generateMarketIntelligence(
     benchmarkAssumptions,
     researchSummary,
     coreSearchKeywords,
+    discoveryQueries,
   };
 }
 
