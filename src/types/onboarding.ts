@@ -247,8 +247,9 @@ export function computeStageReadiness(
 
   // Discovery
   const d = onboarding.discovery;
+  const revenueModelSet = d.revenueModel && d.revenueModel.revenuePerConversion > 0 ? 'set' : '';
   const discoveryFields = [
-    d.primaryProducts, d.revenueStreams, d.avgOrderValue, d.coreCustomerSegments,
+    d.primaryProducts, d.revenueStreams, revenueModelSet, d.coreCustomerSegments,
     d.revenueTargets, d.customerLeadTargets, d.timeHorizon,
     d.funnelType, d.closeRate, d.salesCycleLength,
     d.monthlyVisitors || d.currentTraffic, d.monthlyLeads || d.currentLeadsOrders,
