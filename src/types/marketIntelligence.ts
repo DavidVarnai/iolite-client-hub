@@ -187,6 +187,9 @@ export interface MarketIntelligenceInputs {
 /** How competitor research was conducted */
 export type ResearchSourceMode = 'live_search' | 'modeled_fallback';
 
+/** Admin-controlled preference for competitor research mode */
+export type CompetitorResearchPreference = 'auto' | 'live_only' | 'modeled_only';
+
 export interface MarketIntelligenceOutputs {
   keywordThemes: KeywordTheme[];
   competitorProfiles: CompetitorProfile[];
