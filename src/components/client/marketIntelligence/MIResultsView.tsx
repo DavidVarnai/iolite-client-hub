@@ -20,6 +20,7 @@ import type {
   SourceType,
   SourceConfidence,
   CompetitorType,
+  SERPSource,
 } from '@/types/marketIntelligence';
 import { Textarea } from '@/components/ui/textarea';
 import { format } from 'date-fns';
