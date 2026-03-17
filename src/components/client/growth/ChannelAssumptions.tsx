@@ -10,6 +10,7 @@ import { useClientContext } from '@/contexts/ClientContext';
 import { repository } from '@/lib/repository';
 import { Info, Sparkles, ChevronDown, ChevronUp, Check, ExternalLink } from 'lucide-react';
 import { toast } from 'sonner';
+import RevenueModelDisplay from '@/components/client/RevenueModelDisplay';
 
 interface Props {
   model: GrowthModel;
