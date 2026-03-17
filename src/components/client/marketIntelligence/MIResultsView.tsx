@@ -377,8 +377,9 @@ function CompetitorTable({ competitors }: { competitors: CompetitorProfile[] }) 
           <tr className="border-b text-left">
             <th className="py-2 pr-3 text-xs font-medium text-muted-foreground">Business</th>
             <th className="py-2 pr-3 text-xs font-medium text-muted-foreground">Website</th>
+            <th className="py-2 pr-3 text-xs font-medium text-muted-foreground">SERP Source</th>
+            <th className="py-2 pr-3 text-xs font-medium text-muted-foreground">Confidence</th>
             <th className="py-2 pr-3 text-xs font-medium text-muted-foreground">Source</th>
-            <th className="py-2 pr-3 text-xs font-medium text-muted-foreground">Relevance</th>
             <th className="py-2 text-xs font-medium text-muted-foreground">Details</th>
           </tr>
         </thead>
@@ -400,9 +401,31 @@ function CompetitorTable({ competitors }: { competitors: CompetitorProfile[] }) 
                 )}
               </td>
               <td className="py-2 pr-3">
+                <SERPSourceBadge source={cp.serpSource} />
+                {cp.queryFrequency != null && cp.totalQueries != null && (
+                  <span className="text-[9px] text-muted-foreground block mt-0.5">
+                    {cp.queryFrequency}/{cp.totalQueries} queries
+                  </span>
+                )}
+              </td>
+              <td className="py-2 pr-3">
+                {cp.confidenceScore != null ? (
+                  <div className="flex items-center gap-1.5">
+                    <div className="w-12 h-1.5 bg-muted rounded-full overflow-hidden">
+                      <div
+                        className={`h-full rounded-full ${cp.confidenceScore >= 60 ? 'bg-green-500' : cp.confidenceScore >= 30 ? 'bg-blue-500' : 'bg-muted-foreground'}`}
+                        style={{ width: `${cp.confidenceScore}%` }}
+                      />
+                    </div>
+                    <span className="text-[10px] font-medium">{cp.confidenceScore}%</span>
+                  </div>
+                ) : (
+                  <span className="text-[10px] text-muted-foreground">—</span>
+                )}
+              </td>
+              <td className="py-2 pr-3">
                 <SourceBadge type={cp.sourceType} confidence={cp.sourceConfidence} />
               </td>
-              <td className="py-2 pr-3"><RelevanceBadge value={cp.relevance || 'medium'} /></td>
               <td className="py-2 text-[11px] text-muted-foreground max-w-[250px]">
                 <div>{cp.positioning}</div>
                 {cp.rankingKeywords && cp.rankingKeywords.length > 0 && (
@@ -414,9 +437,6 @@ function CompetitorTable({ competitors }: { competitors: CompetitorProfile[] }) 
                 )}
                 {cp.estimatedDomainAuthority != null && (
                   <span className="text-[10px] text-muted-foreground">DA ~{cp.estimatedDomainAuthority}</span>
-                )}
-                {cp.paidAdsPresence && (
-                  <span className="text-[10px] text-primary ml-1">• Paid Ads</span>
                 )}
               </td>
             </tr>
