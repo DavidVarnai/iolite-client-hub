@@ -145,16 +145,20 @@ export default function ClientOverview({ onNavigateTab, onOpenWizard, onActivate
               )}
             </div>
             <div>
-              <p className="text-xs text-muted-foreground">Revenue Targets</p>
-              <p className="font-medium">{onboarding.discovery.revenueTargets || '—'}</p>
+              <p className="text-xs text-muted-foreground">Revenue Target</p>
+              <p className="font-medium">{onboarding.discovery.revenueTarget > 0 ? `$${onboarding.discovery.revenueTarget.toLocaleString()}` : (onboarding.discovery.revenueTargets || '—')}</p>
+            </div>
+            <div>
+              <p className="text-xs text-muted-foreground">New Customers Target</p>
+              <p className="font-medium">{onboarding.discovery.newCustomersTarget > 0 ? onboarding.discovery.newCustomersTarget.toLocaleString() : '—'}</p>
             </div>
             <div>
               <p className="text-xs text-muted-foreground">Core Customer Segments</p>
               <p>{onboarding.discovery.coreCustomerSegments || '—'}</p>
             </div>
             <div>
-              <p className="text-xs text-muted-foreground">Growth Priorities</p>
-              <p>{onboarding.discovery.majorGrowthPriorities || '—'}</p>
+              <p className="text-xs text-muted-foreground">Growth Objective</p>
+              <p>{onboarding.discovery.primaryGrowthObjective ? (GROWTH_OBJECTIVE_LABELS[onboarding.discovery.primaryGrowthObjective] || onboarding.discovery.primaryGrowthObjective) : (onboarding.discovery.majorGrowthPriorities || '—')}</p>
             </div>
             <div>
               <p className="text-xs text-muted-foreground">Time Horizon</p>
