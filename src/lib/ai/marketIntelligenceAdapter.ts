@@ -416,58 +416,64 @@ function buildSearchAudienceModel(channel: string, inputs: MarketIntelligenceInp
 }
 
 /* ═══════════════════════════════════════════════════════
-   COMPETITOR PROFILES — Modeled SERP-based discovery
+   COMPETITOR PROFILES — SERP-based discovery with organic/paid tracking
    ═══════════════════════════════════════════════════════ */
 
-/** Industry-specific SERP competitor pools — real businesses */
-const SERP_COMPETITOR_POOLS: Record<string, {
+/** Industry-specific SERP competitor pools — real businesses with organic/paid presence */
+interface SERPPoolEntry {
   name: string;
   url: string;
   geography: string;
   positioning: string;
+  /** Which queries this competitor ranks organically for (indices into query set) */
   rankingKeywords: string[];
+  /** Whether competitor appears in organic results */
+  organic: boolean;
+  /** Whether competitor appears in paid ads */
   paidAds: boolean;
   domainAuthority: number;
-}[]> = {
+}
+
+const SERP_COMPETITOR_POOLS: Record<string, SERPPoolEntry[]> = {
   'Education': [
-    { name: 'Stratford School', url: 'https://www.stratfordschools.com', geography: 'San Francisco Bay Area', positioning: 'Private K-8 school with STEM focus', rankingKeywords: ['private school san francisco', 'k-8 school bay area'], paidAds: true, domainAuthority: 45 },
-    { name: 'Kumon', url: 'https://www.kumon.com', geography: 'National (local centers)', positioning: 'Franchise tutoring chain, math and reading', rankingKeywords: ['tutoring near me', 'math tutoring'], paidAds: true, domainAuthority: 62 },
-    { name: 'Sylvan Learning', url: 'https://www.sylvanlearning.com', geography: 'National (local centers)', positioning: 'Personalized tutoring and test prep', rankingKeywords: ['learning center near me', 'tutoring services'], paidAds: true, domainAuthority: 55 },
-    { name: 'BASIS Independent Schools', url: 'https://www.basisindependent.com', geography: 'Multiple US metros', positioning: 'Rigorous college-prep curriculum', rankingKeywords: ['best private school', 'college prep school'], paidAds: false, domainAuthority: 38 },
-    { name: 'Fusion Academy', url: 'https://www.fusionacademy.com', geography: 'Multiple US metros', positioning: 'One-to-one private school model', rankingKeywords: ['private school small class', 'alternative school'], paidAds: true, domainAuthority: 35 },
-    { name: 'Primrose Schools', url: 'https://www.primroseschools.com', geography: 'National (franchise)', positioning: 'Early education and childcare franchise', rankingKeywords: ['preschool near me', 'early childhood education'], paidAds: true, domainAuthority: 48 },
+    { name: 'Stratford School', url: 'https://www.stratfordschools.com', geography: 'San Francisco Bay Area', positioning: 'Private K-8 school with STEM focus', rankingKeywords: ['private school san francisco', 'k-8 school bay area'], organic: true, paidAds: true, domainAuthority: 45 },
+    { name: 'Kumon', url: 'https://www.kumon.com', geography: 'National (local centers)', positioning: 'Franchise tutoring chain, math and reading', rankingKeywords: ['tutoring near me', 'math tutoring'], organic: true, paidAds: true, domainAuthority: 62 },
+    { name: 'Sylvan Learning', url: 'https://www.sylvanlearning.com', geography: 'National (local centers)', positioning: 'Personalized tutoring and test prep', rankingKeywords: ['learning center near me', 'tutoring services'], organic: true, paidAds: true, domainAuthority: 55 },
+    { name: 'BASIS Independent Schools', url: 'https://www.basisindependent.com', geography: 'Multiple US metros', positioning: 'Rigorous college-prep curriculum', rankingKeywords: ['best private school', 'college prep school'], organic: true, paidAds: false, domainAuthority: 38 },
+    { name: 'Fusion Academy', url: 'https://www.fusionacademy.com', geography: 'Multiple US metros', positioning: 'One-to-one private school model', rankingKeywords: ['private school small class', 'alternative school'], organic: true, paidAds: true, domainAuthority: 35 },
+    { name: 'Primrose Schools', url: 'https://www.primroseschools.com', geography: 'National (franchise)', positioning: 'Early education and childcare franchise', rankingKeywords: ['preschool near me', 'early childhood education'], organic: true, paidAds: true, domainAuthority: 48 },
   ],
   'IT Services': [
-    { name: 'Dataprise', url: 'https://www.dataprise.com', geography: 'Mid-Atlantic / National', positioning: 'Managed IT services and cybersecurity for mid-market', rankingKeywords: ['managed it services', 'it support near me', 'msp provider'], paidAds: true, domainAuthority: 48 },
-    { name: 'Ntiva', url: 'https://www.ntiva.com', geography: 'Mid-Atlantic / National', positioning: 'IT services and strategic consulting for SMBs', rankingKeywords: ['managed service provider', 'it consulting firm', 'it help desk'], paidAds: true, domainAuthority: 42 },
-    { name: 'Corsica Technologies', url: 'https://www.corsicatech.com', geography: 'Eastern US', positioning: 'Unified IT services with cybersecurity focus', rankingKeywords: ['managed cybersecurity', 'it services company'], paidAds: true, domainAuthority: 35 },
-    { name: 'Electric', url: 'https://www.electric.ai', geography: 'US (Remote-first)', positioning: 'IT management platform for SMBs', rankingKeywords: ['it management platform', 'outsourced it department'], paidAds: true, domainAuthority: 50 },
-    { name: 'Kaseya', url: 'https://www.kaseya.com', geography: 'Global', positioning: 'IT management software for MSPs', rankingKeywords: ['rmm software', 'msp platform', 'it automation'], paidAds: true, domainAuthority: 65 },
-    { name: 'ConnectWise', url: 'https://www.connectwise.com', geography: 'Global', positioning: 'Business management platform for MSPs', rankingKeywords: ['psa software', 'msp business management'], paidAds: true, domainAuthority: 62 },
-    { name: 'Datto (Kaseya)', url: 'https://www.datto.com', geography: 'Global', positioning: 'Backup, networking, and business continuity', rankingKeywords: ['data backup solutions', 'business continuity msp'], paidAds: true, domainAuthority: 58 },
+    { name: 'Dataprise', url: 'https://www.dataprise.com', geography: 'Mid-Atlantic / National', positioning: 'Managed IT services and cybersecurity for mid-market', rankingKeywords: ['managed it services', 'it support near me', 'msp provider'], organic: true, paidAds: true, domainAuthority: 48 },
+    { name: 'Ntiva', url: 'https://www.ntiva.com', geography: 'Mid-Atlantic / National', positioning: 'IT services and strategic consulting for SMBs', rankingKeywords: ['managed service provider', 'it consulting firm', 'it help desk'], organic: true, paidAds: true, domainAuthority: 42 },
+    { name: 'Corsica Technologies', url: 'https://www.corsicatech.com', geography: 'Eastern US', positioning: 'Unified IT services with cybersecurity focus', rankingKeywords: ['managed cybersecurity', 'it services company'], organic: true, paidAds: true, domainAuthority: 35 },
+    { name: 'Electric', url: 'https://www.electric.ai', geography: 'US (Remote-first)', positioning: 'IT management platform for SMBs', rankingKeywords: ['it management platform', 'outsourced it department'], organic: true, paidAds: true, domainAuthority: 50 },
+    { name: 'Kaseya', url: 'https://www.kaseya.com', geography: 'Global', positioning: 'IT management software for MSPs', rankingKeywords: ['rmm software', 'msp platform', 'it automation'], organic: true, paidAds: true, domainAuthority: 65 },
+    { name: 'ConnectWise', url: 'https://www.connectwise.com', geography: 'Global', positioning: 'Business management platform for MSPs', rankingKeywords: ['psa software', 'msp business management'], organic: true, paidAds: true, domainAuthority: 62 },
+    { name: 'Datto (Kaseya)', url: 'https://www.datto.com', geography: 'Global', positioning: 'Backup, networking, and business continuity', rankingKeywords: ['data backup solutions', 'business continuity msp'], organic: true, paidAds: true, domainAuthority: 58 },
   ],
   'E-commerce': [
-    { name: 'Parachute Home', url: 'https://www.parachutehome.com', geography: 'US (National)', positioning: 'Premium DTC home essentials', rankingKeywords: ['organic bedding', 'premium towels online'], paidAds: true, domainAuthority: 52 },
-    { name: 'West Elm', url: 'https://www.westelm.com', geography: 'US + International', positioning: 'Modern furniture and home décor', rankingKeywords: ['modern home decor', 'furniture online'], paidAds: true, domainAuthority: 75 },
-    { name: 'Crate & Barrel', url: 'https://www.crateandbarrel.com', geography: 'US + International', positioning: 'Contemporary home furnishings', rankingKeywords: ['home furnishings', 'kitchen accessories'], paidAds: true, domainAuthority: 78 },
-    { name: 'Brooklinen', url: 'https://www.brooklinen.com', geography: 'US (DTC)', positioning: 'Luxury bedding and bath DTC', rankingKeywords: ['best sheets online', 'luxury bedding'], paidAds: true, domainAuthority: 48 },
+    { name: 'Parachute Home', url: 'https://www.parachutehome.com', geography: 'US (National)', positioning: 'Premium DTC home essentials', rankingKeywords: ['organic bedding', 'premium towels online'], organic: true, paidAds: true, domainAuthority: 52 },
+    { name: 'West Elm', url: 'https://www.westelm.com', geography: 'US + International', positioning: 'Modern furniture and home décor', rankingKeywords: ['modern home decor', 'furniture online'], organic: true, paidAds: true, domainAuthority: 75 },
+    { name: 'Crate & Barrel', url: 'https://www.crateandbarrel.com', geography: 'US + International', positioning: 'Contemporary home furnishings', rankingKeywords: ['home furnishings', 'kitchen accessories'], organic: true, paidAds: true, domainAuthority: 78 },
+    { name: 'Brooklinen', url: 'https://www.brooklinen.com', geography: 'US (DTC)', positioning: 'Luxury bedding and bath DTC', rankingKeywords: ['best sheets online', 'luxury bedding'], organic: true, paidAds: true, domainAuthority: 48 },
   ],
   'Professional Services': [
-    { name: 'Fisher Phillips', url: 'https://www.fisherphillips.com', geography: 'National', positioning: 'Labor & employment law leader', rankingKeywords: ['employment lawyer', 'labor law firm'], paidAds: true, domainAuthority: 58 },
-    { name: 'Foley & Lardner', url: 'https://www.foley.com', geography: 'National', positioning: 'Full-service corporate law', rankingKeywords: ['corporate lawyer', 'M&A attorney'], paidAds: false, domainAuthority: 65 },
-    { name: 'Cooley', url: 'https://www.cooley.com', geography: 'National', positioning: 'Tech and startup legal services', rankingKeywords: ['startup lawyer', 'venture capital attorney'], paidAds: false, domainAuthority: 62 },
-    { name: 'Baker McKenzie', url: 'https://www.bakermckenzie.com', geography: 'Global', positioning: 'International corporate law', rankingKeywords: ['international law firm', 'global corporate counsel'], paidAds: false, domainAuthority: 72 },
+    { name: 'Fisher Phillips', url: 'https://www.fisherphillips.com', geography: 'National', positioning: 'Labor & employment law leader', rankingKeywords: ['employment lawyer', 'labor law firm'], organic: true, paidAds: true, domainAuthority: 58 },
+    { name: 'Foley & Lardner', url: 'https://www.foley.com', geography: 'National', positioning: 'Full-service corporate law', rankingKeywords: ['corporate lawyer', 'M&A attorney'], organic: true, paidAds: false, domainAuthority: 65 },
+    { name: 'Cooley', url: 'https://www.cooley.com', geography: 'National', positioning: 'Tech and startup legal services', rankingKeywords: ['startup lawyer', 'venture capital attorney'], organic: true, paidAds: false, domainAuthority: 62 },
+    { name: 'Baker McKenzie', url: 'https://www.bakermckenzie.com', geography: 'Global', positioning: 'International corporate law', rankingKeywords: ['international law firm', 'global corporate counsel'], organic: true, paidAds: false, domainAuthority: 72 },
   ],
   'Healthcare': [
-    { name: 'One Medical', url: 'https://www.onemedical.com', geography: 'Major US metros', positioning: 'Membership-based primary care', rankingKeywords: ['primary care near me', 'concierge doctor'], paidAds: true, domainAuthority: 55 },
-    { name: 'Carbon Health', url: 'https://carbonhealth.com', geography: 'US metros', positioning: 'Tech-enabled urgent and primary care', rankingKeywords: ['urgent care near me', 'walk-in clinic'], paidAds: true, domainAuthority: 45 },
-    { name: 'Teladoc', url: 'https://www.teladoc.com', geography: 'US (Telehealth)', positioning: 'Virtual care platform', rankingKeywords: ['online doctor', 'telehealth visit'], paidAds: true, domainAuthority: 60 },
-    { name: 'MinuteClinic (CVS)', url: 'https://www.cvs.com/minuteclinic', geography: 'National (retail)', positioning: 'Retail clinic for basic care', rankingKeywords: ['walk-in clinic near me', 'quick medical visit'], paidAds: true, domainAuthority: 80 },
+    { name: 'One Medical', url: 'https://www.onemedical.com', geography: 'Major US metros', positioning: 'Membership-based primary care', rankingKeywords: ['primary care near me', 'concierge doctor'], organic: true, paidAds: true, domainAuthority: 55 },
+    { name: 'Carbon Health', url: 'https://carbonhealth.com', geography: 'US metros', positioning: 'Tech-enabled urgent and primary care', rankingKeywords: ['urgent care near me', 'walk-in clinic'], organic: true, paidAds: true, domainAuthority: 45 },
+    { name: 'Teladoc', url: 'https://www.teladoc.com', geography: 'US (Telehealth)', positioning: 'Virtual care platform', rankingKeywords: ['online doctor', 'telehealth visit'], organic: true, paidAds: true, domainAuthority: 60 },
+    { name: 'MinuteClinic (CVS)', url: 'https://www.cvs.com/minuteclinic', geography: 'National (retail)', positioning: 'Retail clinic for basic care', rankingKeywords: ['walk-in clinic near me', 'quick medical visit'], organic: true, paidAds: true, domainAuthority: 80 },
   ],
   'Real Estate': [
-    { name: 'Compass', url: 'https://www.compass.com', geography: 'Major US metros', positioning: 'Tech-forward luxury brokerage', rankingKeywords: ['real estate agent near me', 'luxury homes'], paidAds: true, domainAuthority: 68 },
-    { name: 'Redfin', url: 'https://www.redfin.com', geography: 'US (National)', positioning: 'Discount brokerage with listing portal', rankingKeywords: ['homes for sale', 'real estate listings'], paidAds: true, domainAuthority: 82 },
-    { name: 'Keller Williams', url: 'https://www.kw.com', geography: 'US (National franchise)', positioning: 'Large agent network', rankingKeywords: ['real estate broker', 'buy a home'], paidAds: true, domainAuthority: 65 },
+    { name: 'Compass', url: 'https://www.compass.com', geography: 'Major US metros', positioning: 'Tech-forward luxury brokerage', rankingKeywords: ['real estate agent near me', 'luxury homes'], organic: true, paidAds: true, domainAuthority: 68 },
+    { name: 'Redfin', url: 'https://www.redfin.com', geography: 'US (National)', positioning: 'Discount brokerage with listing portal', rankingKeywords: ['homes for sale', 'real estate listings'], organic: true, paidAds: true, domainAuthority: 82 },
+    { name: 'Keller Williams', url: 'https://www.kw.com', geography: 'US (National franchise)', positioning: 'Large agent network', rankingKeywords: ['real estate broker', 'buy a home'], organic: true, paidAds: true, domainAuthority: 65 },
   ],
 };
 
@@ -504,15 +510,52 @@ const DIRECTORY_POOL: Record<string, {
   ],
 };
 
+/**
+ * Generate 3-5 discovery queries from client profile for SERP competitor lookup.
+ */
+function generateDiscoveryQueries(inputs: MarketIntelligenceInputs, ctx: GenerationContext): string[] {
+  const product = ctx.product.toLowerCase();
+  const loc = ctx.isLocal ? ctx.localArea : '';
+  const queries: string[] = [];
+
+  // Query 1: Primary product/service + location
+  queries.push(`${product} ${loc}`.trim());
+
+  // Query 2: Industry + near me / best
+  queries.push(ctx.isLocal ? `best ${inputs.industry.toLowerCase()} ${loc}` : `best ${inputs.industry.toLowerCase()} companies`);
+
+  // Query 3: Customer segment focused
+  const segment = ctx.audience.toLowerCase().split(',')[0]?.trim();
+  if (segment) {
+    queries.push(`${product} for ${segment}`);
+  }
+
+  // Query 4: Commercial intent
+  queries.push(`${product} services ${loc}`.trim());
+
+  // Query 5: Geo-specific if local
+  if (ctx.isLocal) {
+    queries.push(`${inputs.industry.toLowerCase()} ${loc} reviews`);
+  }
+
+  return [...new Set(queries.map(q => q.trim()).filter(Boolean))].slice(0, 5);
+}
+
+/**
+ * Simulate SERP-based competitor discovery using modeled pools.
+ * Each competitor is scored by frequency across queries + organic/paid presence.
+ */
 function generateCompetitorProfiles(
   inputs: MarketIntelligenceInputs,
   ctx: GenerationContext,
   coreKeywords: string[],
   keywordThemes: KeywordTheme[],
+  discoveryQueries: string[],
 ): CompetitorProfile[] {
   const { area, localArea, isLocal, normalizedIndustry } = ctx;
   const loc = isLocal ? localArea : area;
   const profiles: CompetitorProfile[] = [];
+  const totalQueries = discoveryQueries.length;
 
   // 1. Manual competitors — highest trust, never overwritten
   const known = inputs.knownCompetitors?.filter(Boolean) || [];
@@ -529,10 +572,14 @@ function generateCompetitorProfiles(
       sourceConfidence: 'high',
       manuallyAdded: true,
       approved: true,
+      serpSource: 'both',
+      queryFrequency: totalQueries,
+      totalQueries,
+      confidenceScore: 100,
     });
   }
 
-  // 2. Pull from SERP pool using normalized industry
+  // 2. Pull from SERP pool using normalized industry, score by query frequency
   const serpPool = SERP_COMPETITOR_POOLS[normalizedIndustry] || [];
   const knownNames = new Set(known.map(n => n.toLowerCase()));
 
@@ -540,16 +587,39 @@ function generateCompetitorProfiles(
     .filter(c => !knownNames.has(c.name.toLowerCase()))
     .filter(c => !EXCLUDED_DOMAINS.some(d => c.url.includes(d)))
     .map(c => {
-      let score = 0;
-      const matchingKeywords = coreKeywords.filter(kw =>
+      // Simulate frequency: count how many discovery queries match this competitor's keywords
+      let queryMatchCount = 0;
+      for (const query of discoveryQueries) {
+        const queryWords = query.toLowerCase().split(/\s+/);
+        const matches = c.rankingKeywords.some(rk =>
+          queryWords.some(qw => rk.toLowerCase().includes(qw) || qw.includes(rk.toLowerCase().split(' ')[0] || ''))
+        );
+        if (matches) queryMatchCount++;
+      }
+      // Also count core keyword matches
+      const coreMatches = coreKeywords.filter(kw =>
         c.rankingKeywords.some(rk => rk.toLowerCase().includes(kw.split(' ')[0]?.toLowerCase() || ''))
       );
-      score += matchingKeywords.length * 3;
+      queryMatchCount = Math.max(queryMatchCount, Math.min(coreMatches.length, totalQueries));
+
+      // Score: frequency-weighted with paid/organic bonuses
+      let score = queryMatchCount * 5; // frequency is primary signal
+      if (c.organic && c.paidAds) score += 10; // both = highest priority
+      else if (c.paidAds) score += 7; // paid = higher weight
+      else if (c.organic) score += 3;
       if (isLocal && c.geography.toLowerCase().includes(localArea.toLowerCase().split(',')[0] || '')) score += 5;
       if (c.geography.toLowerCase().includes('national') || c.geography.toLowerCase().includes('us')) score += 1;
       score += Math.floor(c.domainAuthority / 20);
-      if (c.paidAds) score += 2;
-      return { ...c, score, matchingKeywords };
+
+      // Determine SERP source
+      const serpSource: SERPSource = (c.organic && c.paidAds) ? 'both' : c.paidAds ? 'paid' : 'organic';
+
+      // Confidence score (0-100)
+      const freqRatio = queryMatchCount / Math.max(totalQueries, 1);
+      const sourceBonus = serpSource === 'both' ? 20 : serpSource === 'paid' ? 10 : 0;
+      const confidenceScore = Math.min(100, Math.round(freqRatio * 60 + sourceBonus + Math.min(c.domainAuthority / 5, 20)));
+
+      return { ...c, score, queryMatchCount, serpSource, confidenceScore, coreMatches };
     })
     .sort((a, b) => b.score - a.score);
 
@@ -561,7 +631,7 @@ function generateCompetitorProfiles(
 
     // Gather evidence refs from matching keyword theme IDs
     const matchingThemeIds = keywordThemes
-      .filter(kt => comp.matchingKeywords.some(mk => kt.keywordExamples.some(ke => ke.toLowerCase().includes(mk.split(' ')[0]?.toLowerCase() || ''))))
+      .filter(kt => comp.coreMatches.some(mk => kt.keywordExamples.some(ke => ke.toLowerCase().includes(mk.split(' ')[0]?.toLowerCase() || ''))))
       .map(kt => kt.id);
 
     profiles.push({
@@ -569,7 +639,7 @@ function generateCompetitorProfiles(
       name: comp.name,
       geography: comp.geography,
       positioning: comp.positioning,
-      channelObservations: `${comp.paidAds ? 'Active Google Ads presence. ' : ''}DA ~${comp.domainAuthority}. Ranks for: ${comp.rankingKeywords.slice(0, 3).join(', ')}.`,
+      channelObservations: `${comp.paidAds ? 'Active Google Ads presence. ' : ''}${comp.organic ? 'Ranks organically. ' : ''}DA ~${comp.domainAuthority}. Found in ${comp.queryMatchCount}/${totalQueries} queries.`,
       websiteUrl: comp.url,
       competitorType: 'direct',
       relevance: comp.score >= 8 ? 'high' : comp.score >= 4 ? 'medium' : 'low',
@@ -577,9 +647,13 @@ function generateCompetitorProfiles(
       rankingKeywords: comp.rankingKeywords,
       estimatedDomainAuthority: comp.domainAuthority,
       paidAdsPresence: comp.paidAds,
+      serpSource: comp.serpSource,
+      queryFrequency: comp.queryMatchCount,
+      totalQueries,
+      confidenceScore: comp.confidenceScore,
       sourceType,
-      sourceConfidence: comp.score >= 6 ? 'high' : 'medium',
-      sourceKeyword: comp.matchingKeywords[0] || coreKeywords[0],
+      sourceConfidence: comp.confidenceScore >= 60 ? 'high' : comp.confidenceScore >= 30 ? 'medium' : 'low',
+      sourceKeyword: comp.coreMatches[0] || coreKeywords[0],
       evidenceRefs: matchingThemeIds.length > 0 ? matchingThemeIds : undefined,
     });
   }
@@ -602,6 +676,7 @@ function generateCompetitorProfiles(
       rankingKeywords: dir.rankingKeywords,
       estimatedDomainAuthority: dir.domainAuthority,
       paidAdsPresence: false,
+      serpSource: 'organic',
       sourceType: 'google_serp',
       sourceConfidence: 'high',
       sourceKeyword: coreKeywords[0],
