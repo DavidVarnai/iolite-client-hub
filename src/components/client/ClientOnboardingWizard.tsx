@@ -612,13 +612,12 @@ function DiscoveryStep() {
     selectedSuggestions.forEach(idx => {
       const s = aiSuggestions[idx];
       if (s && !existingNames.has(s.name.toLowerCase())) {
-        toAdd.push({ name: s.name, url: s.url });
+        toAdd.push({ name: s.name, url: s.url, source: 'live_search' });
       }
     });
     if (toAdd.length > 0) {
       updateD({ competitors: [...(d.competitors || []), ...toAdd] });
     }
-    // Remove approved from suggestions
     setAiSuggestions(prev => prev.filter((_, i) => !selectedSuggestions.has(i)));
     setSelectedSuggestions(new Set());
   };
