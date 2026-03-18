@@ -36,21 +36,27 @@ type TestStatus = 'idle' | 'testing' | 'success' | 'fail';
 interface TestResult {
   status: TestStatus;
   envReady: boolean;
-  serpApiConfigured: boolean | null; // null = unknown until tested
+  serpApiConfigured: boolean | null;
   sampleQuery: string;
   organicCount?: number;
   paidCount?: number;
+  topDomains?: string[];
   latencyMs?: number;
   error?: string;
+  failReason?: 'missing_api_key' | 'request_error' | 'empty_results';
   effectiveMode: string;
+  reasoning: string;
 }
+
+const TEST_QUERY = 'best private schools in Houston';
 
 const INITIAL_TEST: TestResult = {
   status: 'idle',
   envReady: Boolean(import.meta.env.VITE_SUPABASE_URL && import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY),
   serpApiConfigured: null,
-  sampleQuery: 'best digital marketing agency',
+  sampleQuery: TEST_QUERY,
   effectiveMode: '—',
+  reasoning: '',
 };
 
 function SearchProviderTest({ researchMode }: { researchMode: CompetitorResearchPreference }) {
