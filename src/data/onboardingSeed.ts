@@ -275,6 +275,7 @@ export const c6Onboarding: OnboardingData = {
     revenueStreams: 'Financial services engagements',
     avgOrderValue: 'Financial services engagement',
     revenueModel: { revenueModelType: 'one_time', revenuePerConversion: 0, revenueUnit: 'per_deal' },
+    revenueStreamsList: [],
     coreCustomerSegments: 'Businesses and individuals requiring financial advisory services',
     revenueTarget: 0,
     newCustomersTarget: 0,
