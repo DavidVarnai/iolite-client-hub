@@ -644,8 +644,8 @@ function DiscoveryStep() {
     const imported: DiscoveryCompetitor[] = approvedRun.approved.approvedCompetitors.map(c => ({
       name: c.name,
       url: c.websiteUrl || '',
+      source: 'live_search' as CompetitorSource,
     }));
-    // Merge: add only new names
     const existing = d.competitors || [];
     const existingNames = new Set(existing.map(c => c.name.toLowerCase()));
     const toAdd = imported.filter(c => !existingNames.has(c.name.toLowerCase()));
