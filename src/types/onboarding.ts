@@ -223,10 +223,10 @@ export interface ClientDiscovery {
 export const EMPTY_DISCOVERY: ClientDiscovery = {
   businessModel: 'other',
   primaryProducts: '',
-  revenueStreams: '',
+  legacyRevenueStreamsText: '',
   avgOrderValue: '',
-  revenueModel: { revenueModelType: 'one_time', revenuePerConversion: 0, revenueUnit: 'per_deal' },
-  revenueStreamsList: [],
+  legacyRevenueModel: { revenueModelType: 'one_time', revenuePerConversion: 0, revenueUnit: 'per_deal' },
+  revenueStreams: [],
   coreCustomerSegments: '',
   revenueTarget: 0,
   newCustomersTarget: 0,
