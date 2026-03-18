@@ -208,11 +208,11 @@ export default function ProposalView({ proposalMode = false }: { proposalMode?: 
         )}
 
         {/* Revenue Economics (read-only from Discovery) */}
-        {onboarding.discovery.revenueModel?.revenuePerConversion > 0 && (
+        {onboarding.discovery.legacyRevenueModel?.revenuePerConversion > 0 && (
           <ProposalSection>
             <SectionHeader icon={BarChart3} title="Revenue Economics" />
             <RevenueModelDisplay
-              revenueModel={onboarding.discovery.revenueModel}
+              revenueModel={onboarding.discovery.legacyRevenueModel}
               showEditHint={!proposalMode}
               onEditClick={!proposalMode ? undefined : undefined}
               variant="card"

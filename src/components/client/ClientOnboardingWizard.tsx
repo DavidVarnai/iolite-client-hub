@@ -485,10 +485,9 @@ function DiscoveryStep() {
           ]}
           onChange={(v) => updateD({ businessModel: v as BusinessModel })} />
         <ExpandableField label="Primary Products / Services" value={d.primaryProducts} onChange={(v) => updateD({ primaryProducts: v })} />
-        <ExpandableField label="Revenue Streams (notes)" value={d.revenueStreams} onChange={(v) => updateD({ revenueStreams: v })} hint="Free-text description of revenue streams" />
         <RevenueStreamsEditor
-          streams={d.revenueStreamsList || []}
-          onChange={(streams) => updateD({ revenueStreamsList: streams })}
+          streams={d.revenueStreams || []}
+          onChange={(streams) => updateD({ revenueStreams: streams })}
           masterBrief={onboarding.masterBrief}
         />
         <ExpandableField label="Core Customer Segments" value={d.coreCustomerSegments} onChange={(v) => updateD({ coreCustomerSegments: v })} />
