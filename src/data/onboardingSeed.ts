@@ -215,6 +215,7 @@ export const c4Onboarding: OnboardingData = {
     revenueStreams: 'Annual tuition',
     avgOrderValue: 'Annual tuition',
     revenueModel: { revenueModelType: 'annual_contract', revenuePerConversion: 0, revenueUnit: 'per_year' },
+    revenueStreamsList: [],
     coreCustomerSegments: 'Parents with children ages 4-14 seeking bilingual private education',
     revenueTarget: 0,
     newCustomersTarget: 0,
