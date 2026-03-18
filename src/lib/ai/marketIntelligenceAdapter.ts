@@ -171,6 +171,8 @@ export async function generateMarketIntelligence(
 
   onProgress?.(100, 'Complete');
 
+  const briefSignals = inputs.masterBriefSignals;
+
   return {
     keywordThemes,
     competitorProfiles,
@@ -184,6 +186,11 @@ export async function generateMarketIntelligence(
     researchSourceNote,
     selectedResearchMode: inputs.competitorResearchMode || 'auto',
     enhancedWithMasterBrief: hasBriefSignals,
+    masterBriefProvenance: hasBriefSignals ? {
+      enhancedQueries: !!(briefSignals?.painPoints?.length || briefSignals?.audiences?.length || briefSignals?.industries?.length),
+      inferredCompetitorCount: briefSignals?.inferredCompetitors?.length || 0,
+      audienceContextUsed: !!(briefSignals?.audiences?.length || briefSignals?.painPoints?.length),
+    } : undefined,
   };
 }
 

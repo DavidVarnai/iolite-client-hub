@@ -6,8 +6,9 @@ import AiResultPanel from '@/components/ai/AiResultPanel';
 import { runStrategyDraft } from '@/lib/ai/aiActions';
 import type { AiActionStatus, StrategyDraftResult } from '@/types/ai';
 import type { OnboardingContinuation } from '@/types/onboarding';
+import { getApprovedBriefSignals } from '@/types/onboarding';
 import { useClientContext } from '@/contexts/ClientContext';
-import { Plus, Trash2 } from 'lucide-react';
+import { Plus, Trash2, FileText } from 'lucide-react';
 import RunMIButton from '@/components/client/marketIntelligence/RunMIButton';
 import OnboardingContinuityPanel from './OnboardingContinuityPanel';
 
@@ -24,15 +25,8 @@ function StrategySectionCard({ section, proposalMode }: { section: StrategySecti
   const handleGenerateDraft = async () => {
     setAiStatus('loading');
     try {
-      // Build Master Brief context if available
-      const briefInsights = onboarding.masterBrief?.extractedInsights;
-      const masterBriefContext = briefInsights ? JSON.stringify({
-        audiences: briefInsights.audiences,
-        painPoints: briefInsights.painPoints,
-        valueProps: briefInsights.valueProps,
-        differentiators: briefInsights.differentiators,
-        positioning: briefInsights.positioning,
-      }) : undefined;
+      // Only use approved + included brief signals
+      const approvedSignals = getApprovedBriefSignals(onboarding.masterBrief);
 
       const result = await runStrategyDraft({
         channel: section.channel,
@@ -47,8 +41,17 @@ function StrategySectionCard({ section, proposalMode }: { section: StrategySecti
           coreCustomerSegments: onboarding.discovery.coreCustomerSegments,
           knownBottlenecks: onboarding.discovery.knownBottlenecks,
           currentTraffic: onboarding.discovery.currentTraffic,
-          ...(masterBriefContext ? { masterBriefContext } : {}),
         }),
+        // Pass approved brief as separate structured object
+        ...(approvedSignals ? {
+          approvedMasterBriefInsights: JSON.stringify({
+            audiences: approvedSignals.audiences,
+            painPoints: approvedSignals.painPoints,
+            valueProps: approvedSignals.valueProps,
+            differentiators: approvedSignals.differentiators,
+            positioning: approvedSignals.positioning,
+          }),
+        } : {}),
       });
       setAiResult(result);
       setAiStatus('success');
@@ -232,9 +235,15 @@ function StrategySectionCard({ section, proposalMode }: { section: StrategySecti
         </AnimatePresence>
       )}
 
-      {/* AI Strategy Draft Result */}
+      {/* Brief provenance on AI result */}
       {aiStatus !== 'idle' && (
         <div className="px-5 pb-5">
+          {aiResult && !!getApprovedBriefSignals(onboarding.masterBrief) && (
+            <div className="flex items-center gap-1.5 mb-2">
+              <FileText className="h-3 w-3 text-primary" />
+              <span className="text-[10px] text-primary font-medium">Strategy enhanced with approved Master Brief insights</span>
+            </div>
+          )}
           <AiResultPanel
             title={`${SERVICE_CHANNEL_LABELS[section.channel]} — Strategy Draft`}
             status={aiStatus}

@@ -104,10 +104,22 @@ export default function MIResultsView({ outputs, run, onRerun, onRefine, onAppro
 
       {/* ─── MASTER BRIEF ENHANCEMENT BADGE ─── */}
       {outputs.enhancedWithMasterBrief && (
-        <div className="flex items-center gap-2 px-3 py-2 rounded-md bg-primary/5 border border-primary/15">
-          <FileText className="h-3.5 w-3.5 text-primary" />
-          <span className="text-xs text-primary font-medium">Enhanced with Master Brief insights</span>
-          <span className="text-[10px] text-muted-foreground">— inferred competitors, audiences, and pain points used to improve discovery queries and competitor matching</span>
+        <div className="panel p-4 space-y-2 border-primary/15 bg-primary/[0.02]">
+          <div className="flex items-center gap-2">
+            <FileText className="h-3.5 w-3.5 text-primary" />
+            <span className="text-xs text-primary font-medium">Enhanced with approved Master Brief insights</span>
+          </div>
+          <div className="space-y-1 text-[11px] text-muted-foreground">
+            {outputs.masterBriefProvenance?.enhancedQueries && (
+              <p>• Discovery queries enhanced with brief-sourced audience segments, pain points, and industries</p>
+            )}
+            {(outputs.masterBriefProvenance?.inferredCompetitorCount ?? 0) > 0 && (
+              <p>• {outputs.masterBriefProvenance!.inferredCompetitorCount} competitor(s) inferred from Master Brief (merged with known competitors)</p>
+            )}
+            {outputs.masterBriefProvenance?.audienceContextUsed && (
+              <p>• Audience and pain-point context influenced keyword themes and audience models</p>
+            )}
+          </div>
         </div>
       )}
 

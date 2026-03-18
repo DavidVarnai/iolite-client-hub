@@ -224,6 +224,12 @@ export interface MarketIntelligenceOutputs {
   selectedResearchMode?: CompetitorResearchPreference;
   /** Whether Master Brief insights were used to enhance this run */
   enhancedWithMasterBrief?: boolean;
+  /** Provenance details for Master Brief enhancement */
+  masterBriefProvenance?: {
+    enhancedQueries: boolean;
+    inferredCompetitorCount: number;
+    audienceContextUsed: boolean;
+  };
 }
 
 /* ── Approved Research ── */
