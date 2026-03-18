@@ -472,7 +472,7 @@ function DiscoveryStep() {
           serviceArea: onboarding.serviceArea || '',
           primaryCity: '',
           localRadius: null,
-          businessModel: d.businessModel === 'ecommerce' ? 'ecommerce' : d.businessModel === 'lead_gen' ? 'lead_generation' : 'hybrid',
+          businessModel: d.businessModel === 'ecommerce' ? 'ecommerce' : d.businessModel === 'lead_generation' ? 'lead_generation' : 'hybrid',
           selectedChannels: [],
           knownCompetitors: (d.competitors || []).map(c => c.name).filter(Boolean),
           website: '',
