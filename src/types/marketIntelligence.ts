@@ -164,6 +164,17 @@ export interface BenchmarkAssumption extends Partial<EvidenceMetadata> {
 
 /* ── Inputs / Outputs ── */
 
+/** Master Brief signals passed into MI for enhancement (not replacement) */
+export interface MasterBriefSignals {
+  audiences?: string[];
+  painPoints?: string[];
+  valueProps?: string[];
+  differentiators?: string[];
+  positioning?: string;
+  industries?: string[];
+  inferredCompetitors?: string[];
+}
+
 export interface MarketIntelligenceInputs {
   industry: string;
   serviceArea: string;
@@ -184,6 +195,8 @@ export interface MarketIntelligenceInputs {
   refinementNote?: string;
   /** Per-run override of competitor research mode */
   competitorResearchMode?: CompetitorResearchPreference;
+  /** Signals extracted from Master Brief for enhancement */
+  masterBriefSignals?: MasterBriefSignals;
 }
 
 /** How competitor research was conducted */
