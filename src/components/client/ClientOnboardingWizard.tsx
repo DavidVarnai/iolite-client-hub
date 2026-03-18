@@ -658,7 +658,7 @@ function DiscoveryStep() {
   }, [client.id]);
 
   // Competitor helpers
-  const addCompetitor = () => updateD({ competitors: [...(d.competitors || []), { name: '', url: '' }] });
+  const addCompetitor = () => updateD({ competitors: [...(d.competitors || []), { name: '', url: '', source: 'manual' }] });
   const updateCompetitor = (idx: number, patch: Partial<DiscoveryCompetitor>) => {
     const next = [...(d.competitors || [])];
     next[idx] = { ...next[idx], ...patch };
