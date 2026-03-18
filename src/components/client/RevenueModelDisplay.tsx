@@ -14,6 +14,8 @@ import { Info, Pencil } from 'lucide-react';
 
 interface Props {
   revenueModel: RevenueModelConfig;
+  /** Structured revenue streams (preferred over revenueModel when present) */
+  revenueStreams?: RevenueStream[];
   /** Show "Edit in Discovery" link */
   showEditHint?: boolean;
   /** Callback when user clicks the edit action */
