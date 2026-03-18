@@ -992,18 +992,45 @@ function DiscoveryStep() {
             </button>
           </div>
         </div>
-        {aiStatus === 'error' && (
-          <p className="text-[10px] text-destructive font-medium">Failed to research competitors. Please try again.</p>
+        {/* Source label */}
+        {researchSourceMode && (
+          <div className={`flex items-center gap-2 px-3 py-2 rounded-md text-xs font-medium ${
+            researchSourceMode === 'live_search'
+              ? 'bg-green-500/10 text-green-700 border border-green-500/20'
+              : 'bg-amber-500/10 text-amber-700 border border-amber-500/20'
+          }`}>
+            {researchSourceMode === 'live_search' ? (
+              <><Globe className="h-3.5 w-3.5" /> Live Search Results</>
+            ) : (
+              <><Cpu className="h-3.5 w-3.5" /> Modeled Fallback</>
+            )}
+            {researchSourceNote && (
+              <span className="text-[10px] font-normal opacity-75 ml-1">— {researchSourceNote}</span>
+            )}
+          </div>
         )}
 
-        {/* AI Discovered Competitors */}
+        {/* Error state */}
+        {aiStatus === 'error' && (
+          <div className="flex items-start gap-2 px-3 py-2 rounded-md bg-destructive/10 border border-destructive/20">
+            <AlertTriangle className="h-3.5 w-3.5 text-destructive mt-0.5 shrink-0" />
+            <div>
+              <p className="text-xs font-medium text-destructive">Failed to research competitors</p>
+              {researchError && (
+                <p className="text-[10px] text-destructive/80 mt-0.5">{researchError}</p>
+              )}
+            </div>
+          </div>
+        )}
+
+        {/* Live Search Results — main suggestions */}
         {aiSuggestions.length > 0 && (
-          <div className="panel border-primary/20 bg-primary/[0.02]">
-            <div className="flex items-center justify-between px-4 py-3 border-b border-primary/10">
+          <div className="panel border-green-500/20 bg-green-500/[0.02]">
+            <div className="flex items-center justify-between px-4 py-3 border-b border-green-500/10">
               <div className="flex items-center gap-2">
-                <Sparkles className="h-3.5 w-3.5 text-primary" />
-                <span className="text-xs font-semibold">AI Discovered Competitors</span>
-                <span className="text-[10px] text-muted-foreground bg-muted px-1.5 py-0.5 rounded">{aiSuggestions.length} found</span>
+                <Globe className="h-3.5 w-3.5 text-green-600" />
+                <span className="text-xs font-semibold">Live Search Results</span>
+                <span className="text-[10px] text-muted-foreground bg-muted px-1.5 py-0.5 rounded">{aiSuggestions.length} verified</span>
               </div>
               {selectedSuggestions.size > 0 && (
                 <button
@@ -1045,6 +1072,51 @@ function DiscoveryStep() {
                     <p className="text-xs text-muted-foreground mt-0.5">{suggestion.reason}</p>
                   </div>
                 </label>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {/* Modeled Suggestions — separate section with warning */}
+        {modeledSuggestions.length > 0 && (
+          <div className="panel border-amber-500/20 bg-amber-500/[0.02]">
+            <div className="px-4 py-3 border-b border-amber-500/10">
+              <div className="flex items-center gap-2">
+                <AlertTriangle className="h-3.5 w-3.5 text-amber-600" />
+                <span className="text-xs font-semibold text-amber-700">Modeled Suggestions</span>
+                <span className="text-[10px] text-muted-foreground bg-muted px-1.5 py-0.5 rounded">{modeledSuggestions.length} suggestions</span>
+              </div>
+              <p className="text-[10px] text-amber-600/80 mt-1">These are modeled estimates, not verified via live search. Use as research starting points only.</p>
+            </div>
+            <div className="divide-y divide-border">
+              {modeledSuggestions.map((suggestion, idx) => (
+                <div key={idx} className="flex items-start gap-3 px-4 py-3">
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center gap-2">
+                      <span className="text-sm font-medium text-amber-800">{suggestion.name}</span>
+                      {suggestion.url && (
+                        <span className="text-[11px] text-muted-foreground truncate max-w-[200px] font-mono">
+                          {suggestion.url.replace(/^https?:\/\//, '')}
+                        </span>
+                      )}
+                    </div>
+                    <p className="text-xs text-muted-foreground mt-0.5">{suggestion.reason}</p>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      const existing = d.competitors || [];
+                      const existingNames = new Set(existing.map(c => c.name.toLowerCase()));
+                      if (!existingNames.has(suggestion.name.toLowerCase())) {
+                        updateD({ competitors: [...existing, { name: suggestion.name, url: suggestion.url }] });
+                      }
+                      setModeledSuggestions(prev => prev.filter((_, i) => i !== idx));
+                    }}
+                    className="flex items-center gap-1 px-2.5 py-1.5 text-xs rounded-md border border-amber-500/20 bg-background hover:bg-amber-500/10 transition-colors text-amber-700 shrink-0"
+                  >
+                    <Plus className="h-3 w-3" /> Add
+                  </button>
+                </div>
               ))}
             </div>
           </div>
