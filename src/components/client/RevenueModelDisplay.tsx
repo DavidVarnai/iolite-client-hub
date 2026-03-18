@@ -8,8 +8,8 @@
  *     i.e. revenue *recognised within the model window*, not the full contract value.
  *   - annual_contract: revenue = conversions × revenuePerConversion (the annual value)
  */
-import type { RevenueModelConfig, RevenueModelType } from '@/types/onboarding';
-import { REVENUE_MODEL_TYPE_LABELS, estimatedContractValue, deriveRevenueUnit, REVENUE_UNIT_LABELS } from '@/types/onboarding';
+import type { RevenueModelConfig, RevenueModelType, RevenueStream } from '@/types/onboarding';
+import { REVENUE_MODEL_TYPE_LABELS, estimatedContractValue, deriveRevenueUnit, REVENUE_UNIT_LABELS, REVENUE_STREAM_TYPE_LABELS } from '@/types/onboarding';
 import { Info, Pencil } from 'lucide-react';
 
 interface Props {
