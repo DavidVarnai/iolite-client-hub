@@ -6,8 +6,9 @@ import AiResultPanel from '@/components/ai/AiResultPanel';
 import { runStrategyDraft } from '@/lib/ai/aiActions';
 import type { AiActionStatus, StrategyDraftResult } from '@/types/ai';
 import type { OnboardingContinuation } from '@/types/onboarding';
+import { getApprovedBriefSignals } from '@/types/onboarding';
 import { useClientContext } from '@/contexts/ClientContext';
-import { Plus, Trash2 } from 'lucide-react';
+import { Plus, Trash2, FileText } from 'lucide-react';
 import RunMIButton from '@/components/client/marketIntelligence/RunMIButton';
 import OnboardingContinuityPanel from './OnboardingContinuityPanel';
 
