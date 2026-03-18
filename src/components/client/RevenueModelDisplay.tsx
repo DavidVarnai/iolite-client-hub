@@ -8,12 +8,14 @@
  *     i.e. revenue *recognised within the model window*, not the full contract value.
  *   - annual_contract: revenue = conversions × revenuePerConversion (the annual value)
  */
-import type { RevenueModelConfig, RevenueModelType } from '@/types/onboarding';
-import { REVENUE_MODEL_TYPE_LABELS, estimatedContractValue, deriveRevenueUnit, REVENUE_UNIT_LABELS } from '@/types/onboarding';
+import type { RevenueModelConfig, RevenueModelType, RevenueStream } from '@/types/onboarding';
+import { REVENUE_MODEL_TYPE_LABELS, estimatedContractValue, deriveRevenueUnit, REVENUE_UNIT_LABELS, REVENUE_STREAM_TYPE_LABELS } from '@/types/onboarding';
 import { Info, Pencil } from 'lucide-react';
 
 interface Props {
   revenueModel: RevenueModelConfig;
+  /** Structured revenue streams (preferred over revenueModel when present) */
+  revenueStreams?: RevenueStream[];
   /** Show "Edit in Discovery" link */
   showEditHint?: boolean;
   /** Callback when user clicks the edit action */
@@ -110,16 +112,29 @@ export default function RevenueModelDisplay({
 }
 
 /**
+ * Aggregate revenue summary across multiple streams (for future Growth Model).
+ */
+export function getAggregateRevenue(streams: RevenueStream[]): {
+  totalOneTime: number;
+  totalMonthlyRecurring: number;
+  streamCount: number;
+} {
+  let totalOneTime = 0;
+  let totalMonthlyRecurring = 0;
+  for (const s of streams) {
+    if (s.type === 'one_time' || s.type === 'hybrid') {
+      totalOneTime += s.averageDealSize || 0;
+    }
+    if (s.type === 'recurring' || s.type === 'hybrid') {
+      totalMonthlyRecurring += s.monthlyValue || 0;
+    }
+  }
+  return { totalOneTime, totalMonthlyRecurring, streamCount: streams.length };
+}
+
+/**
  * Calculate effective revenue per conversion for Growth Model calculations.
- *
- * Interpretation:
- *   - one_time: full value per conversion
- *   - monthly_recurring: value × min(contractLength, modelWindowMonths)
- *     → revenue *recognised within the model time window*
- *   - annual_contract: full annual value per conversion
- *
- * @param revenueModel  The structured revenue config from Discovery
- * @param modelWindowMonths  How many months the growth model covers (e.g. 12)
+ * Supports both legacy RevenueModelConfig and new RevenueStream[].
  */
 export function getEffectiveRevenuePerConversion(
   revenueModel: RevenueModelConfig,
@@ -132,7 +147,6 @@ export function getEffectiveRevenuePerConversion(
     case 'one_time':
       return revenuePerConversion;
     case 'monthly_recurring': {
-      // Revenue recognised within the model window
       const months = avgContractLengthMonths && modelWindowMonths
         ? Math.min(avgContractLengthMonths, modelWindowMonths)
         : avgContractLengthMonths || modelWindowMonths || 1;

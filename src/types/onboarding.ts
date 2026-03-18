@@ -35,6 +35,25 @@ export const GROWTH_OBJECTIVE_LABELS: Record<GrowthObjective, string> = {
 export type RevenueModelType = 'one_time' | 'monthly_recurring' | 'annual_contract';
 export type RevenueUnit = 'per_deal' | 'per_month' | 'per_year';
 
+/* ── Multi-stream revenue ── */
+export type RevenueStreamType = 'one_time' | 'recurring' | 'hybrid';
+
+export const REVENUE_STREAM_TYPE_LABELS: Record<RevenueStreamType, string> = {
+  one_time: 'One-time',
+  recurring: 'Recurring',
+  hybrid: 'Hybrid',
+};
+
+export interface RevenueStream {
+  id: string;
+  name: string;
+  type: RevenueStreamType;
+  averageDealSize?: number;
+  monthlyValue?: number;
+  contractLengthMonths?: number;
+  notes?: string;
+}
+
 /** Canonical mapping: revenueModelType → revenueUnit. Unit is fully derived. */
 export const REVENUE_MODEL_UNIT_MAP: Record<RevenueModelType, RevenueUnit> = {
   one_time: 'per_deal',
@@ -132,7 +151,10 @@ export interface ClientDiscovery {
   revenueStreams: string;
   /** @deprecated use revenueModel */
   avgOrderValue: string;
+  /** @deprecated use revenueStreamsList */
   revenueModel: RevenueModelConfig;
+  /** Structured multi-stream revenue data */
+  revenueStreamsList: RevenueStream[];
   coreCustomerSegments: string;
 
   // B. Growth Targets — Business Outcomes
@@ -199,6 +221,7 @@ export const EMPTY_DISCOVERY: ClientDiscovery = {
   revenueStreams: '',
   avgOrderValue: '',
   revenueModel: { revenueModelType: 'one_time', revenuePerConversion: 0, revenueUnit: 'per_deal' },
+  revenueStreamsList: [],
   coreCustomerSegments: '',
   revenueTarget: 0,
   newCustomersTarget: 0,
@@ -364,11 +387,11 @@ export function computeStageReadiness(
 
   // Discovery
   const d = onboarding.discovery;
-  const revenueModelSet = d.revenueModel && d.revenueModel.revenuePerConversion > 0 ? 'set' : '';
+  const revenueStreamsSet = (d.revenueStreamsList?.length > 0) ? 'set' : (d.revenueModel && d.revenueModel.revenuePerConversion > 0 ? 'set' : '');
   const revenueTargetSet = d.revenueTarget > 0 ? 'set' : (d.revenueTargets || '');
   const customersTargetSet = d.newCustomersTarget > 0 ? 'set' : (d.customerLeadTargets || '');
   const discoveryFields = [
-    d.primaryProducts, d.revenueStreams, revenueModelSet, d.coreCustomerSegments,
+    d.primaryProducts, d.revenueStreams, revenueStreamsSet, d.coreCustomerSegments,
     revenueTargetSet, customersTargetSet, d.timeHorizon,
     d.funnelType, d.closeRate, d.salesCycleLength,
     d.monthlyVisitors || d.currentTraffic, d.monthlyLeads || d.currentLeadsOrders,
@@ -425,9 +448,9 @@ export function getProposalChecklist(
   hasGrowthModel: boolean,
 ): ProposalChecklistItem[] {
   const d = onboarding.discovery;
-  const revenueModelSet = d.revenueModel && d.revenueModel.revenuePerConversion > 0 ? 'set' : '';
+  const revenueStreamsSet = (d.revenueStreamsList?.length > 0) ? 'set' : (d.revenueModel && d.revenueModel.revenuePerConversion > 0 ? 'set' : '');
   const revenueTargetSet = d.revenueTarget > 0 ? 'set' : (d.revenueTargets || '');
-  const dFields = [d.primaryProducts, d.revenueStreams, revenueModelSet, revenueTargetSet, d.newCustomersTarget > 0 ? 'set' : (d.customerLeadTargets || '')];
+  const dFields = [d.primaryProducts, d.revenueStreams, revenueStreamsSet, revenueTargetSet, d.newCustomersTarget > 0 ? 'set' : (d.customerLeadTargets || '')];
   const dFilled = dFields.filter(f => f && String(f).trim().length > 0).length;
 
   return [

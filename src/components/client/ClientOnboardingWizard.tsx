@@ -1,8 +1,8 @@
 import { useState, useCallback, useMemo } from 'react';
-import { ClientDiscovery, EMPTY_DISCOVERY, BusinessModel, GrowthGoal, PerformanceConfidence, BOTTLENECK_OPTIONS, DiscoveryCompetitor, AiDiscoveredCompetitor, FunnelStage, FunnelStageCategory, FUNNEL_STAGE_OPTIONS, FUNNEL_CATEGORY_ORDER, deriveRevenueUnit, GROWTH_OBJECTIVE_LABELS } from '@/types/onboarding';
-import type { RevenueModelType, GrowthObjective } from '@/types/onboarding';
+import { ClientDiscovery, EMPTY_DISCOVERY, BusinessModel, GrowthGoal, PerformanceConfidence, BOTTLENECK_OPTIONS, DiscoveryCompetitor, AiDiscoveredCompetitor, FunnelStage, FunnelStageCategory, FUNNEL_STAGE_OPTIONS, FUNNEL_CATEGORY_ORDER, deriveRevenueUnit, GROWTH_OBJECTIVE_LABELS, REVENUE_STREAM_TYPE_LABELS, getApprovedBriefSignals } from '@/types/onboarding';
+import type { RevenueModelType, GrowthObjective, RevenueStream, RevenueStreamType } from '@/types/onboarding';
 import { ServiceChannel, SERVICE_CHANNEL_LABELS } from '@/types';
-import { Check, ChevronLeft, ChevronRight, X, Loader2, Sparkles, Plus, Trash2, ArrowRight, Download, Pause } from 'lucide-react';
+import { Check, ChevronLeft, ChevronRight, X, Loader2, Sparkles, Plus, Trash2, ArrowRight, Download, Pause, FileText } from 'lucide-react';
 import { AnimatePresence, motion } from 'framer-motion';
 import { useClientContext } from '@/contexts/ClientContext';
 import { runMarketResearch } from '@/lib/ai/aiActions';
@@ -11,6 +11,7 @@ import type { AiActionStatus } from '@/types/ai';
 import FunnelVisualPreview from './discovery/FunnelVisualPreview';
 import MasterBriefSection from './discovery/MasterBriefSection';
 import { Collapsible, CollapsibleTrigger, CollapsibleContent } from '@/components/ui/collapsible';
+import { mapBriefToRevenueStreamSuggestions } from '@/lib/ai/masterBriefRevenueHelper';
 
 type WizardStep = 'setup' | 'discovery' | 'strategy' | 'growth_model' | 'proposal';
 
@@ -160,7 +161,201 @@ function ClientSetupStep() {
   );
 }
 
-// ---------- STEP 2: Discovery ----------
+// ---------- Revenue Streams Editor ----------
+function RevenueStreamsEditor({ streams, onChange, masterBrief }: {
+  streams: RevenueStream[];
+  onChange: (streams: RevenueStream[]) => void;
+  masterBrief?: import('@/types/onboarding').MasterBrief;
+}) {
+  const approvedSignals = getApprovedBriefSignals(masterBrief);
+  const suggestions = useMemo(() => {
+    if (!approvedSignals) return [];
+    return mapBriefToRevenueStreamSuggestions(approvedSignals);
+  }, [approvedSignals]);
+
+  // Filter out suggestions that already exist by name
+  const existingNames = new Set(streams.map(s => s.name.toLowerCase()));
+  const availableSuggestions = suggestions.filter(s => !existingNames.has(s.name.toLowerCase()));
+
+  const addStream = () => {
+    onChange([...streams, { id: `rs-${Date.now()}`, name: '', type: 'one_time' }]);
+  };
+
+  const updateStream = (idx: number, patch: Partial<RevenueStream>) => {
+    const next = [...streams];
+    next[idx] = { ...next[idx], ...patch };
+    onChange(next);
+  };
+
+  const removeStream = (idx: number) => {
+    onChange(streams.filter((_, i) => i !== idx));
+  };
+
+  const addSuggestion = (s: { name: string; type: RevenueStreamType }) => {
+    if (existingNames.has(s.name.toLowerCase())) return;
+    onChange([...streams, { id: `rs-${Date.now()}`, name: s.name, type: s.type }]);
+  };
+
+  const addAllSuggestions = () => {
+    const toAdd = availableSuggestions.map((s, i) => ({
+      id: `rs-${Date.now()}-${i}`,
+      name: s.name,
+      type: s.type,
+    }));
+    onChange([...streams, ...toAdd]);
+  };
+
+  return (
+    <div className="col-span-2 space-y-4">
+      <div>
+        <p className="text-xs font-semibold text-foreground">Revenue Streams</p>
+        <p className="text-[10px] text-muted-foreground mt-0.5">Add one or more revenue streams to describe how this client earns revenue.</p>
+      </div>
+
+      {/* Master Brief suggestions */}
+      {availableSuggestions.length > 0 && (
+        <div className="border rounded-lg p-3 bg-primary/5 border-primary/20 space-y-2">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-1.5">
+              <FileText className="h-3.5 w-3.5 text-primary" />
+              <span className="text-xs font-medium text-primary">Suggested from Master Brief</span>
+            </div>
+            <button
+              type="button"
+              onClick={addAllSuggestions}
+              className="text-[10px] font-medium text-primary hover:underline"
+            >
+              Add All
+            </button>
+          </div>
+          <div className="flex flex-wrap gap-1.5">
+            {availableSuggestions.map((s, i) => (
+              <button
+                key={i}
+                type="button"
+                onClick={() => addSuggestion(s)}
+                className="flex items-center gap-1.5 px-2.5 py-1.5 text-xs rounded-md border border-primary/20 bg-background hover:bg-primary/10 transition-colors"
+              >
+                <Plus className="h-3 w-3 text-primary" />
+                <span className="truncate max-w-[200px]">{s.name}</span>
+                <span className="text-[10px] px-1.5 py-0.5 rounded bg-muted text-muted-foreground">
+                  {REVENUE_STREAM_TYPE_LABELS[s.type]}
+                </span>
+              </button>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* Stream cards */}
+      <div className="space-y-3">
+        {streams.map((stream, idx) => (
+          <div key={stream.id} className="border rounded-lg p-4 bg-muted/20 space-y-3">
+            <div className="flex items-start gap-3">
+              <div className="flex-1 grid grid-cols-2 gap-3">
+                <div>
+                  <label className="text-[10px] font-medium text-muted-foreground uppercase tracking-wider">Stream Name</label>
+                  <input
+                    type="text"
+                    value={stream.name}
+                    onChange={(e) => updateStream(idx, { name: e.target.value })}
+                    className="w-full rounded-md border bg-background px-3 py-2 text-sm"
+                    placeholder="e.g. Managed Services"
+                  />
+                </div>
+                <div>
+                  <label className="text-[10px] font-medium text-muted-foreground uppercase tracking-wider">Type</label>
+                  <select
+                    value={stream.type}
+                    onChange={(e) => updateStream(idx, { type: e.target.value as RevenueStreamType })}
+                    className="w-full rounded-md border bg-background px-3 py-2 text-sm"
+                  >
+                    <option value="one_time">One-time</option>
+                    <option value="recurring">Recurring</option>
+                    <option value="hybrid">Hybrid</option>
+                  </select>
+                </div>
+              </div>
+              <button
+                type="button"
+                onClick={() => removeStream(idx)}
+                className="p-1.5 rounded-md text-muted-foreground hover:text-destructive hover:bg-destructive/10 transition-colors mt-4"
+              >
+                <Trash2 className="h-3.5 w-3.5" />
+              </button>
+            </div>
+
+            {/* Type-specific fields */}
+            <div className="grid grid-cols-2 gap-3">
+              {(stream.type === 'one_time' || stream.type === 'hybrid') && (
+                <div>
+                  <label className="text-[10px] font-medium text-muted-foreground uppercase tracking-wider">Avg Deal Size ($)</label>
+                  <input
+                    type="number"
+                    value={stream.averageDealSize || ''}
+                    onChange={(e) => updateStream(idx, { averageDealSize: parseFloat(e.target.value) || undefined })}
+                    className="w-full rounded-md border bg-background px-3 py-2 text-sm"
+                    placeholder="e.g. 5000"
+                  />
+                </div>
+              )}
+              {(stream.type === 'recurring' || stream.type === 'hybrid') && (
+                <>
+                  <div>
+                    <label className="text-[10px] font-medium text-muted-foreground uppercase tracking-wider">Monthly Value ($)</label>
+                    <input
+                      type="number"
+                      value={stream.monthlyValue || ''}
+                      onChange={(e) => updateStream(idx, { monthlyValue: parseFloat(e.target.value) || undefined })}
+                      className="w-full rounded-md border bg-background px-3 py-2 text-sm"
+                      placeholder="e.g. 2000"
+                    />
+                  </div>
+                  <div>
+                    <label className="text-[10px] font-medium text-muted-foreground uppercase tracking-wider">Contract Length (months)</label>
+                    <input
+                      type="number"
+                      value={stream.contractLengthMonths || ''}
+                      onChange={(e) => updateStream(idx, { contractLengthMonths: parseInt(e.target.value) || undefined })}
+                      className="w-full rounded-md border bg-background px-3 py-2 text-sm"
+                      placeholder="e.g. 12"
+                    />
+                  </div>
+                </>
+              )}
+            </div>
+
+            {/* Notes collapsible */}
+            <Collapsible>
+              <CollapsibleTrigger className="text-[10px] text-muted-foreground hover:text-foreground transition-colors">
+                {stream.notes ? 'Notes ▾' : '+ Add notes'}
+              </CollapsibleTrigger>
+              <CollapsibleContent>
+                <textarea
+                  value={stream.notes || ''}
+                  onChange={(e) => updateStream(idx, { notes: e.target.value })}
+                  rows={2}
+                  className="w-full rounded-md border bg-background px-3 py-2 text-sm mt-1 resize-y"
+                  placeholder="Optional notes about this stream"
+                />
+              </CollapsibleContent>
+            </Collapsible>
+          </div>
+        ))}
+      </div>
+
+      <button
+        type="button"
+        onClick={addStream}
+        className="flex items-center gap-1.5 px-3 py-2 text-xs font-medium rounded-md border border-dashed border-border text-muted-foreground hover:text-foreground hover:border-primary/50 transition-colors"
+      >
+        <Plus className="h-3.5 w-3.5" /> Add Revenue Stream
+      </button>
+    </div>
+  );
+}
+
+
 function DiscoveryStep() {
   const { client, onboarding, updateOnboarding } = useClientContext();
   const d = onboarding.discovery;
@@ -290,60 +485,12 @@ function DiscoveryStep() {
           ]}
           onChange={(v) => updateD({ businessModel: v as BusinessModel })} />
         <ExpandableField label="Primary Products / Services" value={d.primaryProducts} onChange={(v) => updateD({ primaryProducts: v })} />
-        <ExpandableField label="Revenue Streams" value={d.revenueStreams} onChange={(v) => updateD({ revenueStreams: v })} />
-        <div className="space-y-4 py-2 border rounded-lg p-4 bg-muted/20">
-          <div>
-            <p className="text-xs font-semibold text-foreground">Revenue per Conversion</p>
-            <p className="text-[10px] text-muted-foreground mt-0.5">How much revenue does a single converted customer generate?</p>
-          </div>
-          <div className="grid grid-cols-2 gap-3">
-            <div>
-              <label className="text-[10px] font-medium text-muted-foreground uppercase tracking-wider">Revenue Model</label>
-              <select
-                value={d.revenueModel?.revenueModelType || 'one_time'}
-                onChange={(e) => {
-                  const type = e.target.value as RevenueModelType;
-                  updateD({ revenueModel: { ...d.revenueModel, revenueModelType: type, revenueUnit: deriveRevenueUnit(type) } });
-                }}
-                className="w-full rounded-md border bg-background px-3 py-2 text-sm"
-              >
-                <option value="one_time">One-time purchase</option>
-                <option value="monthly_recurring">Monthly recurring</option>
-                <option value="annual_contract">Annual contract</option>
-              </select>
-              <p className="text-[10px] text-muted-foreground mt-1">
-                {d.revenueModel?.revenueModelType === 'monthly_recurring'
-                  ? 'Monthly revenue per converted customer (e.g. subscription fee)'
-                  : d.revenueModel?.revenueModelType === 'annual_contract'
-                  ? 'Annual contract value per converted customer'
-                  : 'One-time revenue per converted customer (e.g. average order value)'}
-              </p>
-            </div>
-            <div>
-              <label className="text-[10px] font-medium text-muted-foreground uppercase tracking-wider">Revenue per Conversion ($)</label>
-              <input
-                type="number"
-                value={d.revenueModel?.revenuePerConversion || ''}
-                onChange={(e) => updateD({ revenueModel: { ...d.revenueModel, revenuePerConversion: parseFloat(e.target.value) || 0 } })}
-                className="w-full rounded-md border bg-background px-3 py-2 text-sm"
-                placeholder="e.g. 5000"
-              />
-            </div>
-            {(d.revenueModel?.revenueModelType === 'monthly_recurring' || d.revenueModel?.revenueModelType === 'annual_contract') && (
-              <div>
-                <label className="text-[10px] font-medium text-muted-foreground uppercase tracking-wider">Average Contract Length (months)</label>
-                <input
-                  type="number"
-                  value={d.revenueModel?.avgContractLengthMonths || ''}
-                  onChange={(e) => updateD({ revenueModel: { ...d.revenueModel, avgContractLengthMonths: parseInt(e.target.value) || undefined } })}
-                  className="w-full rounded-md border bg-background px-3 py-2 text-sm"
-                  placeholder="e.g. 12"
-                />
-                <p className="text-[10px] text-muted-foreground mt-1">Used to estimate total contract value</p>
-              </div>
-            )}
-          </div>
-        </div>
+        <ExpandableField label="Revenue Streams (notes)" value={d.revenueStreams} onChange={(v) => updateD({ revenueStreams: v })} hint="Free-text description of revenue streams" />
+        <RevenueStreamsEditor
+          streams={d.revenueStreamsList || []}
+          onChange={(streams) => updateD({ revenueStreamsList: streams })}
+          masterBrief={onboarding.masterBrief}
+        />
         <ExpandableField label="Core Customer Segments" value={d.coreCustomerSegments} onChange={(v) => updateD({ coreCustomerSegments: v })} />
       </DiscoverySection>
 
