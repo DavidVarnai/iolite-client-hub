@@ -52,6 +52,10 @@ export interface RevenueStream {
   monthlyValue?: number;
   contractLengthMonths?: number;
   notes?: string;
+  /** Provenance: where this stream originated */
+  source?: 'manual' | 'master_brief';
+  /** Original name when added from brief — used to detect significant edits */
+  originalBriefName?: string;
 }
 
 /** Canonical mapping: revenueModelType → revenueUnit. Unit is fully derived. */
