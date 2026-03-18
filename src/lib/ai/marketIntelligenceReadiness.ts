@@ -86,7 +86,17 @@ export function collectMIInputs(
     website: onboarding.website || '',
     productsOrServices: d.primaryProducts || '',
     targetAudience: d.coreCustomerSegments || '',
-    knownCompetitors: d.topCompetitors ? d.topCompetitors.split(',').map(s => s.trim()).filter(Boolean) : undefined,
+    knownCompetitors: (() => {
+      const fromArray = (d.competitors || []).map(c => c.name.trim()).filter(Boolean);
+      const fromLegacy = d.topCompetitors ? d.topCompetitors.split(',').map(s => s.trim()).filter(Boolean) : [];
+      const seen = new Set<string>();
+      const merged: string[] = [];
+      for (const name of [...fromArray, ...fromLegacy]) {
+        const key = name.toLowerCase();
+        if (!seen.has(key)) { seen.add(key); merged.push(name); }
+      }
+      return merged.length > 0 ? merged : undefined;
+    })(),
     primaryGoal: d.primaryGrowthObjective || d.majorGrowthPriorities || onboarding.primaryGrowthGoal || '',
     budgetRange: '',
     selectedChannels: channels,
