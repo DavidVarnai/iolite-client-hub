@@ -11,7 +11,7 @@ import type { AiActionStatus } from '@/types/ai';
 import FunnelVisualPreview from './discovery/FunnelVisualPreview';
 import MasterBriefSection from './discovery/MasterBriefSection';
 import { Collapsible, CollapsibleTrigger, CollapsibleContent } from '@/components/ui/collapsible';
-import { mapBriefToRevenueStreamSuggestions } from '@/lib/ai/masterBriefRevenueHelper';
+import { mapBriefToRevenueStreamSuggestions, mapBriefToDiscoverySuggestions } from '@/lib/ai/masterBriefRevenueHelper';
 
 type WizardStep = 'setup' | 'discovery' | 'strategy' | 'growth_model' | 'proposal';
 
@@ -157,6 +157,41 @@ function ClientSetupStep() {
           className="w-full rounded-md border bg-background px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-ring"
         />
       </div>
+    </div>
+  );
+}
+
+// ---------- Brief Suggestion Chips ----------
+function BriefSuggestionChips({ suggestions, currentValue, onApply, mode = 'replace' }: {
+  suggestions: string[];
+  currentValue: string;
+  onApply: (value: string) => void;
+  mode?: 'replace' | 'append';
+}) {
+  const lowerCurrent = currentValue.toLowerCase();
+  const available = suggestions.filter(s => s.trim().length > 0 && !lowerCurrent.includes(s.toLowerCase().trim()));
+  if (available.length === 0) return null;
+
+  return (
+    <div className="flex items-center gap-1.5 flex-wrap mt-1">
+      <FileText className="h-3 w-3 text-primary shrink-0" />
+      <span className="text-[10px] text-primary font-medium shrink-0">From Brief:</span>
+      {available.map((s, i) => (
+        <button
+          key={i}
+          type="button"
+          onClick={() => {
+            if (mode === 'append' && currentValue.trim()) {
+              onApply(currentValue.trim() + '\n' + s);
+            } else {
+              onApply(s);
+            }
+          }}
+          className="px-2 py-0.5 text-[11px] rounded-md border border-primary/20 bg-primary/5 text-primary hover:bg-primary/10 transition-colors truncate max-w-[220px]"
+        >
+          + {s}
+        </button>
+      ))}
     </div>
   );
 }
@@ -396,6 +431,13 @@ function DiscoveryStep() {
   const [aiSuggestions, setAiSuggestions] = useState<AiDiscoveredCompetitor[]>([]);
   const [selectedSuggestions, setSelectedSuggestions] = useState<Set<number>>(new Set());
 
+  // Brief → Discovery suggestions
+  const approvedSignals = getApprovedBriefSignals(onboarding.masterBrief);
+  const briefSuggestions = useMemo(() => {
+    if (!approvedSignals) return null;
+    return mapBriefToDiscoverySuggestions(approvedSignals);
+  }, [approvedSignals]);
+
   const handleResearchCompetitors = async () => {
     setAiStatus('loading');
     setAiSuggestions([]);
@@ -516,13 +558,33 @@ function DiscoveryStep() {
             { value: 'other', label: 'Other' },
           ]}
           onChange={(v) => updateD({ businessModel: v as BusinessModel })} />
-        <ExpandableField label="Primary Products / Services" value={d.primaryProducts} onChange={(v) => updateD({ primaryProducts: v })} />
+        <div className="col-span-2">
+          <ExpandableField label="Primary Products / Services" value={d.primaryProducts} onChange={(v) => updateD({ primaryProducts: v })} />
+          {briefSuggestions?.primaryProductsHint && (
+            <BriefSuggestionChips
+              suggestions={[briefSuggestions.primaryProductsHint]}
+              currentValue={d.primaryProducts}
+              onApply={(v) => updateD({ primaryProducts: v })}
+              mode="replace"
+            />
+          )}
+        </div>
         <RevenueStreamsEditor
           streams={d.revenueStreams || []}
           onChange={(streams) => updateD({ revenueStreams: streams })}
           masterBrief={onboarding.masterBrief}
         />
-        <ExpandableField label="Core Customer Segments" value={d.coreCustomerSegments} onChange={(v) => updateD({ coreCustomerSegments: v })} />
+        <div className="col-span-2">
+          <ExpandableField label="Core Customer Segments" value={d.coreCustomerSegments} onChange={(v) => updateD({ coreCustomerSegments: v })} />
+          {briefSuggestions && briefSuggestions.audiences.length > 0 && (
+            <BriefSuggestionChips
+              suggestions={briefSuggestions.audiences}
+              currentValue={d.coreCustomerSegments}
+              onApply={(v) => updateD({ coreCustomerSegments: v })}
+              mode="append"
+            />
+          )}
+        </div>
       </DiscoverySection>
 
       <DiscoverySection title="B. Growth Targets">
@@ -939,11 +1001,59 @@ function DiscoveryStep() {
         </div>
 
         <div className="grid grid-cols-2 gap-4">
-          <ExpandableField label="Positioning Notes" value={d.positioningNotes} onChange={(v) => updateD({ positioningNotes: v })}
-            placeholder="Key positioning themes in your market" />
-          <ExpandableField label="Differentiators" value={d.differentiators} onChange={(v) => updateD({ differentiators: v })}
-            placeholder="What sets this client apart from competitors?" hint="Unique value propositions, strengths, moats" />
+          <div>
+            <ExpandableField label="Positioning Notes" value={d.positioningNotes} onChange={(v) => updateD({ positioningNotes: v })}
+              placeholder="Key positioning themes in your market" />
+            {briefSuggestions?.primaryProductsHint && approvedSignals?.positioning && (
+              <BriefSuggestionChips
+                suggestions={[approvedSignals.positioning]}
+                currentValue={d.positioningNotes}
+                onApply={(v) => updateD({ positioningNotes: v })}
+                mode="replace"
+              />
+            )}
+          </div>
+          <div>
+            <ExpandableField label="Differentiators" value={d.differentiators} onChange={(v) => updateD({ differentiators: v })}
+              placeholder="What sets this client apart from competitors?" hint="Unique value propositions, strengths, moats" />
+            {approvedSignals?.differentiators && approvedSignals.differentiators.length > 0 && (
+              <BriefSuggestionChips
+                suggestions={approvedSignals.differentiators}
+                currentValue={d.differentiators}
+                onApply={(v) => updateD({ differentiators: v })}
+                mode="append"
+              />
+            )}
+          </div>
         </div>
+
+        {/* Brief-inferred competitors */}
+        {briefSuggestions && briefSuggestions.inferredCompetitors.length > 0 && (() => {
+          const existingNames = new Set((d.competitors || []).map(c => c.name.toLowerCase().trim()));
+          const available = briefSuggestions.inferredCompetitors.filter(c => !existingNames.has(c.toLowerCase().trim()));
+          if (available.length === 0) return null;
+          return (
+            <div className="border rounded-lg p-3 bg-primary/5 border-primary/20 space-y-2">
+              <div className="flex items-center gap-1.5">
+                <FileText className="h-3.5 w-3.5 text-primary" />
+                <span className="text-xs font-medium text-primary">Competitors from Brief</span>
+              </div>
+              <div className="flex flex-wrap gap-1.5">
+                {available.map((name, i) => (
+                  <button
+                    key={i}
+                    type="button"
+                    onClick={() => updateD({ competitors: [...(d.competitors || []), { name, url: '' }] })}
+                    className="flex items-center gap-1 px-2.5 py-1.5 text-xs rounded-md border border-primary/20 bg-background hover:bg-primary/10 transition-colors"
+                  >
+                    <Plus className="h-3 w-3 text-primary" />
+                    {name}
+                  </button>
+                ))}
+              </div>
+            </div>
+          );
+        })()}
       </div>
     </div>
   );
