@@ -2,12 +2,12 @@ import { useState, useCallback, useMemo } from 'react';
 import { ClientDiscovery, EMPTY_DISCOVERY, BusinessModel, GrowthGoal, PerformanceConfidence, BOTTLENECK_OPTIONS, DiscoveryCompetitor, AiDiscoveredCompetitor, FunnelStage, FunnelStageCategory, FUNNEL_STAGE_OPTIONS, FUNNEL_CATEGORY_ORDER, deriveRevenueUnit, GROWTH_OBJECTIVE_LABELS, REVENUE_STREAM_TYPE_LABELS, getApprovedBriefSignals } from '@/types/onboarding';
 import type { RevenueModelType, GrowthObjective, RevenueStream, RevenueStreamType } from '@/types/onboarding';
 import { ServiceChannel, SERVICE_CHANNEL_LABELS } from '@/types';
-import { Check, ChevronLeft, ChevronRight, X, Loader2, Sparkles, Plus, Trash2, ArrowRight, Download, Pause, FileText } from 'lucide-react';
+import { Check, ChevronLeft, ChevronRight, X, Loader2, Sparkles, Plus, Trash2, ArrowRight, Download, Pause, FileText, AlertTriangle, Globe, Cpu } from 'lucide-react';
 import { AnimatePresence, motion } from 'framer-motion';
 import { useClientContext } from '@/contexts/ClientContext';
-import { runMarketResearch } from '@/lib/ai/aiActions';
 import { repository } from '@/lib/repository';
 import type { AiActionStatus } from '@/types/ai';
+import { searchCompetitors, type CompetitorSearchResult, type CompetitorSearchContext } from '@/lib/ai/competitorSearchProvider';
 import FunnelVisualPreview from './discovery/FunnelVisualPreview';
 import MasterBriefSection from './discovery/MasterBriefSection';
 import { Collapsible, CollapsibleTrigger, CollapsibleContent } from '@/components/ui/collapsible';
@@ -429,7 +429,11 @@ function DiscoveryStep() {
   const updateD = (patch: Partial<ClientDiscovery>) => updateOnboarding({ ...onboarding, discovery: { ...d, ...patch } });
   const [aiStatus, setAiStatus] = useState<AiActionStatus>('idle');
   const [aiSuggestions, setAiSuggestions] = useState<AiDiscoveredCompetitor[]>([]);
+  const [modeledSuggestions, setModeledSuggestions] = useState<AiDiscoveredCompetitor[]>([]);
   const [selectedSuggestions, setSelectedSuggestions] = useState<Set<number>>(new Set());
+  const [researchSourceMode, setResearchSourceMode] = useState<'live_search' | 'modeled_fallback' | null>(null);
+  const [researchSourceNote, setResearchSourceNote] = useState<string>('');
+  const [researchError, setResearchError] = useState<string>('');
 
   // Brief → Discovery suggestions
   const approvedSignals = getApprovedBriefSignals(onboarding.masterBrief);
@@ -441,29 +445,114 @@ function DiscoveryStep() {
   const handleResearchCompetitors = async () => {
     setAiStatus('loading');
     setAiSuggestions([]);
+    setModeledSuggestions([]);
     setSelectedSuggestions(new Set());
+    setResearchSourceMode(null);
+    setResearchSourceNote('');
+    setResearchError('');
+
     try {
-      const result = await runMarketResearch({
-        industry: client.industry,
-        geography: onboarding.geography,
-        serviceArea: onboarding.serviceArea,
-        businessModel: d.businessModel,
-        primaryProducts: d.primaryProducts,
-        coreCustomerSegments: d.coreCustomerSegments,
-      });
-      // Filter out any AI suggestions that match existing manual entries
+      // Build discovery queries from available data
+      const industry = client.industry?.toLowerCase() || '';
+      const area = onboarding.serviceArea || onboarding.geography || '';
+      const product = d.primaryProducts || client.industry || '';
+      const queries: string[] = [];
+      queries.push(`best ${product.toLowerCase()} ${area}`.trim());
+      queries.push(`${industry} ${area}`.trim());
+      queries.push(`top ${industry} companies ${area}`.trim());
+      if (d.coreCustomerSegments) queries.push(`${product.toLowerCase()} for ${d.coreCustomerSegments.split(',')[0]?.trim() || 'businesses'} ${area}`.trim());
+      queries.push(`${industry} services near me`);
+
+      const searchCtx: CompetitorSearchContext = {
+        inputs: {
+          industry: client.industry,
+          productsOrServices: d.primaryProducts || '',
+          targetAudience: d.coreCustomerSegments || '',
+          geography: onboarding.geography || '',
+          serviceArea: onboarding.serviceArea || '',
+          primaryCity: '',
+          localRadius: null,
+          businessModel: d.businessModel === 'ecommerce' ? 'ecommerce' : d.businessModel === 'lead_generation' ? 'lead_generation' : 'hybrid',
+          selectedChannels: [],
+          knownCompetitors: (d.competitors || []).map(c => c.name).filter(Boolean),
+          website: '',
+          primaryGoal: '',
+          budgetRange: '',
+        },
+        discoveryQueries: [...new Set(queries.filter(Boolean))].slice(0, 5),
+        coreKeywords: [product.toLowerCase(), industry].filter(Boolean),
+        keywordThemes: [],
+        normalizedIndustry: client.industry,
+        isLocal: !!(onboarding.serviceArea || onboarding.geography),
+        localArea: onboarding.serviceArea || onboarding.geography || '',
+        area: onboarding.geography || 'target market',
+      };
+
+      console.log('[Discovery-Research] Starting competitor search with shared provider');
+      console.log('[Discovery-Research] Queries:', searchCtx.discoveryQueries);
+
+      const result: CompetitorSearchResult = await searchCompetitors(searchCtx);
+
+      console.log(`[Discovery-Research] Provider used: ${result.sourceMode}`);
+      console.log(`[Discovery-Research] Competitors returned: ${result.competitors.length}`);
+
+      setResearchSourceMode(result.sourceMode);
+      setResearchSourceNote(result.sourceNote);
+
+      // Filter out existing manual entries
       const existingNames = new Set((d.competitors || []).map(c => c.name.toLowerCase()));
-      const suggestions: AiDiscoveredCompetitor[] = result.topCompetitors
-        .filter(c => !existingNames.has(c.name.toLowerCase()))
-        .map(c => ({
+
+      // Validate competitors: must have real domain, not be generic/fake names
+      const FAKE_NAME_PATTERNS = /^(pro services|solutions|group|experts|nextgen|elite|premier|advanced|digital|global)\s/i;
+      const GENERIC_SUFFIXES = /(^|\s)(pro services|solutions group|experts|services pro|consulting group)$/i;
+
+      function isValidCompetitor(name: string, url?: string): boolean {
+        if (!name || name.length < 3) return false;
+        // Reject names that are purely generic patterns
+        if (FAKE_NAME_PATTERNS.test(name)) return false;
+        if (GENERIC_SUFFIXES.test(name)) return false;
+        // Reject names that contain the industry verbatim as a prefix + generic suffix
+        const industryLower = client.industry?.toLowerCase() || '';
+        if (industryLower && name.toLowerCase().startsWith(industryLower) && GENERIC_SUFFIXES.test(name)) return false;
+        // For live search, must have a real-looking URL
+        if (url && !url.startsWith('http')) return false;
+        return true;
+      }
+
+      const validCompetitors = result.competitors.filter(c => {
+        if (existingNames.has(c.name.toLowerCase())) return false;
+        if (c.manuallyAdded) return false; // already in manual list
+        return isValidCompetitor(c.name, c.websiteUrl);
+      });
+
+      const rejectedCount = result.competitors.length - validCompetitors.length;
+      console.log(`[Discovery-Research] Valid after filtering: ${validCompetitors.length}, rejected: ${rejectedCount}`);
+
+      if (result.sourceMode === 'live_search') {
+        // Live results go to main suggestions (user can approve)
+        const liveSuggestions: AiDiscoveredCompetitor[] = validCompetitors
+          .filter(c => c.sourceType === 'google_serp' || c.sourceType === 'manual')
+          .map(c => ({
+            name: c.name,
+            url: c.websiteUrl || '',
+            reason: c.channelObservations || c.positioning || `Found via live search (${c.serpSource || 'organic'})`,
+          }));
+        setAiSuggestions(liveSuggestions);
+      } else {
+        // Modeled results go to a separate section — NOT auto-populated
+        const modeled: AiDiscoveredCompetitor[] = validCompetitors.map(c => ({
           name: c.name,
-          url: c.url || '',
-          reason: c.notes,
+          url: c.websiteUrl || '',
+          reason: c.channelObservations || c.positioning || 'Modeled suggestion — not verified via live search',
         }));
-      setAiSuggestions(suggestions);
-      updateD({ positioningNotes: result.positioningThemes.join('\n') });
+        setModeledSuggestions(modeled);
+      }
+
       setAiStatus('success');
-    } catch {
+    } catch (err) {
+      const message = err instanceof Error ? err.message : 'Unknown error';
+      console.error('[Discovery-Research] Failed:', message);
+      setResearchError(message);
       setAiStatus('error');
     }
   };
@@ -903,18 +992,45 @@ function DiscoveryStep() {
             </button>
           </div>
         </div>
-        {aiStatus === 'error' && (
-          <p className="text-[10px] text-destructive font-medium">Failed to research competitors. Please try again.</p>
+        {/* Source label */}
+        {researchSourceMode && (
+          <div className={`flex items-center gap-2 px-3 py-2 rounded-md text-xs font-medium ${
+            researchSourceMode === 'live_search'
+              ? 'bg-green-500/10 text-green-700 border border-green-500/20'
+              : 'bg-amber-500/10 text-amber-700 border border-amber-500/20'
+          }`}>
+            {researchSourceMode === 'live_search' ? (
+              <><Globe className="h-3.5 w-3.5" /> Live Search Results</>
+            ) : (
+              <><Cpu className="h-3.5 w-3.5" /> Modeled Fallback</>
+            )}
+            {researchSourceNote && (
+              <span className="text-[10px] font-normal opacity-75 ml-1">— {researchSourceNote}</span>
+            )}
+          </div>
         )}
 
-        {/* AI Discovered Competitors */}
+        {/* Error state */}
+        {aiStatus === 'error' && (
+          <div className="flex items-start gap-2 px-3 py-2 rounded-md bg-destructive/10 border border-destructive/20">
+            <AlertTriangle className="h-3.5 w-3.5 text-destructive mt-0.5 shrink-0" />
+            <div>
+              <p className="text-xs font-medium text-destructive">Failed to research competitors</p>
+              {researchError && (
+                <p className="text-[10px] text-destructive/80 mt-0.5">{researchError}</p>
+              )}
+            </div>
+          </div>
+        )}
+
+        {/* Live Search Results — main suggestions */}
         {aiSuggestions.length > 0 && (
-          <div className="panel border-primary/20 bg-primary/[0.02]">
-            <div className="flex items-center justify-between px-4 py-3 border-b border-primary/10">
+          <div className="panel border-green-500/20 bg-green-500/[0.02]">
+            <div className="flex items-center justify-between px-4 py-3 border-b border-green-500/10">
               <div className="flex items-center gap-2">
-                <Sparkles className="h-3.5 w-3.5 text-primary" />
-                <span className="text-xs font-semibold">AI Discovered Competitors</span>
-                <span className="text-[10px] text-muted-foreground bg-muted px-1.5 py-0.5 rounded">{aiSuggestions.length} found</span>
+                <Globe className="h-3.5 w-3.5 text-green-600" />
+                <span className="text-xs font-semibold">Live Search Results</span>
+                <span className="text-[10px] text-muted-foreground bg-muted px-1.5 py-0.5 rounded">{aiSuggestions.length} verified</span>
               </div>
               {selectedSuggestions.size > 0 && (
                 <button
@@ -956,6 +1072,51 @@ function DiscoveryStep() {
                     <p className="text-xs text-muted-foreground mt-0.5">{suggestion.reason}</p>
                   </div>
                 </label>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {/* Modeled Suggestions — separate section with warning */}
+        {modeledSuggestions.length > 0 && (
+          <div className="panel border-amber-500/20 bg-amber-500/[0.02]">
+            <div className="px-4 py-3 border-b border-amber-500/10">
+              <div className="flex items-center gap-2">
+                <AlertTriangle className="h-3.5 w-3.5 text-amber-600" />
+                <span className="text-xs font-semibold text-amber-700">Modeled Suggestions</span>
+                <span className="text-[10px] text-muted-foreground bg-muted px-1.5 py-0.5 rounded">{modeledSuggestions.length} suggestions</span>
+              </div>
+              <p className="text-[10px] text-amber-600/80 mt-1">These are modeled estimates, not verified via live search. Use as research starting points only.</p>
+            </div>
+            <div className="divide-y divide-border">
+              {modeledSuggestions.map((suggestion, idx) => (
+                <div key={idx} className="flex items-start gap-3 px-4 py-3">
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center gap-2">
+                      <span className="text-sm font-medium text-amber-800">{suggestion.name}</span>
+                      {suggestion.url && (
+                        <span className="text-[11px] text-muted-foreground truncate max-w-[200px] font-mono">
+                          {suggestion.url.replace(/^https?:\/\//, '')}
+                        </span>
+                      )}
+                    </div>
+                    <p className="text-xs text-muted-foreground mt-0.5">{suggestion.reason}</p>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      const existing = d.competitors || [];
+                      const existingNames = new Set(existing.map(c => c.name.toLowerCase()));
+                      if (!existingNames.has(suggestion.name.toLowerCase())) {
+                        updateD({ competitors: [...existing, { name: suggestion.name, url: suggestion.url }] });
+                      }
+                      setModeledSuggestions(prev => prev.filter((_, i) => i !== idx));
+                    }}
+                    className="flex items-center gap-1 px-2.5 py-1.5 text-xs rounded-md border border-amber-500/20 bg-background hover:bg-amber-500/10 transition-colors text-amber-700 shrink-0"
+                  >
+                    <Plus className="h-3 w-3" /> Add
+                  </button>
+                </div>
               ))}
             </div>
           </div>
