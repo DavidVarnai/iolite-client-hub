@@ -1001,11 +1001,59 @@ function DiscoveryStep() {
         </div>
 
         <div className="grid grid-cols-2 gap-4">
-          <ExpandableField label="Positioning Notes" value={d.positioningNotes} onChange={(v) => updateD({ positioningNotes: v })}
-            placeholder="Key positioning themes in your market" />
-          <ExpandableField label="Differentiators" value={d.differentiators} onChange={(v) => updateD({ differentiators: v })}
-            placeholder="What sets this client apart from competitors?" hint="Unique value propositions, strengths, moats" />
+          <div>
+            <ExpandableField label="Positioning Notes" value={d.positioningNotes} onChange={(v) => updateD({ positioningNotes: v })}
+              placeholder="Key positioning themes in your market" />
+            {briefSuggestions?.primaryProductsHint && approvedSignals?.positioning && (
+              <BriefSuggestionChips
+                suggestions={[approvedSignals.positioning]}
+                currentValue={d.positioningNotes}
+                onApply={(v) => updateD({ positioningNotes: v })}
+                mode="replace"
+              />
+            )}
+          </div>
+          <div>
+            <ExpandableField label="Differentiators" value={d.differentiators} onChange={(v) => updateD({ differentiators: v })}
+              placeholder="What sets this client apart from competitors?" hint="Unique value propositions, strengths, moats" />
+            {approvedSignals?.differentiators && approvedSignals.differentiators.length > 0 && (
+              <BriefSuggestionChips
+                suggestions={approvedSignals.differentiators}
+                currentValue={d.differentiators}
+                onApply={(v) => updateD({ differentiators: v })}
+                mode="append"
+              />
+            )}
+          </div>
         </div>
+
+        {/* Brief-inferred competitors */}
+        {briefSuggestions && briefSuggestions.inferredCompetitors.length > 0 && (() => {
+          const existingNames = new Set((d.competitors || []).map(c => c.name.toLowerCase().trim()));
+          const available = briefSuggestions.inferredCompetitors.filter(c => !existingNames.has(c.toLowerCase().trim()));
+          if (available.length === 0) return null;
+          return (
+            <div className="border rounded-lg p-3 bg-primary/5 border-primary/20 space-y-2">
+              <div className="flex items-center gap-1.5">
+                <FileText className="h-3.5 w-3.5 text-primary" />
+                <span className="text-xs font-medium text-primary">Competitors from Brief</span>
+              </div>
+              <div className="flex flex-wrap gap-1.5">
+                {available.map((name, i) => (
+                  <button
+                    key={i}
+                    type="button"
+                    onClick={() => updateD({ competitors: [...(d.competitors || []), { name, url: '' }] })}
+                    className="flex items-center gap-1 px-2.5 py-1.5 text-xs rounded-md border border-primary/20 bg-background hover:bg-primary/10 transition-colors"
+                  >
+                    <Plus className="h-3 w-3 text-primary" />
+                    {name}
+                  </button>
+                ))}
+              </div>
+            </div>
+          );
+        })()}
       </div>
     </div>
   );
