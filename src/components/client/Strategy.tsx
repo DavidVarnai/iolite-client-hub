@@ -235,9 +235,15 @@ function StrategySectionCard({ section, proposalMode }: { section: StrategySecti
         </AnimatePresence>
       )}
 
-      {/* AI Strategy Draft Result */}
+      {/* Brief provenance on AI result */}
       {aiStatus !== 'idle' && (
         <div className="px-5 pb-5">
+          {aiResult && !!getApprovedBriefSignals(onboarding.masterBrief) && (
+            <div className="flex items-center gap-1.5 mb-2">
+              <FileText className="h-3 w-3 text-primary" />
+              <span className="text-[10px] text-primary font-medium">Strategy enhanced with approved Master Brief insights</span>
+            </div>
+          )}
           <AiResultPanel
             title={`${SERVICE_CHANNEL_LABELS[section.channel]} — Strategy Draft`}
             status={aiStatus}

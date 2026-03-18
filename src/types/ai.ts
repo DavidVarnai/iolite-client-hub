@@ -41,6 +41,8 @@ export interface StrategyDraftRequest {
   geography?: string;
   discoveryContext?: string;
   budgetContext?: string;
+  /** Approved Master Brief insights — separate from discovery context */
+  approvedMasterBriefInsights?: string;
 }
 
 export interface StrategyDraftResult {
