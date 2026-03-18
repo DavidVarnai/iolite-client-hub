@@ -431,6 +431,13 @@ function DiscoveryStep() {
   const [aiSuggestions, setAiSuggestions] = useState<AiDiscoveredCompetitor[]>([]);
   const [selectedSuggestions, setSelectedSuggestions] = useState<Set<number>>(new Set());
 
+  // Brief → Discovery suggestions
+  const approvedSignals = getApprovedBriefSignals(onboarding.masterBrief);
+  const briefSuggestions = useMemo(() => {
+    if (!approvedSignals) return null;
+    return mapBriefToDiscoverySuggestions(approvedSignals);
+  }, [approvedSignals]);
+
   const handleResearchCompetitors = async () => {
     setAiStatus('loading');
     setAiSuggestions([]);
