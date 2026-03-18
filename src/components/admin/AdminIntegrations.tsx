@@ -63,78 +63,93 @@ function SearchProviderTest({ researchMode }: { researchMode: CompetitorResearch
   const [test, setTest] = useState<TestResult>(INITIAL_TEST);
 
   const runTest = async () => {
-    const modeLabel = RESEARCH_MODES.find(m => m.value === researchMode)?.label ?? researchMode;
     console.log(`[ProviderTest] Starting test — admin mode: "${researchMode}"`);
 
-    // Determine effective mode
     if (researchMode === 'modeled_only') {
       console.log('[ProviderTest] Mode is modeled_only — no live call needed');
       setTest(prev => ({
-        ...prev,
-        status: 'success',
-        serpApiConfigured: null,
-        effectiveMode: 'Modeled Only',
-        organicCount: undefined,
-        paidCount: undefined,
-        latencyMs: undefined,
-        error: undefined,
+        ...prev, status: 'success', serpApiConfigured: null, effectiveMode: 'Modeled Only',
+        organicCount: undefined, paidCount: undefined, topDomains: undefined,
+        latencyMs: undefined, error: undefined, failReason: undefined,
+        reasoning: 'Live search skipped — admin mode is "Modeled Only". No API calls are made; modeled industry pools are used instead.',
       }));
-      toast({ title: 'Modeled Only', description: 'No live search call is made in this mode. Modeled pools will be used.' });
+      toast({ title: 'Modeled Only', description: 'No live search call is made in this mode.' });
       return;
     }
 
-    setTest(prev => ({ ...prev, status: 'testing', error: undefined }));
-
+    setTest(prev => ({ ...prev, status: 'testing', error: undefined, failReason: undefined }));
     const start = performance.now();
+
     try {
       const { data, error } = await supabase.functions.invoke('serp-search', {
-        body: { query: test.sampleQuery, num: 3 },
+        body: { query: test.sampleQuery, num: 5 },
       });
-
       const latencyMs = Math.round(performance.now() - start);
+      const wouldFallback = researchMode === 'auto';
 
       if (error) {
         console.error('[ProviderTest] Edge function error:', error);
-        const wouldFallback = researchMode === 'auto';
+        const isMissingKey = /secret|not configured|unauthorized/i.test(error.message || '');
         setTest(prev => ({
-          ...prev,
-          status: 'fail',
-          serpApiConfigured: false,
-          latencyMs,
+          ...prev, status: 'fail', serpApiConfigured: false, latencyMs,
           effectiveMode: wouldFallback ? 'Modeled Fallback' : 'BLOCKED',
           error: error.message || 'Edge function call failed',
+          failReason: isMissingKey ? 'missing_api_key' : 'request_error',
+          topDomains: undefined, organicCount: undefined, paidCount: undefined,
+          reasoning: wouldFallback
+            ? 'Live search failed. Mode is "Auto" so MI runs would fall back to modeled research automatically.'
+            : 'Live search failed. Mode is "Live Only" — MI runs will be blocked until this is resolved.',
         }));
         return;
       }
 
       if (data?.error) {
         console.error('[ProviderTest] SerpAPI error:', data.error);
-        const wouldFallback = researchMode === 'auto';
+        const isMissingKey = /secret|not configured|key/i.test(data.error);
         setTest(prev => ({
-          ...prev,
-          status: 'fail',
-          serpApiConfigured: false,
-          latencyMs,
+          ...prev, status: 'fail', serpApiConfigured: false, latencyMs,
           effectiveMode: wouldFallback ? 'Modeled Fallback' : 'BLOCKED',
           error: `SerpAPI: ${data.error}`,
+          failReason: isMissingKey ? 'missing_api_key' : 'request_error',
+          topDomains: undefined, organicCount: undefined, paidCount: undefined,
+          reasoning: wouldFallback
+            ? 'SerpAPI returned an error. Mode is "Auto" — modeled fallback would be used.'
+            : 'SerpAPI returned an error. Mode is "Live Only" — MI runs will fail.',
         }));
         return;
       }
 
-      const organicCount = data?.organic_results?.length ?? 0;
+      const organicResults: { domain: string }[] = data?.organic_results ?? [];
+      const organicCount = organicResults.length;
       const paidCount = data?.paid_results?.length ?? 0;
+
+      if (organicCount === 0 && paidCount === 0) {
+        setTest(prev => ({
+          ...prev, status: 'fail', serpApiConfigured: true, latencyMs,
+          effectiveMode: wouldFallback ? 'Modeled Fallback' : 'BLOCKED',
+          organicCount: 0, paidCount: 0, topDomains: [],
+          error: 'SerpAPI responded but returned zero results for the test query.',
+          failReason: 'empty_results',
+          reasoning: wouldFallback
+            ? 'API key works but query returned empty results. "Auto" mode would fall back to modeled research.'
+            : 'API key works but query returned empty results. "Live Only" mode would block the run.',
+        }));
+        return;
+      }
+
+      const topDomains = organicResults
+        .map((r: { domain: string }) => r.domain?.replace(/^www\./, ''))
+        .filter(Boolean)
+        .slice(0, 5);
+
       console.log(`[ProviderTest] ✅ Success — ${organicCount} organic, ${paidCount} paid (${latencyMs}ms)`);
-      console.log(`[ProviderTest] Effective source: live_search`);
+      console.log(`[ProviderTest] Top domains:`, topDomains);
 
       setTest(prev => ({
-        ...prev,
-        status: 'success',
-        serpApiConfigured: true,
-        organicCount,
-        paidCount,
-        latencyMs,
-        effectiveMode: 'Live Search',
-        error: undefined,
+        ...prev, status: 'success', serpApiConfigured: true,
+        organicCount, paidCount, topDomains, latencyMs,
+        effectiveMode: 'Live Search', error: undefined, failReason: undefined,
+        reasoning: `Live search used because API key is present and mode = "${RESEARCH_MODES.find(m => m.value === researchMode)?.label}". ${wouldFallback ? 'Would fall back to modeled if API fails.' : ''}`.trim(),
       }));
     } catch (err) {
       const latencyMs = Math.round(performance.now() - start);
@@ -142,12 +157,13 @@ function SearchProviderTest({ researchMode }: { researchMode: CompetitorResearch
       console.error('[ProviderTest] Unexpected error:', message);
       const wouldFallback = researchMode === 'auto';
       setTest(prev => ({
-        ...prev,
-        status: 'fail',
-        serpApiConfigured: false,
-        latencyMs,
+        ...prev, status: 'fail', serpApiConfigured: false, latencyMs,
         effectiveMode: wouldFallback ? 'Modeled Fallback' : 'BLOCKED',
-        error: message,
+        error: message, failReason: 'request_error',
+        topDomains: undefined, organicCount: undefined, paidCount: undefined,
+        reasoning: wouldFallback
+          ? 'Request failed unexpectedly. "Auto" mode would fall back to modeled research.'
+          : 'Request failed unexpectedly. "Live Only" mode blocks MI runs until fixed.',
       }));
     }
   };
