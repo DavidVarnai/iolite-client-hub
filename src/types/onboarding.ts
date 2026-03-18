@@ -315,6 +315,29 @@ export const DEFAULT_INCLUDED_SECTIONS: MasterBriefIncludedSections = {
   inferredCompetitors: true,
 };
 
+/* ── Chunked extraction types ── */
+
+export type ExtractionMode = 'single_pass' | 'chunked';
+export type ExtractionSourceType = 'text' | 'pdf' | 'docx';
+export type ChunkStatus = 'pending' | 'processing' | 'success' | 'error';
+
+export interface DocumentChunk {
+  id: string;
+  sourceLabel: string;
+  chunkIndex: number;
+  text: string;
+  status: ChunkStatus;
+  extractedInsights?: MasterBriefExtractedInsights;
+  error?: string;
+}
+
+export interface ChunkProcessingStatus {
+  totalChunks: number;
+  completedChunks: number;
+  failedChunks: number;
+  inProgress: boolean;
+}
+
 export interface MasterBrief {
   rawText: string;
   uploadedFileName?: string;
@@ -327,6 +350,13 @@ export interface MasterBrief {
   /** Whether extracted insights have been explicitly approved */
   isApproved?: boolean;
   approvedAt?: string;
+  /** Chunked extraction support */
+  extractionMode?: ExtractionMode;
+  extractionSourceType?: ExtractionSourceType;
+  documentChunks?: DocumentChunk[];
+  mergedInsights?: MasterBriefExtractedInsights;
+  chunkProcessingStatus?: ChunkProcessingStatus;
+  extractionNotes?: string[];
 }
 
 export const EMPTY_MASTER_BRIEF: MasterBrief = { rawText: '' };

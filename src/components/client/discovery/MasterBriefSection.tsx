@@ -1,14 +1,15 @@
 /**
  * MasterBriefSection — upload or paste a strategic document to enhance MI and Strategy.
+ * Supports large documents via automatic chunking + merged extraction.
  * Compact, optional augmentation layer at the top of Discovery.
- * Includes approval workflow and per-section include/exclude toggles that actually filter downstream signals.
  */
 import { useState, useRef, useCallback } from 'react';
-import { FileText, Upload, Sparkles, Loader2, Check, X, ChevronDown, ChevronUp, Eye, EyeOff, ShieldCheck, AlertTriangle } from 'lucide-react';
+import { FileText, Upload, Sparkles, Loader2, Check, X, ChevronDown, ChevronUp, Eye, EyeOff, ShieldCheck, AlertTriangle, Layers, Info } from 'lucide-react';
 import { useClientContext } from '@/contexts/ClientContext';
-import type { MasterBrief, MasterBriefExtractedInsights, MasterBriefIncludedSections } from '@/types/onboarding';
+import type { MasterBrief, MasterBriefExtractedInsights, MasterBriefIncludedSections, DocumentChunk, ChunkProcessingStatus } from '@/types/onboarding';
 import { EMPTY_MASTER_BRIEF, DEFAULT_INCLUDED_SECTIONS } from '@/types/onboarding';
-import { supabase } from '@/integrations/supabase/client';
+import { processMasterBriefExtraction, detectExtractionMode } from '@/lib/ai/masterBriefChunking';
+import { Progress } from '@/components/ui/progress';
 
 const ACCEPTED_TYPES = '.pdf,.docx,.doc,.txt,.md';
 const MAX_FILE_SIZE = 5 * 1024 * 1024; // 5 MB
@@ -24,10 +25,13 @@ export default function MasterBriefSection() {
   const [extractionError, setExtractionError] = useState('');
   const [expanded, setExpanded] = useState(false);
   const [confirmReextract, setConfirmReextract] = useState(false);
+  const [chunkProgress, setChunkProgress] = useState<ChunkProcessingStatus | null>(null);
+  const [showChunkDetails, setShowChunkDetails] = useState(false);
 
   const hasBrief = !!(brief.rawText?.trim() || brief.uploadedFileName);
   const hasInsights = !!brief.extractedInsights;
   const isBinaryUpload = brief.uploadedFileType && BINARY_TYPES.includes(brief.uploadedFileType);
+  const isChunked = brief.extractionMode === 'chunked';
 
   const updateBrief = useCallback((patch: Partial<MasterBrief>) => {
     const next = { ...brief, ...patch, lastUpdatedAt: new Date().toISOString() };
@@ -36,10 +40,10 @@ export default function MasterBriefSection() {
 
   const handleTextChange = (text: string) => {
     updateBrief({ rawText: text });
-    // Clear previous extraction when content changes significantly
     if (brief.extractedInsights && Math.abs(text.length - (brief.rawText?.length || 0)) > 50) {
-      updateBrief({ rawText: text, extractedInsights: undefined, isApproved: false, approvedAt: undefined });
+      updateBrief({ rawText: text, extractedInsights: undefined, isApproved: false, approvedAt: undefined, documentChunks: undefined, extractionMode: undefined, extractionNotes: undefined, mergedInsights: undefined, chunkProcessingStatus: undefined });
       setExtractionStatus('idle');
+      setChunkProgress(null);
     }
   };
 
@@ -58,20 +62,20 @@ export default function MasterBriefSection() {
         uploadedFileType: ext,
         uploadedFileContent: text,
         rawText: brief.rawText ? `${brief.rawText}\n\n--- Uploaded: ${file.name} ---\n\n${text}` : text,
+        extractionSourceType: 'text',
       });
     } else {
-      // Binary file — store metadata only, prompt user to paste content
       updateBrief({
         uploadedFileName: file.name,
         uploadedFileType: ext,
         uploadedFileContent: undefined,
+        extractionSourceType: ext as any,
       });
     }
     if (fileInputRef.current) fileInputRef.current.value = '';
   };
 
   const handleExtractInsights = async () => {
-    // If already approved, require confirmation before re-extracting
     if (brief.isApproved && !confirmReextract) {
       setConfirmReextract(true);
       return;
@@ -83,34 +87,50 @@ export default function MasterBriefSection() {
       setExtractionError('Please provide at least a few sentences of content.');
       return;
     }
+
     setExtractionStatus('loading');
     setExtractionError('');
+    setChunkProgress(null);
+
+    const mode = detectExtractionMode(content);
 
     try {
-      const { data, error } = await supabase.functions.invoke('extract-master-brief', {
-        body: { content },
+      const result = await processMasterBriefExtraction(content, {
+        sourceLabel: brief.uploadedFileName || 'Brief',
+        onProgress: ({ status }) => {
+          setChunkProgress({ ...status });
+        },
       });
-      if (error) throw error;
-      const insights = data as MasterBriefExtractedInsights;
+
       updateBrief({
-        extractedInsights: insights,
+        extractedInsights: result.mergedInsights,
+        mergedInsights: result.mode === 'chunked' ? result.mergedInsights : undefined,
+        documentChunks: result.mode === 'chunked' ? result.chunks : undefined,
+        extractionMode: result.mode,
+        extractionNotes: result.notes.length > 0 ? result.notes : undefined,
+        chunkProcessingStatus: result.mode === 'chunked' ? result.processingStatus : undefined,
         includedSections: { ...DEFAULT_INCLUDED_SECTIONS },
         isApproved: false,
         approvedAt: undefined,
       });
-      setExtractionStatus('success');
+
+      if (result.isPartial) {
+        setExtractionError('Some chunks failed. Results may be incomplete — see details below.');
+        setExtractionStatus('success');
+      } else {
+        setExtractionStatus('success');
+      }
+      setChunkProgress(null);
     } catch (err: any) {
       console.error('Master Brief extraction failed:', err);
       setExtractionError('Extraction failed. Brief will still be available as raw context.');
       setExtractionStatus('error');
+      setChunkProgress(null);
     }
   };
 
   const handleApproveInsights = () => {
-    updateBrief({
-      isApproved: true,
-      approvedAt: new Date().toISOString(),
-    });
+    updateBrief({ isApproved: true, approvedAt: new Date().toISOString() });
   };
 
   const handleUpdateIncluded = (key: string, value: boolean) => {
@@ -123,6 +143,7 @@ export default function MasterBriefSection() {
     setExtractionStatus('idle');
     setExtractionError('');
     setConfirmReextract(false);
+    setChunkProgress(null);
   };
 
   return (
@@ -135,6 +156,11 @@ export default function MasterBriefSection() {
           {brief.isApproved && (
             <span className="flex items-center gap-1 text-[10px] font-medium text-green-600 dark:text-green-400 bg-green-50 dark:bg-green-900/20 px-1.5 py-0.5 rounded">
               <ShieldCheck className="h-3 w-3" /> Approved
+            </span>
+          )}
+          {isChunked && hasInsights && (
+            <span className="flex items-center gap-1 text-[10px] font-medium text-blue-600 dark:text-blue-400 bg-blue-50 dark:bg-blue-900/20 px-1.5 py-0.5 rounded">
+              <Layers className="h-3 w-3" /> Chunked ({brief.documentChunks?.length || 0} chunks)
             </span>
           )}
         </div>
@@ -154,7 +180,7 @@ export default function MasterBriefSection() {
         Upload or paste a strategic document describing the business, positioning, audience, offerings, pain points, competitors, and strategic context.
       </p>
 
-      {/* How This Is Used — compact info block */}
+      {/* How This Is Used */}
       <div className="flex items-start gap-2 p-2.5 rounded-md bg-muted/50 border border-border/50">
         <FileText className="h-3.5 w-3.5 text-muted-foreground shrink-0 mt-0.5" />
         <div className="space-y-0.5">
@@ -163,6 +189,7 @@ export default function MasterBriefSection() {
             <li>• Enhances Market Intelligence (competitors, queries)</li>
             <li>• Improves Strategy recommendations</li>
             <li>• Suggests revenue streams and discovery inputs</li>
+            <li>• Large documents are automatically chunked for complete extraction</li>
             <li>• Requires approval before being used downstream</li>
           </ul>
         </div>
@@ -171,22 +198,14 @@ export default function MasterBriefSection() {
       {/* Upload + Paste */}
       <div className="grid grid-cols-2 gap-3">
         <div>
-          <input
-            ref={fileInputRef}
-            type="file"
-            accept={ACCEPTED_TYPES}
-            onChange={handleFileUpload}
-            className="hidden"
-          />
+          <input ref={fileInputRef} type="file" accept={ACCEPTED_TYPES} onChange={handleFileUpload} className="hidden" />
           <button
             type="button"
             onClick={() => fileInputRef.current?.click()}
             className="w-full flex items-center justify-center gap-2 px-4 py-3 rounded-md border-2 border-dashed border-border hover:border-primary/40 text-muted-foreground hover:text-foreground transition-colors"
           >
             <Upload className="h-4 w-4" />
-            <span className="text-xs font-medium">
-              {brief.uploadedFileName || 'Upload file (PDF, DOCX, TXT)'}
-            </span>
+            <span className="text-xs font-medium">{brief.uploadedFileName || 'Upload file (PDF, DOCX, TXT)'}</span>
           </button>
         </div>
         <div className="flex items-center gap-2 text-xs text-muted-foreground">
@@ -218,8 +237,31 @@ export default function MasterBriefSection() {
         className="w-full rounded-md border bg-background px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-ring resize-y min-h-[60px] placeholder:text-muted-foreground/50"
       />
 
+      {/* Chunk progress indicator */}
+      {chunkProgress && chunkProgress.inProgress && (
+        <div className="space-y-2 p-3 rounded-md bg-muted/30 border border-border/50">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <Loader2 className="h-3.5 w-3.5 animate-spin text-primary" />
+              <span className="text-xs font-medium">
+                Processing chunk {chunkProgress.completedChunks + 1} of {chunkProgress.totalChunks}…
+              </span>
+            </div>
+            <span className="text-[10px] text-muted-foreground tabular-nums">
+              {Math.round((chunkProgress.completedChunks / chunkProgress.totalChunks) * 100)}%
+            </span>
+          </div>
+          <Progress value={(chunkProgress.completedChunks / chunkProgress.totalChunks) * 100} className="h-1.5" />
+          {chunkProgress.failedChunks > 0 && (
+            <span className="text-[10px] text-amber-600 dark:text-amber-400">
+              {chunkProgress.failedChunks} chunk{chunkProgress.failedChunks > 1 ? 's' : ''} failed
+            </span>
+          )}
+        </div>
+      )}
+
       {/* Extract insights button */}
-      {hasBrief && (
+      {hasBrief && !chunkProgress?.inProgress && (
         <div className="flex items-center gap-3 flex-wrap">
           {confirmReextract ? (
             <div className="flex items-center gap-2 px-3 py-2 rounded-md bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800">
@@ -244,15 +286,57 @@ export default function MasterBriefSection() {
               )}
             </button>
           )}
-          <button
-            type="button"
-            onClick={clearBrief}
-            className="text-xs text-muted-foreground hover:text-destructive transition-colors"
-          >
+          <button type="button" onClick={clearBrief} className="text-xs text-muted-foreground hover:text-destructive transition-colors">
             Clear Brief
           </button>
-          {extractionError && (
-            <span className="text-xs text-destructive">{extractionError}</span>
+          {extractionError && <span className="text-xs text-destructive">{extractionError}</span>}
+        </div>
+      )}
+
+      {/* Extraction notes / warnings */}
+      {brief.extractionNotes && brief.extractionNotes.length > 0 && hasInsights && (
+        <div className="space-y-1 p-2.5 rounded-md bg-amber-50/50 dark:bg-amber-900/10 border border-amber-200/50 dark:border-amber-800/30">
+          <div className="flex items-center gap-1.5">
+            <Info className="h-3 w-3 text-amber-600 dark:text-amber-400" />
+            <span className="text-[10px] font-semibold text-amber-700 dark:text-amber-400 uppercase tracking-wider">Extraction Notes</span>
+          </div>
+          {brief.extractionNotes.map((note, i) => (
+            <p key={i} className="text-[10px] text-amber-700 dark:text-amber-300">{note}</p>
+          ))}
+        </div>
+      )}
+
+      {/* Extraction mode badge */}
+      {hasInsights && brief.extractionMode && (
+        <div className="flex items-center gap-2 text-[10px] text-muted-foreground">
+          <span className="px-1.5 py-0.5 rounded bg-muted font-medium">
+            {brief.extractionMode === 'chunked' ? 'Chunked Extraction' : 'Single Pass'}
+          </span>
+          {brief.extractionMode === 'chunked' && brief.chunkProcessingStatus && (
+            <span>
+              {brief.chunkProcessingStatus.completedChunks - brief.chunkProcessingStatus.failedChunks} of {brief.chunkProcessingStatus.totalChunks} chunks succeeded
+            </span>
+          )}
+        </div>
+      )}
+
+      {/* Chunk details (collapsible, secondary) */}
+      {isChunked && brief.documentChunks && brief.documentChunks.length > 0 && hasInsights && (
+        <div>
+          <button
+            type="button"
+            onClick={() => setShowChunkDetails(!showChunkDetails)}
+            className="flex items-center gap-1 text-[10px] text-muted-foreground hover:text-foreground transition-colors"
+          >
+            {showChunkDetails ? <ChevronUp className="h-3 w-3" /> : <ChevronDown className="h-3 w-3" />}
+            {showChunkDetails ? 'Hide chunk details' : 'View chunk details'}
+          </button>
+          {showChunkDetails && (
+            <div className="mt-2 space-y-2">
+              {brief.documentChunks.map((chunk) => (
+                <ChunkDetailCard key={chunk.id} chunk={chunk} />
+              ))}
+            </div>
           )}
         </div>
       )}
@@ -267,6 +351,56 @@ export default function MasterBriefSection() {
           onToggleSection={handleUpdateIncluded}
           onApprove={handleApproveInsights}
         />
+      )}
+    </div>
+  );
+}
+
+/* ── Chunk Detail Card ── */
+
+function ChunkDetailCard({ chunk }: { chunk: DocumentChunk }) {
+  const [expanded, setExpanded] = useState(false);
+  const statusColors: Record<string, string> = {
+    success: 'text-green-600 dark:text-green-400',
+    error: 'text-destructive',
+    pending: 'text-muted-foreground',
+    processing: 'text-primary',
+  };
+
+  return (
+    <div className="p-2.5 rounded-md border bg-card text-card-foreground">
+      <div className="flex items-center justify-between">
+        <div className="flex items-center gap-2">
+          <span className="text-[10px] font-medium">Chunk {chunk.chunkIndex + 1}</span>
+          <span className={`text-[10px] font-medium ${statusColors[chunk.status] || ''}`}>
+            {chunk.status === 'success' ? '✓ Extracted' : chunk.status === 'error' ? '✗ Failed' : chunk.status}
+          </span>
+          <span className="text-[10px] text-muted-foreground">{(chunk.text.length / 1000).toFixed(1)}k chars</span>
+        </div>
+        <button type="button" onClick={() => setExpanded(!expanded)} className="text-[10px] text-muted-foreground hover:text-foreground">
+          {expanded ? 'Hide' : 'Details'}
+        </button>
+      </div>
+      {chunk.error && (
+        <p className="text-[10px] text-destructive mt-1">{chunk.error}</p>
+      )}
+      {expanded && (
+        <div className="mt-2 space-y-2">
+          <p className="text-[10px] text-muted-foreground line-clamp-3 whitespace-pre-wrap">{chunk.text.substring(0, 300)}…</p>
+          {chunk.extractedInsights && (
+            <div className="space-y-1">
+              {Object.entries(chunk.extractedInsights).map(([key, value]) => {
+                if (!value || (Array.isArray(value) && value.length === 0) || (typeof value === 'string' && !value.trim())) return null;
+                return (
+                  <div key={key} className="text-[10px]">
+                    <span className="font-medium text-muted-foreground">{key}: </span>
+                    <span className="text-foreground">{Array.isArray(value) ? value.join(', ') : String(value).substring(0, 100)}</span>
+                  </div>
+                );
+              })}
+            </div>
+          )}
+        </div>
       )}
     </div>
   );
