@@ -11,7 +11,7 @@ import type { AiActionStatus } from '@/types/ai';
 import FunnelVisualPreview from './discovery/FunnelVisualPreview';
 import MasterBriefSection from './discovery/MasterBriefSection';
 import { Collapsible, CollapsibleTrigger, CollapsibleContent } from '@/components/ui/collapsible';
-import { mapBriefToRevenueStreamSuggestions } from '@/lib/ai/masterBriefRevenueHelper';
+import { mapBriefToRevenueStreamSuggestions, mapBriefToDiscoverySuggestions } from '@/lib/ai/masterBriefRevenueHelper';
 
 type WizardStep = 'setup' | 'discovery' | 'strategy' | 'growth_model' | 'proposal';
 
