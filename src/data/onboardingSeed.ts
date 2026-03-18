@@ -241,11 +241,11 @@ export const c5Onboarding: OnboardingData = {
     ...EMPTY_DISCOVERY,
     businessModel: 'lead_generation',
     primaryProducts: 'IT Services, IAM, Managed Service Provider',
-    revenueStreams: 'Managed IT service contracts',
+    legacyRevenueStreamsText: 'Managed IT service contracts',
     avgOrderValue: '$5,000/month managed service contract',
-    revenueModel: { revenueModelType: 'monthly_recurring', revenuePerConversion: 5000, revenueUnit: 'per_month', avgContractLengthMonths: 12 },
-    revenueStreamsList: [
-      { id: 'rs-c5-1', name: 'Managed IT Service Contract', type: 'recurring', monthlyValue: 5000, contractLengthMonths: 12 },
+    legacyRevenueModel: { revenueModelType: 'monthly_recurring', revenuePerConversion: 5000, revenueUnit: 'per_month', avgContractLengthMonths: 12 },
+    revenueStreams: [
+      { id: 'rs-c5-1', name: 'Managed IT Service Contract', type: 'recurring', monthlyValue: 5000, contractLengthMonths: 12, source: 'manual' },
     ],
     coreCustomerSegments: 'Mid-market companies, 20-500 employees, $2M-$100M revenue. Industries: healthcare, manufacturing, professional services.',
     revenueTarget: 0,
