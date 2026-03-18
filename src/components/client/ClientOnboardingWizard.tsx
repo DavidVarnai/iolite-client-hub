@@ -574,7 +574,17 @@ function DiscoveryStep() {
           onChange={(streams) => updateD({ revenueStreams: streams })}
           masterBrief={onboarding.masterBrief}
         />
-        <ExpandableField label="Core Customer Segments" value={d.coreCustomerSegments} onChange={(v) => updateD({ coreCustomerSegments: v })} />
+        <div className="col-span-2">
+          <ExpandableField label="Core Customer Segments" value={d.coreCustomerSegments} onChange={(v) => updateD({ coreCustomerSegments: v })} />
+          {briefSuggestions && briefSuggestions.audiences.length > 0 && (
+            <BriefSuggestionChips
+              suggestions={briefSuggestions.audiences}
+              currentValue={d.coreCustomerSegments}
+              onApply={(v) => updateD({ coreCustomerSegments: v })}
+              mode="append"
+            />
+          )}
+        </div>
       </DiscoverySection>
 
       <DiscoverySection title="B. Growth Targets">
