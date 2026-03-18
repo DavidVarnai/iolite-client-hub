@@ -2,7 +2,7 @@
  * ResearchSetupStep — editable research scope before running MI.
  */
 import { useState } from 'react';
-import { Sparkles, MapPin, Globe, Database } from 'lucide-react';
+import { Sparkles, MapPin, Globe, Database, FileText } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
