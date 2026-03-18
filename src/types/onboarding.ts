@@ -35,6 +35,25 @@ export const GROWTH_OBJECTIVE_LABELS: Record<GrowthObjective, string> = {
 export type RevenueModelType = 'one_time' | 'monthly_recurring' | 'annual_contract';
 export type RevenueUnit = 'per_deal' | 'per_month' | 'per_year';
 
+/* ── Multi-stream revenue ── */
+export type RevenueStreamType = 'one_time' | 'recurring' | 'hybrid';
+
+export const REVENUE_STREAM_TYPE_LABELS: Record<RevenueStreamType, string> = {
+  one_time: 'One-time',
+  recurring: 'Recurring',
+  hybrid: 'Hybrid',
+};
+
+export interface RevenueStream {
+  id: string;
+  name: string;
+  type: RevenueStreamType;
+  averageDealSize?: number;
+  monthlyValue?: number;
+  contractLengthMonths?: number;
+  notes?: string;
+}
+
 /** Canonical mapping: revenueModelType → revenueUnit. Unit is fully derived. */
 export const REVENUE_MODEL_UNIT_MAP: Record<RevenueModelType, RevenueUnit> = {
   one_time: 'per_deal',
