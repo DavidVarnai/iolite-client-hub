@@ -6,6 +6,7 @@
 import { useState, useRef, useCallback } from 'react';
 import { FileText, Upload, Sparkles, Loader2, Check, X, ChevronDown, ChevronUp, Eye, EyeOff, ShieldCheck, AlertTriangle, Layers, Info } from 'lucide-react';
 import { useClientContext } from '@/contexts/ClientContext';
+import { supabase } from '@/integrations/supabase/client';
 import type { MasterBrief, MasterBriefExtractedInsights, MasterBriefIncludedSections, DocumentChunk, ChunkProcessingStatus } from '@/types/onboarding';
 import { EMPTY_MASTER_BRIEF, DEFAULT_INCLUDED_SECTIONS } from '@/types/onboarding';
 import { processMasterBriefExtraction, detectExtractionMode } from '@/lib/ai/masterBriefChunking';
