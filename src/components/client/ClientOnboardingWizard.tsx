@@ -452,37 +452,33 @@ function DiscoveryStep() {
     setResearchSourceMode(null);
     setResearchSourceNote('');
     setResearchError('');
+    setResearchQA(null);
+    setModeledConfirmPending(null);
 
     try {
-      // Build discovery queries from available data
-      const industry = client.industry?.toLowerCase() || '';
-      const area = onboarding.serviceArea || onboarding.geography || '';
-      const product = d.primaryProducts || client.industry || '';
-      const queries: string[] = [];
-      queries.push(`best ${product.toLowerCase()} ${area}`.trim());
-      queries.push(`${industry} ${area}`.trim());
-      queries.push(`top ${industry} companies ${area}`.trim());
-      if (d.coreCustomerSegments) queries.push(`${product.toLowerCase()} for ${d.coreCustomerSegments.split(',')[0]?.trim() || 'businesses'} ${area}`.trim());
-      queries.push(`${industry} services near me`);
+      // Use shared discovery query builder (same as MI)
+      const queryInputs = {
+        industry: client.industry,
+        productsOrServices: d.primaryProducts || '',
+        targetAudience: d.coreCustomerSegments || '',
+        geography: onboarding.geography || '',
+        serviceArea: onboarding.serviceArea || '',
+        primaryCity: '',
+        businessModel: d.businessModel === 'ecommerce' ? 'ecommerce' : d.businessModel === 'lead_generation' ? 'lead_generation' : 'hybrid',
+      };
+      const discoveryQueries = generateDiscoveryQueries(queryInputs);
 
       const searchCtx: CompetitorSearchContext = {
         inputs: {
-          industry: client.industry,
-          productsOrServices: d.primaryProducts || '',
-          targetAudience: d.coreCustomerSegments || '',
-          geography: onboarding.geography || '',
-          serviceArea: onboarding.serviceArea || '',
-          primaryCity: '',
-          localRadius: null,
-          businessModel: d.businessModel === 'ecommerce' ? 'ecommerce' : d.businessModel === 'lead_generation' ? 'lead_generation' : 'hybrid',
+          ...queryInputs,
           selectedChannels: [],
           knownCompetitors: (d.competitors || []).map(c => c.name).filter(Boolean),
-          website: '',
+          website: onboarding.website || '',
           primaryGoal: '',
           budgetRange: '',
         },
-        discoveryQueries: [...new Set(queries.filter(Boolean))].slice(0, 5),
-        coreKeywords: [product.toLowerCase(), industry].filter(Boolean),
+        discoveryQueries,
+        coreKeywords: [queryInputs.productsOrServices.toLowerCase(), queryInputs.industry.toLowerCase()].filter(Boolean),
         keywordThemes: [],
         normalizedIndustry: client.industry,
         isLocal: !!(onboarding.serviceArea || onboarding.geography),
@@ -491,47 +487,83 @@ function DiscoveryStep() {
       };
 
       console.log('[Discovery-Research] Starting competitor search with shared provider');
-      console.log('[Discovery-Research] Queries:', searchCtx.discoveryQueries);
+      console.log('[Discovery-Research] Queries (shared builder):', discoveryQueries);
 
       const result: CompetitorSearchResult = await searchCompetitors(searchCtx);
+      const rawCount = result.competitors.length;
 
       console.log(`[Discovery-Research] Provider used: ${result.sourceMode}`);
-      console.log(`[Discovery-Research] Competitors returned: ${result.competitors.length}`);
+      console.log(`[Discovery-Research] Raw results: ${rawCount}`);
 
       setResearchSourceMode(result.sourceMode);
       setResearchSourceNote(result.sourceNote);
 
       // Filter out existing manual entries
       const existingNames = new Set((d.competitors || []).map(c => c.name.toLowerCase()));
+      const clientDomain = extractClientDomain(onboarding.website || '');
 
-      // Validate competitors: must have real domain, not be generic/fake names
+      // Validation with detailed logging
       const FAKE_NAME_PATTERNS = /^(pro services|solutions|group|experts|nextgen|elite|premier|advanced|digital|global)\s/i;
       const GENERIC_SUFFIXES = /(^|\s)(pro services|solutions group|experts|services pro|consulting group)$/i;
 
-      function isValidCompetitor(name: string, url?: string): boolean {
-        if (!name || name.length < 3) return false;
-        // Reject names that are purely generic patterns
-        if (FAKE_NAME_PATTERNS.test(name)) return false;
-        if (GENERIC_SUFFIXES.test(name)) return false;
-        // Reject names that contain the industry verbatim as a prefix + generic suffix
-        const industryLower = client.industry?.toLowerCase() || '';
-        if (industryLower && name.toLowerCase().startsWith(industryLower) && GENERIC_SUFFIXES.test(name)) return false;
-        // For live search, must have a real-looking URL
-        if (url && !url.startsWith('http')) return false;
-        return true;
-      }
-
+      let rejectedCount = 0;
       const validCompetitors = result.competitors.filter(c => {
-        if (existingNames.has(c.name.toLowerCase())) return false;
-        if (c.manuallyAdded) return false; // already in manual list
-        return isValidCompetitor(c.name, c.websiteUrl);
+        if (existingNames.has(c.name.toLowerCase())) {
+          console.log(`[Discovery-Research] Rejected (duplicate): "${c.name}"`);
+          rejectedCount++;
+          return false;
+        }
+        if (c.manuallyAdded) { rejectedCount++; return false; }
+        if (!c.name || c.name.length < 3) {
+          console.log(`[Discovery-Research] Rejected (too short): "${c.name}"`);
+          rejectedCount++;
+          return false;
+        }
+        if (FAKE_NAME_PATTERNS.test(c.name)) {
+          console.log(`[Discovery-Research] Rejected (generic/fake name): "${c.name}"`);
+          rejectedCount++;
+          return false;
+        }
+        if (GENERIC_SUFFIXES.test(c.name)) {
+          console.log(`[Discovery-Research] Rejected (generic suffix): "${c.name}"`);
+          rejectedCount++;
+          return false;
+        }
+        const industryLower = client.industry?.toLowerCase() || '';
+        if (industryLower && c.name.toLowerCase().startsWith(industryLower) && GENERIC_SUFFIXES.test(c.name)) {
+          console.log(`[Discovery-Research] Rejected (industry+generic): "${c.name}"`);
+          rejectedCount++;
+          return false;
+        }
+        // Live search results MUST have a real domain
+        if (result.sourceMode === 'live_search' && c.sourceType !== 'manual') {
+          if (!c.websiteUrl || !c.websiteUrl.startsWith('http')) {
+            console.log(`[Discovery-Research] Rejected (no domain): "${c.name}"`);
+            rejectedCount++;
+            return false;
+          }
+          try {
+            const domain = new URL(c.websiteUrl).hostname.replace(/^www\./, '');
+            if (clientDomain && domain === clientDomain) {
+              console.log(`[Discovery-Research] Rejected (own domain): "${c.name}" → ${domain}`);
+              rejectedCount++;
+              return false;
+            }
+          } catch {
+            console.log(`[Discovery-Research] Rejected (invalid URL): "${c.name}" → ${c.websiteUrl}`);
+            rejectedCount++;
+            return false;
+          }
+        }
+        return true;
       });
 
-      const rejectedCount = result.competitors.length - validCompetitors.length;
-      console.log(`[Discovery-Research] Valid after filtering: ${validCompetitors.length}, rejected: ${rejectedCount}`);
+      const acceptedCount = validCompetitors.length;
+      console.log(`[Discovery-Research] Accepted: ${acceptedCount}, Rejected: ${rejectedCount}`);
+
+      setResearchQA({ queries: discoveryQueries.length, rawResults: rawCount, accepted: acceptedCount, rejected: rejectedCount });
 
       if (result.sourceMode === 'live_search') {
-        // Live results go to main suggestions (user can approve)
         const liveSuggestions: AiDiscoveredCompetitor[] = validCompetitors
           .filter(c => c.sourceType === 'google_serp' || c.sourceType === 'manual')
           .map(c => ({
@@ -541,7 +573,6 @@ function DiscoveryStep() {
           }));
         setAiSuggestions(liveSuggestions);
       } else {
-        // Modeled results go to a separate section — NOT auto-populated
         const modeled: AiDiscoveredCompetitor[] = validCompetitors.map(c => ({
           name: c.name,
           url: c.websiteUrl || '',
@@ -558,6 +589,14 @@ function DiscoveryStep() {
       setAiStatus('error');
     }
   };
+
+  function extractClientDomain(website: string): string | null {
+    if (!website) return null;
+    try {
+      const url = website.startsWith('http') ? website : `https://${website}`;
+      return new URL(url).hostname.replace(/^www\./, '');
+    } catch { return null; }
+  }
 
   const toggleSuggestion = (idx: number) => {
     setSelectedSuggestions(prev => {
