@@ -277,6 +277,9 @@ function DiscoveryStep() {
         <p className="text-sm text-muted-foreground">Capture structured discovery inputs that will feed Strategy and Growth Model.</p>
       </div>
 
+      {/* Master Brief — optional augmentation layer */}
+      <MasterBriefSection />
+
       <DiscoverySection title="A. Business Overview">
         <SelectField label="Business Model" value={d.businessModel}
           options={[
