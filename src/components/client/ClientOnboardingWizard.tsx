@@ -429,7 +429,11 @@ function DiscoveryStep() {
   const updateD = (patch: Partial<ClientDiscovery>) => updateOnboarding({ ...onboarding, discovery: { ...d, ...patch } });
   const [aiStatus, setAiStatus] = useState<AiActionStatus>('idle');
   const [aiSuggestions, setAiSuggestions] = useState<AiDiscoveredCompetitor[]>([]);
+  const [modeledSuggestions, setModeledSuggestions] = useState<AiDiscoveredCompetitor[]>([]);
   const [selectedSuggestions, setSelectedSuggestions] = useState<Set<number>>(new Set());
+  const [researchSourceMode, setResearchSourceMode] = useState<'live_search' | 'modeled_fallback' | null>(null);
+  const [researchSourceNote, setResearchSourceNote] = useState<string>('');
+  const [researchError, setResearchError] = useState<string>('');
 
   // Brief → Discovery suggestions
   const approvedSignals = getApprovedBriefSignals(onboarding.masterBrief);
@@ -441,29 +445,112 @@ function DiscoveryStep() {
   const handleResearchCompetitors = async () => {
     setAiStatus('loading');
     setAiSuggestions([]);
+    setModeledSuggestions([]);
     setSelectedSuggestions(new Set());
+    setResearchSourceMode(null);
+    setResearchSourceNote('');
+    setResearchError('');
+
     try {
-      const result = await runMarketResearch({
-        industry: client.industry,
-        geography: onboarding.geography,
-        serviceArea: onboarding.serviceArea,
-        businessModel: d.businessModel,
-        primaryProducts: d.primaryProducts,
-        coreCustomerSegments: d.coreCustomerSegments,
-      });
-      // Filter out any AI suggestions that match existing manual entries
+      // Build discovery queries from available data
+      const industry = client.industry?.toLowerCase() || '';
+      const area = onboarding.serviceArea || onboarding.geography || '';
+      const product = d.primaryProducts || client.industry || '';
+      const queries: string[] = [];
+      queries.push(`best ${product.toLowerCase()} ${area}`.trim());
+      queries.push(`${industry} ${area}`.trim());
+      queries.push(`top ${industry} companies ${area}`.trim());
+      if (d.coreCustomerSegments) queries.push(`${product.toLowerCase()} for ${d.coreCustomerSegments.split(',')[0]?.trim() || 'businesses'} ${area}`.trim());
+      queries.push(`${industry} services near me`);
+
+      const searchCtx: CompetitorSearchContext = {
+        inputs: {
+          industry: client.industry,
+          productsOrServices: d.primaryProducts || '',
+          targetAudience: d.coreCustomerSegments || '',
+          geography: onboarding.geography || '',
+          serviceArea: onboarding.serviceArea || '',
+          primaryCity: '',
+          localRadius: null,
+          businessModel: d.businessModel === 'ecommerce' ? 'ecommerce' : d.businessModel === 'lead_gen' ? 'lead_generation' : 'hybrid',
+          selectedChannels: [],
+          knownCompetitors: (d.competitors || []).map(c => c.name).filter(Boolean),
+          website: client.website || '',
+        },
+        discoveryQueries: [...new Set(queries.filter(Boolean))].slice(0, 5),
+        coreKeywords: [product.toLowerCase(), industry].filter(Boolean),
+        keywordThemes: [],
+        normalizedIndustry: client.industry,
+        isLocal: !!(onboarding.serviceArea || onboarding.geography),
+        localArea: onboarding.serviceArea || onboarding.geography || '',
+        area: onboarding.geography || 'target market',
+      };
+
+      console.log('[Discovery-Research] Starting competitor search with shared provider');
+      console.log('[Discovery-Research] Queries:', searchCtx.discoveryQueries);
+
+      const result: CompetitorSearchResult = await searchCompetitors(searchCtx);
+
+      console.log(`[Discovery-Research] Provider used: ${result.sourceMode}`);
+      console.log(`[Discovery-Research] Competitors returned: ${result.competitors.length}`);
+
+      setResearchSourceMode(result.sourceMode);
+      setResearchSourceNote(result.sourceNote);
+
+      // Filter out existing manual entries
       const existingNames = new Set((d.competitors || []).map(c => c.name.toLowerCase()));
-      const suggestions: AiDiscoveredCompetitor[] = result.topCompetitors
-        .filter(c => !existingNames.has(c.name.toLowerCase()))
-        .map(c => ({
+
+      // Validate competitors: must have real domain, not be generic/fake names
+      const FAKE_NAME_PATTERNS = /^(pro services|solutions|group|experts|nextgen|elite|premier|advanced|digital|global)\s/i;
+      const GENERIC_SUFFIXES = /(^|\s)(pro services|solutions group|experts|services pro|consulting group)$/i;
+
+      function isValidCompetitor(name: string, url?: string): boolean {
+        if (!name || name.length < 3) return false;
+        // Reject names that are purely generic patterns
+        if (FAKE_NAME_PATTERNS.test(name)) return false;
+        if (GENERIC_SUFFIXES.test(name)) return false;
+        // Reject names that contain the industry verbatim as a prefix + generic suffix
+        const industryLower = client.industry?.toLowerCase() || '';
+        if (industryLower && name.toLowerCase().startsWith(industryLower) && GENERIC_SUFFIXES.test(name)) return false;
+        // For live search, must have a real-looking URL
+        if (url && !url.startsWith('http')) return false;
+        return true;
+      }
+
+      const validCompetitors = result.competitors.filter(c => {
+        if (existingNames.has(c.name.toLowerCase())) return false;
+        if (c.manuallyAdded) return false; // already in manual list
+        return isValidCompetitor(c.name, c.websiteUrl);
+      });
+
+      const rejectedCount = result.competitors.length - validCompetitors.length;
+      console.log(`[Discovery-Research] Valid after filtering: ${validCompetitors.length}, rejected: ${rejectedCount}`);
+
+      if (result.sourceMode === 'live_search') {
+        // Live results go to main suggestions (user can approve)
+        const liveSuggestions: AiDiscoveredCompetitor[] = validCompetitors
+          .filter(c => c.sourceType === 'google_serp' || c.sourceType === 'manual')
+          .map(c => ({
+            name: c.name,
+            url: c.websiteUrl || '',
+            reason: c.channelObservations || c.positioning || `Found via live search (${c.serpSource || 'organic'})`,
+          }));
+        setAiSuggestions(liveSuggestions);
+      } else {
+        // Modeled results go to a separate section — NOT auto-populated
+        const modeled: AiDiscoveredCompetitor[] = validCompetitors.map(c => ({
           name: c.name,
-          url: c.url || '',
-          reason: c.notes,
+          url: c.websiteUrl || '',
+          reason: c.channelObservations || c.positioning || 'Modeled suggestion — not verified via live search',
         }));
-      setAiSuggestions(suggestions);
-      updateD({ positioningNotes: result.positioningThemes.join('\n') });
+        setModeledSuggestions(modeled);
+      }
+
       setAiStatus('success');
-    } catch {
+    } catch (err) {
+      const message = err instanceof Error ? err.message : 'Unknown error';
+      console.error('[Discovery-Research] Failed:', message);
+      setResearchError(message);
       setAiStatus('error');
     }
   };
