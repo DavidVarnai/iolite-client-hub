@@ -60,6 +60,25 @@ function migrateDiscovery(raw: OnboardingData): OnboardingData {
       revenueUnit: isMonthly ? 'per_month' : isAnnual ? 'per_year' : 'per_deal', // kept for compat; derived from type
     };
   }
+  // Migrate legacy single revenueModel → revenueStreamsList
+  if (!Array.isArray(d.revenueStreamsList)) d.revenueStreamsList = [];
+  if (d.revenueStreamsList.length === 0 && d.revenueModel && d.revenueModel.revenuePerConversion > 0) {
+    const rm = d.revenueModel;
+    const stream: RevenueStream = {
+      id: `rs-migrated-${Date.now()}`,
+      name: raw.discovery?.revenueStreams?.split(',')[0]?.trim() || 'Primary Revenue',
+      type: rm.revenueModelType === 'one_time' ? 'one_time' : 'recurring',
+    };
+    if (rm.revenueModelType === 'one_time') {
+      stream.averageDealSize = rm.revenuePerConversion;
+    } else {
+      stream.monthlyValue = rm.revenueModelType === 'monthly_recurring'
+        ? rm.revenuePerConversion
+        : Math.round(rm.revenuePerConversion / 12);
+      stream.contractLengthMonths = rm.avgContractLengthMonths;
+    }
+    d.revenueStreamsList = [stream];
+  }
   return raw;
 }
 
