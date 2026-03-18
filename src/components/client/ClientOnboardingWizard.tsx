@@ -1289,7 +1289,7 @@ function DiscoveryStep() {
                   <button
                     key={i}
                     type="button"
-                    onClick={() => updateD({ competitors: [...(d.competitors || []), { name, url: '' }] })}
+                    onClick={() => updateD({ competitors: [...(d.competitors || []), { name, url: '', source: 'manual' as CompetitorSource }] })}
                     className="flex items-center gap-1 px-2.5 py-1.5 text-xs rounded-md border border-primary/20 bg-background hover:bg-primary/10 transition-colors"
                   >
                     <Plus className="h-3 w-3 text-primary" />
