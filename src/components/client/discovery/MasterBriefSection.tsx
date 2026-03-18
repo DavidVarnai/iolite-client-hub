@@ -270,10 +270,22 @@ export default function MasterBriefSection() {
                   <X className="h-3 w-3" />
                 </button>
               </div>
-              {isBinaryUpload && !brief.uploadedFileContent && (
+              {isBinaryUpload && !brief.uploadedFileContent && parseStatus !== 'parsing' && (
                 <span className="flex items-center gap-1 text-[10px] text-amber-600 dark:text-amber-400">
                   <AlertTriangle className="h-3 w-3" />
-                  PDF/DOCX content not auto-extracted — paste key content below
+                  {parseStatus === 'error' ? (parseError || 'Text extraction failed — paste key content below') : 'PDF/DOCX content not auto-extracted — paste key content below'}
+                </span>
+              )}
+              {parseStatus === 'parsing' && (
+                <span className="flex items-center gap-1 text-[10px] text-primary">
+                  <Loader2 className="h-3 w-3 animate-spin" />
+                  Extracting text from document…
+                </span>
+              )}
+              {parseStatus === 'done' && brief.uploadedFileContent && (
+                <span className="flex items-center gap-1 text-[10px] text-green-600 dark:text-green-400">
+                  <Check className="h-3 w-3" />
+                  Extracted {(brief.uploadedFileContent.length / 1000).toFixed(1)}k characters
                 </span>
               )}
             </div>
