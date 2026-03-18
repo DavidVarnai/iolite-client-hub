@@ -222,6 +222,8 @@ export interface MarketIntelligenceOutputs {
   researchSourceNote?: string;
   /** Which mode was selected by the user for this run */
   selectedResearchMode?: CompetitorResearchPreference;
+  /** Whether Master Brief insights were used to enhance this run */
+  enhancedWithMasterBrief?: boolean;
 }
 
 /* ── Approved Research ── */
