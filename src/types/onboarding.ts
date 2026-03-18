@@ -119,9 +119,13 @@ export const BOTTLENECK_OPTIONS = [
 
 export type BottleneckTag = typeof BOTTLENECK_OPTIONS[number];
 
+export type CompetitorSource = 'manual' | 'live_search' | 'modeled';
+
 export interface DiscoveryCompetitor {
   name: string;
   url: string;
+  /** How this competitor was added to the list */
+  source?: CompetitorSource;
 }
 
 export interface AiDiscoveredCompetitor {

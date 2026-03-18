@@ -470,56 +470,13 @@ function buildSearchAudienceModel(channel: string, inputs: MarketIntelligenceInp
 }
 
 /* ═══════════════════════════════════════════════════════
-   DISCOVERY QUERIES
+   DISCOVERY QUERIES — delegates to shared builder
    ═══════════════════════════════════════════════════════ */
 
-/**
- * Generate 3-5 discovery queries from client profile for competitor lookup.
- */
-function generateDiscoveryQueries(inputs: MarketIntelligenceInputs, ctx: GenerationContext): string[] {
-  const product = ctx.product.toLowerCase();
-  const loc = ctx.isLocal ? ctx.localArea : '';
-  const queries: string[] = [];
+import { generateDiscoveryQueries as sharedGenerateDiscoveryQueries } from './discoveryQueryBuilder';
 
-  queries.push(`${product} ${loc}`.trim());
-  queries.push(ctx.isLocal ? `best ${inputs.industry.toLowerCase()} ${loc}` : `best ${inputs.industry.toLowerCase()} companies`);
-
-  const segment = ctx.audience.toLowerCase().split(',')[0]?.trim();
-  if (segment) {
-    queries.push(`${product} for ${segment}`);
-  }
-
-  queries.push(`${product} services ${loc}`.trim());
-
-  if (ctx.isLocal) {
-    queries.push(`${inputs.industry.toLowerCase()} ${loc} reviews`);
-  }
-
-  // Enhance with Master Brief signals
-  const brief = inputs.masterBriefSignals;
-  if (brief) {
-    // Add pain-point-driven queries
-    if (brief.painPoints?.length) {
-      const pain = brief.painPoints[0].toLowerCase();
-      queries.push(`${product} ${pain} ${loc}`.trim());
-    }
-    // Add audience-driven queries
-    if (brief.audiences?.length) {
-      const aud = brief.audiences[0].toLowerCase();
-      if (aud !== segment) {
-        queries.push(`${product} for ${aud} ${loc}`.trim());
-      }
-    }
-    // Add industry-specific queries from brief
-    if (brief.industries?.length) {
-      const ind = brief.industries[0].toLowerCase();
-      if (ind !== inputs.industry.toLowerCase()) {
-        queries.push(`${ind} ${product} ${loc}`.trim());
-      }
-    }
-  }
-
-  return [...new Set(queries.map(q => q.trim()).filter(Boolean))].slice(0, 7);
+function generateDiscoveryQueries(inputs: MarketIntelligenceInputs, _ctx: GenerationContext): string[] {
+  return sharedGenerateDiscoveryQueries(inputs);
 }
 
 /* Old competitor pool code removed — now in competitorModeledProvider.ts */
