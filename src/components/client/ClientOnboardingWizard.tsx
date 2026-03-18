@@ -1032,20 +1032,24 @@ function DiscoveryStep() {
             </button>
           </div>
         </div>
-        {/* Source label */}
+        {/* Source label + QA summary */}
         {researchSourceMode && (
-          <div className={`flex items-center gap-2 px-3 py-2 rounded-md text-xs font-medium ${
-            researchSourceMode === 'live_search'
-              ? 'bg-green-500/10 text-green-700 border border-green-500/20'
-              : 'bg-amber-500/10 text-amber-700 border border-amber-500/20'
-          }`}>
-            {researchSourceMode === 'live_search' ? (
-              <><Globe className="h-3.5 w-3.5" /> Live Search Results</>
-            ) : (
-              <><Cpu className="h-3.5 w-3.5" /> Modeled Fallback</>
-            )}
-            {researchSourceNote && (
-              <span className="text-[10px] font-normal opacity-75 ml-1">— {researchSourceNote}</span>
+          <div className="space-y-1.5">
+            <div className={`flex items-center gap-2 px-3 py-2 rounded-md text-xs font-medium ${
+              researchSourceMode === 'live_search'
+                ? 'bg-primary/5 text-primary border border-primary/20'
+                : 'bg-amber-500/10 text-amber-700 border border-amber-500/20'
+            }`}>
+              {researchSourceMode === 'live_search' ? (
+                <><ShieldCheck className="h-3.5 w-3.5" /> Live Search</>
+              ) : (
+                <><Cpu className="h-3.5 w-3.5" /> Modeled Fallback</>
+              )}
+            </div>
+            {researchQA && (
+              <p className="text-[10px] text-muted-foreground px-1 tabular-nums">
+                {researchQA.queries} queries · {researchQA.rawResults} raw results · {researchQA.accepted} accepted · {researchQA.rejected} rejected
+              </p>
             )}
           </div>
         )}
@@ -1057,18 +1061,30 @@ function DiscoveryStep() {
             <div>
               <p className="text-xs font-medium text-destructive">Failed to research competitors</p>
               {researchError && (
-                <p className="text-[10px] text-destructive/80 mt-0.5">{researchError}</p>
+                <p className="text-[10px] text-destructive/80 mt-0.5">
+                  {researchError.includes('not available') ? 'API unavailable' :
+                   researchError.includes('quota') ? 'Quota reached' :
+                   researchError.includes('modeled_only') ? 'Configured as modeled only' :
+                   researchError}
+                </p>
               )}
             </div>
           </div>
         )}
 
+        {/* Empty live results message */}
+        {aiStatus === 'success' && researchSourceMode === 'live_search' && aiSuggestions.length === 0 && (
+          <div className="px-3 py-2 rounded-md border bg-muted/30 text-xs text-muted-foreground">
+            No verified competitors found from live search for these queries.
+          </div>
+        )}
+
         {/* Live Search Results — main suggestions */}
         {aiSuggestions.length > 0 && (
-          <div className="panel border-green-500/20 bg-green-500/[0.02]">
-            <div className="flex items-center justify-between px-4 py-3 border-b border-green-500/10">
+          <div className="rounded-lg border border-primary/20 bg-primary/[0.02]">
+            <div className="flex items-center justify-between px-4 py-3 border-b border-primary/10">
               <div className="flex items-center gap-2">
-                <Globe className="h-3.5 w-3.5 text-green-600" />
+                <ShieldCheck className="h-3.5 w-3.5 text-primary" />
                 <span className="text-xs font-semibold">Live Search Results</span>
                 <span className="text-[10px] text-muted-foreground bg-muted px-1.5 py-0.5 rounded">{aiSuggestions.length} verified</span>
               </div>
@@ -1117,12 +1133,12 @@ function DiscoveryStep() {
           </div>
         )}
 
-        {/* Modeled Suggestions — separate section with warning */}
+        {/* Modeled Suggestions — separate section with confirmation */}
         {modeledSuggestions.length > 0 && (
-          <div className="panel border-amber-500/20 bg-amber-500/[0.02]">
+          <div className="rounded-lg border border-amber-500/20 bg-amber-500/[0.02]">
             <div className="px-4 py-3 border-b border-amber-500/10">
               <div className="flex items-center gap-2">
-                <AlertTriangle className="h-3.5 w-3.5 text-amber-600" />
+                <ShieldAlert className="h-3.5 w-3.5 text-amber-600" />
                 <span className="text-xs font-semibold text-amber-700">Modeled Suggestions</span>
                 <span className="text-[10px] text-muted-foreground bg-muted px-1.5 py-0.5 rounded">{modeledSuggestions.length} suggestions</span>
               </div>
@@ -1142,32 +1158,61 @@ function DiscoveryStep() {
                     </div>
                     <p className="text-xs text-muted-foreground mt-0.5">{suggestion.reason}</p>
                   </div>
-                  <button
-                    type="button"
-                    onClick={() => {
-                      const existing = d.competitors || [];
-                      const existingNames = new Set(existing.map(c => c.name.toLowerCase()));
-                      if (!existingNames.has(suggestion.name.toLowerCase())) {
-                        updateD({ competitors: [...existing, { name: suggestion.name, url: suggestion.url }] });
-                      }
-                      setModeledSuggestions(prev => prev.filter((_, i) => i !== idx));
-                    }}
-                    className="flex items-center gap-1 px-2.5 py-1.5 text-xs rounded-md border border-amber-500/20 bg-background hover:bg-amber-500/10 transition-colors text-amber-700 shrink-0"
-                  >
-                    <Plus className="h-3 w-3" /> Add
-                  </button>
+                  {modeledConfirmPending === idx ? (
+                    <div className="flex items-center gap-1.5 shrink-0">
+                      <span className="text-[10px] text-amber-700">Add unverified?</span>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          const existing = d.competitors || [];
+                          const existingNames = new Set(existing.map(c => c.name.toLowerCase()));
+                          if (!existingNames.has(suggestion.name.toLowerCase())) {
+                            updateD({ competitors: [...existing, { name: suggestion.name, url: suggestion.url, source: 'modeled' as CompetitorSource }] });
+                          }
+                          setModeledSuggestions(prev => prev.filter((_, i) => i !== idx));
+                          setModeledConfirmPending(null);
+                        }}
+                        className="px-2 py-1 text-[10px] font-medium rounded bg-amber-500/20 text-amber-700 hover:bg-amber-500/30 transition-colors"
+                      >
+                        Yes
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => setModeledConfirmPending(null)}
+                        className="px-2 py-1 text-[10px] font-medium rounded bg-muted text-muted-foreground hover:bg-muted/80 transition-colors"
+                      >
+                        No
+                      </button>
+                    </div>
+                  ) : (
+                    <button
+                      type="button"
+                      onClick={() => setModeledConfirmPending(idx)}
+                      className="flex items-center gap-1 px-2.5 py-1.5 text-xs rounded-md border border-amber-500/20 bg-background hover:bg-amber-500/10 transition-colors text-amber-700 shrink-0"
+                    >
+                      <Plus className="h-3 w-3" /> Add
+                    </button>
+                  )}
                 </div>
               ))}
             </div>
           </div>
         )}
 
-        {/* Competitor list */}
+        {/* Competitor list with source badges */}
         <div>
           <label className="text-xs font-medium text-muted-foreground uppercase tracking-wider mb-2 block">Top Competitors</label>
           <div className="space-y-2">
             {(d.competitors || []).map((comp, idx) => (
               <div key={idx} className="flex items-center gap-2">
+                {/* Source badge */}
+                <span className={`shrink-0 text-[9px] font-semibold uppercase tracking-wider px-1.5 py-0.5 rounded ${
+                  comp.source === 'live_search' ? 'bg-primary/10 text-primary' :
+                  comp.source === 'modeled' ? 'bg-amber-500/10 text-amber-700' :
+                  'bg-muted text-muted-foreground'
+                }`}>
+                  {comp.source === 'live_search' ? 'Live' : comp.source === 'modeled' ? 'Modeled' : 'Manual'}
+                </span>
                 <input
                   type="text"
                   value={comp.name}
