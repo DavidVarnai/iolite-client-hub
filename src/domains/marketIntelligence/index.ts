@@ -19,6 +19,7 @@ export type {
   MarketIntelligenceRun,
   MarketIntelligenceDefaults,
   ResearchSourceMode,
+  MasterBriefSignals,
 } from '@/types/marketIntelligence';
 
 export { CHANNEL_TYPE_MAP, getChannelType, SOURCE_TRUST_ORDER, getTrustRank } from '@/types/marketIntelligence';
