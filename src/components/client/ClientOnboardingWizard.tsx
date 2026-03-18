@@ -1,13 +1,14 @@
 import { useState, useCallback, useMemo } from 'react';
 import { ClientDiscovery, EMPTY_DISCOVERY, BusinessModel, GrowthGoal, PerformanceConfidence, BOTTLENECK_OPTIONS, DiscoveryCompetitor, AiDiscoveredCompetitor, FunnelStage, FunnelStageCategory, FUNNEL_STAGE_OPTIONS, FUNNEL_CATEGORY_ORDER, deriveRevenueUnit, GROWTH_OBJECTIVE_LABELS, REVENUE_STREAM_TYPE_LABELS, getApprovedBriefSignals } from '@/types/onboarding';
-import type { RevenueModelType, GrowthObjective, RevenueStream, RevenueStreamType } from '@/types/onboarding';
+import type { RevenueModelType, GrowthObjective, RevenueStream, RevenueStreamType, CompetitorSource } from '@/types/onboarding';
 import { ServiceChannel, SERVICE_CHANNEL_LABELS } from '@/types';
-import { Check, ChevronLeft, ChevronRight, X, Loader2, Sparkles, Plus, Trash2, ArrowRight, Download, Pause, FileText, AlertTriangle, Globe, Cpu } from 'lucide-react';
+import { Check, ChevronLeft, ChevronRight, X, Loader2, Sparkles, Plus, Trash2, ArrowRight, Download, Pause, FileText, AlertTriangle, Globe, Cpu, ShieldCheck, ShieldAlert, User } from 'lucide-react';
 import { AnimatePresence, motion } from 'framer-motion';
 import { useClientContext } from '@/contexts/ClientContext';
 import { repository } from '@/lib/repository';
 import type { AiActionStatus } from '@/types/ai';
 import { searchCompetitors, type CompetitorSearchResult, type CompetitorSearchContext } from '@/lib/ai/competitorSearchProvider';
+import { generateDiscoveryQueries } from '@/lib/ai/discoveryQueryBuilder';
 import FunnelVisualPreview from './discovery/FunnelVisualPreview';
 import MasterBriefSection from './discovery/MasterBriefSection';
 import { Collapsible, CollapsibleTrigger, CollapsibleContent } from '@/components/ui/collapsible';
