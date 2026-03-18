@@ -36,99 +36,120 @@ type TestStatus = 'idle' | 'testing' | 'success' | 'fail';
 interface TestResult {
   status: TestStatus;
   envReady: boolean;
-  serpApiConfigured: boolean | null; // null = unknown until tested
+  serpApiConfigured: boolean | null;
   sampleQuery: string;
   organicCount?: number;
   paidCount?: number;
+  topDomains?: string[];
   latencyMs?: number;
   error?: string;
+  failReason?: 'missing_api_key' | 'request_error' | 'empty_results';
   effectiveMode: string;
+  reasoning: string;
 }
+
+const TEST_QUERY = 'best private schools in Houston';
 
 const INITIAL_TEST: TestResult = {
   status: 'idle',
   envReady: Boolean(import.meta.env.VITE_SUPABASE_URL && import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY),
   serpApiConfigured: null,
-  sampleQuery: 'best digital marketing agency',
+  sampleQuery: TEST_QUERY,
   effectiveMode: '—',
+  reasoning: '',
 };
 
 function SearchProviderTest({ researchMode }: { researchMode: CompetitorResearchPreference }) {
   const [test, setTest] = useState<TestResult>(INITIAL_TEST);
 
   const runTest = async () => {
-    const modeLabel = RESEARCH_MODES.find(m => m.value === researchMode)?.label ?? researchMode;
     console.log(`[ProviderTest] Starting test — admin mode: "${researchMode}"`);
 
-    // Determine effective mode
     if (researchMode === 'modeled_only') {
       console.log('[ProviderTest] Mode is modeled_only — no live call needed');
       setTest(prev => ({
-        ...prev,
-        status: 'success',
-        serpApiConfigured: null,
-        effectiveMode: 'Modeled Only',
-        organicCount: undefined,
-        paidCount: undefined,
-        latencyMs: undefined,
-        error: undefined,
+        ...prev, status: 'success', serpApiConfigured: null, effectiveMode: 'Modeled Only',
+        organicCount: undefined, paidCount: undefined, topDomains: undefined,
+        latencyMs: undefined, error: undefined, failReason: undefined,
+        reasoning: 'Live search skipped — admin mode is "Modeled Only". No API calls are made; modeled industry pools are used instead.',
       }));
-      toast({ title: 'Modeled Only', description: 'No live search call is made in this mode. Modeled pools will be used.' });
+      toast({ title: 'Modeled Only', description: 'No live search call is made in this mode.' });
       return;
     }
 
-    setTest(prev => ({ ...prev, status: 'testing', error: undefined }));
-
+    setTest(prev => ({ ...prev, status: 'testing', error: undefined, failReason: undefined }));
     const start = performance.now();
+
     try {
       const { data, error } = await supabase.functions.invoke('serp-search', {
-        body: { query: test.sampleQuery, num: 3 },
+        body: { query: test.sampleQuery, num: 5 },
       });
-
       const latencyMs = Math.round(performance.now() - start);
+      const wouldFallback = researchMode === 'auto';
 
       if (error) {
         console.error('[ProviderTest] Edge function error:', error);
-        const wouldFallback = researchMode === 'auto';
+        const isMissingKey = /secret|not configured|unauthorized/i.test(error.message || '');
         setTest(prev => ({
-          ...prev,
-          status: 'fail',
-          serpApiConfigured: false,
-          latencyMs,
+          ...prev, status: 'fail', serpApiConfigured: false, latencyMs,
           effectiveMode: wouldFallback ? 'Modeled Fallback' : 'BLOCKED',
           error: error.message || 'Edge function call failed',
+          failReason: isMissingKey ? 'missing_api_key' : 'request_error',
+          topDomains: undefined, organicCount: undefined, paidCount: undefined,
+          reasoning: wouldFallback
+            ? 'Live search failed. Mode is "Auto" so MI runs would fall back to modeled research automatically.'
+            : 'Live search failed. Mode is "Live Only" — MI runs will be blocked until this is resolved.',
         }));
         return;
       }
 
       if (data?.error) {
         console.error('[ProviderTest] SerpAPI error:', data.error);
-        const wouldFallback = researchMode === 'auto';
+        const isMissingKey = /secret|not configured|key/i.test(data.error);
         setTest(prev => ({
-          ...prev,
-          status: 'fail',
-          serpApiConfigured: false,
-          latencyMs,
+          ...prev, status: 'fail', serpApiConfigured: false, latencyMs,
           effectiveMode: wouldFallback ? 'Modeled Fallback' : 'BLOCKED',
           error: `SerpAPI: ${data.error}`,
+          failReason: isMissingKey ? 'missing_api_key' : 'request_error',
+          topDomains: undefined, organicCount: undefined, paidCount: undefined,
+          reasoning: wouldFallback
+            ? 'SerpAPI returned an error. Mode is "Auto" — modeled fallback would be used.'
+            : 'SerpAPI returned an error. Mode is "Live Only" — MI runs will fail.',
         }));
         return;
       }
 
-      const organicCount = data?.organic_results?.length ?? 0;
+      const organicResults: { domain: string }[] = data?.organic_results ?? [];
+      const organicCount = organicResults.length;
       const paidCount = data?.paid_results?.length ?? 0;
+
+      if (organicCount === 0 && paidCount === 0) {
+        setTest(prev => ({
+          ...prev, status: 'fail', serpApiConfigured: true, latencyMs,
+          effectiveMode: wouldFallback ? 'Modeled Fallback' : 'BLOCKED',
+          organicCount: 0, paidCount: 0, topDomains: [],
+          error: 'SerpAPI responded but returned zero results for the test query.',
+          failReason: 'empty_results',
+          reasoning: wouldFallback
+            ? 'API key works but query returned empty results. "Auto" mode would fall back to modeled research.'
+            : 'API key works but query returned empty results. "Live Only" mode would block the run.',
+        }));
+        return;
+      }
+
+      const topDomains = organicResults
+        .map((r: { domain: string }) => r.domain?.replace(/^www\./, ''))
+        .filter(Boolean)
+        .slice(0, 5);
+
       console.log(`[ProviderTest] ✅ Success — ${organicCount} organic, ${paidCount} paid (${latencyMs}ms)`);
-      console.log(`[ProviderTest] Effective source: live_search`);
+      console.log(`[ProviderTest] Top domains:`, topDomains);
 
       setTest(prev => ({
-        ...prev,
-        status: 'success',
-        serpApiConfigured: true,
-        organicCount,
-        paidCount,
-        latencyMs,
-        effectiveMode: 'Live Search',
-        error: undefined,
+        ...prev, status: 'success', serpApiConfigured: true,
+        organicCount, paidCount, topDomains, latencyMs,
+        effectiveMode: 'Live Search', error: undefined, failReason: undefined,
+        reasoning: `Live search used because API key is present and mode = "${RESEARCH_MODES.find(m => m.value === researchMode)?.label}". ${wouldFallback ? 'Would fall back to modeled if API fails.' : ''}`.trim(),
       }));
     } catch (err) {
       const latencyMs = Math.round(performance.now() - start);
@@ -136,12 +157,13 @@ function SearchProviderTest({ researchMode }: { researchMode: CompetitorResearch
       console.error('[ProviderTest] Unexpected error:', message);
       const wouldFallback = researchMode === 'auto';
       setTest(prev => ({
-        ...prev,
-        status: 'fail',
-        serpApiConfigured: false,
-        latencyMs,
+        ...prev, status: 'fail', serpApiConfigured: false, latencyMs,
         effectiveMode: wouldFallback ? 'Modeled Fallback' : 'BLOCKED',
-        error: message,
+        error: message, failReason: 'request_error',
+        topDomains: undefined, organicCount: undefined, paidCount: undefined,
+        reasoning: wouldFallback
+          ? 'Request failed unexpectedly. "Auto" mode would fall back to modeled research.'
+          : 'Request failed unexpectedly. "Live Only" mode blocks MI runs until fixed.',
       }));
     }
   };
@@ -179,18 +201,50 @@ function SearchProviderTest({ researchMode }: { researchMode: CompetitorResearch
           <Row label="Admin mode" value={RESEARCH_MODES.find(m => m.value === researchMode)?.label ?? researchMode} />
           <Row label="Effective source" value={test.effectiveMode} />
           {test.latencyMs !== undefined && <Row label="Latency" value={`${test.latencyMs}ms`} />}
-          {test.organicCount !== undefined && <Row label="Sample results" value={`${test.organicCount} organic · ${test.paidCount ?? 0} paid`} />}
+          <Row label="Test query" value={`"${test.sampleQuery}"`} />
         </div>
 
-        {/* Error message */}
-        {test.error && (
-          <div className="rounded-md bg-destructive/5 border border-destructive/20 px-3 py-2 text-xs text-destructive">
-            {test.error}
-            {researchMode === 'auto' && (
-              <p className="mt-1 text-muted-foreground">Mode is "Auto" — the system would fall back to modeled research.</p>
+        {/* Sample results + domains */}
+        {test.organicCount !== undefined && (
+          <div className="rounded-md bg-muted/50 border border-border px-3 py-2 space-y-1.5">
+            <div className="flex items-center gap-3 text-xs">
+              <span className="text-muted-foreground">Results:</span>
+              <span className="font-medium text-foreground">{test.organicCount} organic · {test.paidCount ?? 0} paid</span>
+            </div>
+            {test.topDomains && test.topDomains.length > 0 && (
+              <div className="text-xs">
+                <span className="text-muted-foreground">Top domains: </span>
+                <span className="font-mono text-[11px] text-foreground">
+                  {test.topDomains.join(', ')}
+                </span>
+              </div>
             )}
-            {researchMode === 'live_only' && (
-              <p className="mt-1 font-medium">Mode is "Live Only" — MI runs will fail until this is resolved.</p>
+          </div>
+        )}
+
+        {/* Decision reasoning */}
+        {test.reasoning && (
+          <div className="rounded-md bg-primary/5 border border-primary/10 px-3 py-2 text-xs text-muted-foreground leading-relaxed">
+            <span className="font-medium text-foreground">Decision: </span>{test.reasoning}
+          </div>
+        )}
+
+        {/* Failure detail */}
+        {test.error && (
+          <div className="rounded-md bg-destructive/5 border border-destructive/20 px-3 py-2 text-xs space-y-1">
+            <div className="flex items-start gap-1.5">
+              <AlertCircle className="h-3.5 w-3.5 text-destructive shrink-0 mt-0.5" />
+              <div>
+                <span className="font-medium text-destructive">
+                  {test.failReason === 'missing_api_key' && 'Missing API Key — '}
+                  {test.failReason === 'request_error' && 'Request Error — '}
+                  {test.failReason === 'empty_results' && 'Empty Results — '}
+                </span>
+                <span className="text-destructive">{test.error}</span>
+              </div>
+            </div>
+            {test.failReason === 'missing_api_key' && (
+              <p className="text-muted-foreground ml-5">Add the SerpAPI secret in your backend function configuration.</p>
             )}
           </div>
         )}
