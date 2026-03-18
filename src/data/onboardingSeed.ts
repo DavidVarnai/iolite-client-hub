@@ -180,6 +180,9 @@ export const c3Onboarding: OnboardingData = {
     revenueStreams: 'Tuition (90%), summer programs (10%)',
     avgOrderValue: '$28,000 annual tuition',
     revenueModel: { revenueModelType: 'annual_contract', revenuePerConversion: 28000, revenueUnit: 'per_year', avgContractLengthMonths: 12 },
+    revenueStreamsList: [
+      { id: 'rs-c3-1', name: 'Annual Tuition', type: 'recurring', monthlyValue: 2333, contractLengthMonths: 12 },
+    ],
     coreCustomerSegments: 'Parents 30-50, HHI $120k+, metro area',
     revenueTarget: 0,
     newCustomersTarget: 200,
