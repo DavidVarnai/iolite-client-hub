@@ -2,7 +2,7 @@
  * Client & Onboarding localStorage repos.
  */
 import type { Client } from '@/types';
-import type { OnboardingData } from '@/types/onboarding';
+import type { OnboardingData, RevenueStream } from '@/types/onboarding';
 import type { ClientRepository, OnboardingRepository } from './types';
 import { load, persist, STORAGE_KEYS, isSeedStale, markSeedCurrent } from './helpers';
 import { DEFAULT_ONBOARDING, EMPTY_DISCOVERY } from '@/types/onboarding';
