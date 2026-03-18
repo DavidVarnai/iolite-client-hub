@@ -29,6 +29,8 @@ export default function MasterBriefSection() {
   const [confirmReextract, setConfirmReextract] = useState(false);
   const [chunkProgress, setChunkProgress] = useState<ChunkProcessingStatus | null>(null);
   const [showChunkDetails, setShowChunkDetails] = useState(false);
+  const [parseStatus, setParseStatus] = useState<ParseStatus>('idle');
+  const [parseError, setParseError] = useState('');
 
   const hasBrief = !!(brief.rawText?.trim() || brief.uploadedFileName);
   const hasInsights = !!brief.extractedInsights;
