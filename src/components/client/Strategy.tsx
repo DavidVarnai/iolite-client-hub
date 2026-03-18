@@ -24,15 +24,8 @@ function StrategySectionCard({ section, proposalMode }: { section: StrategySecti
   const handleGenerateDraft = async () => {
     setAiStatus('loading');
     try {
-      // Build Master Brief context if available
-      const briefInsights = onboarding.masterBrief?.extractedInsights;
-      const masterBriefContext = briefInsights ? JSON.stringify({
-        audiences: briefInsights.audiences,
-        painPoints: briefInsights.painPoints,
-        valueProps: briefInsights.valueProps,
-        differentiators: briefInsights.differentiators,
-        positioning: briefInsights.positioning,
-      }) : undefined;
+      // Only use approved + included brief signals
+      const approvedSignals = getApprovedBriefSignals(onboarding.masterBrief);
 
       const result = await runStrategyDraft({
         channel: section.channel,
@@ -47,8 +40,17 @@ function StrategySectionCard({ section, proposalMode }: { section: StrategySecti
           coreCustomerSegments: onboarding.discovery.coreCustomerSegments,
           knownBottlenecks: onboarding.discovery.knownBottlenecks,
           currentTraffic: onboarding.discovery.currentTraffic,
-          ...(masterBriefContext ? { masterBriefContext } : {}),
         }),
+        // Pass approved brief as separate structured object
+        ...(approvedSignals ? {
+          approvedMasterBriefInsights: JSON.stringify({
+            audiences: approvedSignals.audiences,
+            painPoints: approvedSignals.painPoints,
+            valueProps: approvedSignals.valueProps,
+            differentiators: approvedSignals.differentiators,
+            positioning: approvedSignals.positioning,
+          }),
+        } : {}),
       });
       setAiResult(result);
       setAiStatus('success');
