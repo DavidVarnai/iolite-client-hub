@@ -435,7 +435,8 @@ function DiscoveryStep() {
   const [researchSourceMode, setResearchSourceMode] = useState<'live_search' | 'modeled_fallback' | null>(null);
   const [researchSourceNote, setResearchSourceNote] = useState<string>('');
   const [researchError, setResearchError] = useState<string>('');
-
+  const [researchQA, setResearchQA] = useState<{ queries: number; rawResults: number; accepted: number; rejected: number } | null>(null);
+  const [modeledConfirmPending, setModeledConfirmPending] = useState<number | null>(null);
   // Brief → Discovery suggestions
   const approvedSignals = getApprovedBriefSignals(onboarding.masterBrief);
   const briefSuggestions = useMemo(() => {
