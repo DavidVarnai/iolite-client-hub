@@ -24,6 +24,16 @@ function StrategySectionCard({ section, proposalMode }: { section: StrategySecti
   const handleGenerateDraft = async () => {
     setAiStatus('loading');
     try {
+      // Build Master Brief context if available
+      const briefInsights = onboarding.masterBrief?.extractedInsights;
+      const masterBriefContext = briefInsights ? JSON.stringify({
+        audiences: briefInsights.audiences,
+        painPoints: briefInsights.painPoints,
+        valueProps: briefInsights.valueProps,
+        differentiators: briefInsights.differentiators,
+        positioning: briefInsights.positioning,
+      }) : undefined;
+
       const result = await runStrategyDraft({
         channel: section.channel,
         industry: client.industry,
@@ -37,6 +47,7 @@ function StrategySectionCard({ section, proposalMode }: { section: StrategySecti
           coreCustomerSegments: onboarding.discovery.coreCustomerSegments,
           knownBottlenecks: onboarding.discovery.knownBottlenecks,
           currentTraffic: onboarding.discovery.currentTraffic,
+          ...(masterBriefContext ? { masterBriefContext } : {}),
         }),
       });
       setAiResult(result);

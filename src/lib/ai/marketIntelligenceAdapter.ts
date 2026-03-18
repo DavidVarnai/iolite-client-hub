@@ -488,7 +488,31 @@ function generateDiscoveryQueries(inputs: MarketIntelligenceInputs, ctx: Generat
     queries.push(`${inputs.industry.toLowerCase()} ${loc} reviews`);
   }
 
-  return [...new Set(queries.map(q => q.trim()).filter(Boolean))].slice(0, 5);
+  // Enhance with Master Brief signals
+  const brief = inputs.masterBriefSignals;
+  if (brief) {
+    // Add pain-point-driven queries
+    if (brief.painPoints?.length) {
+      const pain = brief.painPoints[0].toLowerCase();
+      queries.push(`${product} ${pain} ${loc}`.trim());
+    }
+    // Add audience-driven queries
+    if (brief.audiences?.length) {
+      const aud = brief.audiences[0].toLowerCase();
+      if (aud !== segment) {
+        queries.push(`${product} for ${aud} ${loc}`.trim());
+      }
+    }
+    // Add industry-specific queries from brief
+    if (brief.industries?.length) {
+      const ind = brief.industries[0].toLowerCase();
+      if (ind !== inputs.industry.toLowerCase()) {
+        queries.push(`${ind} ${product} ${loc}`.trim());
+      }
+    }
+  }
+
+  return [...new Set(queries.map(q => q.trim()).filter(Boolean))].slice(0, 7);
 }
 
 /* Old competitor pool code removed — now in competitorModeledProvider.ts */
