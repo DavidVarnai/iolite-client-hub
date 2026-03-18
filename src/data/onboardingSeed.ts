@@ -27,6 +27,9 @@ export const c1Onboarding: OnboardingData = {
     revenueStreams: 'DTC ecommerce (85%), wholesale (15%)',
     avgOrderValue: '$78',
     revenueModel: { revenueModelType: 'one_time', revenuePerConversion: 78, revenueUnit: 'per_deal' },
+    revenueStreamsList: [
+      { id: 'rs-c1-1', name: 'DTC Ecommerce', type: 'one_time', averageDealSize: 78 },
+    ],
     coreCustomerSegments: 'Women 25-45, HHI $75k+, urban/suburban, sustainability-conscious',
     revenueTarget: 12000000,
     newCustomersTarget: 35000,
