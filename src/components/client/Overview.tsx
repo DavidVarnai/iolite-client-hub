@@ -131,9 +131,9 @@ export default function ClientOverview({ onNavigateTab, onOpenWizard, onActivate
               <p className="font-medium capitalize">{onboarding.discovery.businessModel.replace('_', ' ')}</p>
             </div>
             <div className="col-span-2">
-              {onboarding.discovery.revenueModel?.revenuePerConversion > 0 ? (
+              {onboarding.discovery.legacyRevenueModel?.revenuePerConversion > 0 ? (
                 <RevenueModelDisplay
-                  revenueModel={onboarding.discovery.revenueModel}
+                  revenueModel={onboarding.discovery.legacyRevenueModel}
                   showEditHint={false}
                   variant="inline"
                 />

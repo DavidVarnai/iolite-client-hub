@@ -134,7 +134,7 @@ export default function ChannelAssumptions({ model, scenario, onUpdate }: Props)
   const { client, onboarding } = useClientContext();
   const [showMIBanner, setShowMIBanner] = useState(true);
 
-  const revenueModel = onboarding.discovery.revenueModel;
+  const revenueModel = onboarding.discovery.legacyRevenueModel;
   const globalAov = useMemo(() => {
     if (revenueModel?.revenuePerConversion > 0) return revenueModel.revenuePerConversion;
     const raw = onboarding.discovery.avgOrderValue || '';

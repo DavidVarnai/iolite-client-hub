@@ -43,43 +43,69 @@ function migrateDiscovery(raw: OnboardingData): OnboardingData {
   if (d.monthlyCustomers === undefined) d.monthlyCustomers = '';
   if (d.monthlyMarketingBudget === undefined) d.monthlyMarketingBudget = '';
   if (!d.performanceConfidence) d.performanceConfidence = 'unknown';
-  if (!Array.isArray(d.bottleneckTags)) d.bottleneckTags = [];
-  if (d.bottleneckNotes === undefined) d.bottleneckNotes = '';
-  // Structured competitors
-  if (!Array.isArray(d.competitors)) d.competitors = [];
-  // Revenue model migration: infer from legacy avgOrderValue
-  if (!d.revenueModel) {
-    const raw = d.avgOrderValue || '';
-    const parsed = parseFloat(raw.replace(/[^0-9.]/g, ''));
-    const value = isNaN(parsed) ? 0 : parsed;
-    const isMonthly = /month|\/mo/i.test(raw);
-    const isAnnual = /annual|year|\/yr/i.test(raw);
-    d.revenueModel = {
-      revenueModelType: isMonthly ? 'monthly_recurring' : isAnnual ? 'annual_contract' : 'one_time',
-      revenuePerConversion: value,
-      revenueUnit: isMonthly ? 'per_month' : isAnnual ? 'per_year' : 'per_deal', // kept for compat; derived from type
-    };
-  }
-  // Migrate legacy single revenueModel → revenueStreamsList
-  if (!Array.isArray(d.revenueStreamsList)) d.revenueStreamsList = [];
-  if (d.revenueStreamsList.length === 0 && d.revenueModel && d.revenueModel.revenuePerConversion > 0) {
-    const rm = d.revenueModel;
-    const stream: RevenueStream = {
-      id: `rs-migrated-${Date.now()}`,
-      name: raw.discovery?.revenueStreams?.split(',')[0]?.trim() || 'Primary Revenue',
-      type: rm.revenueModelType === 'one_time' ? 'one_time' : 'recurring',
-    };
-    if (rm.revenueModelType === 'one_time') {
-      stream.averageDealSize = rm.revenuePerConversion;
-    } else {
-      stream.monthlyValue = rm.revenueModelType === 'monthly_recurring'
-        ? rm.revenuePerConversion
-        : Math.round(rm.revenuePerConversion / 12);
-      stream.contractLengthMonths = rm.avgContractLengthMonths;
-    }
-    d.revenueStreamsList = [stream];
-  }
-  return raw;
+   if (!Array.isArray(d.bottleneckTags)) d.bottleneckTags = [];
+   if (d.bottleneckNotes === undefined) d.bottleneckNotes = '';
+   // Structured competitors
+   if (!Array.isArray(d.competitors)) d.competitors = [];
+   // Revenue model migration: infer from legacy avgOrderValue
+   if (!d.legacyRevenueModel) {
+     // Check for old field name
+     const oldModel = (d as any).revenueModel;
+     if (oldModel) {
+       d.legacyRevenueModel = oldModel;
+       delete (d as any).revenueModel;
+     } else {
+       const raw = d.avgOrderValue || '';
+       const parsed = parseFloat(raw.replace(/[^0-9.]/g, ''));
+       const value = isNaN(parsed) ? 0 : parsed;
+       const isMonthly = /month|\/mo/i.test(raw);
+       const isAnnual = /annual|year|\/yr/i.test(raw);
+       d.legacyRevenueModel = {
+         revenueModelType: isMonthly ? 'monthly_recurring' : isAnnual ? 'annual_contract' : 'one_time',
+         revenuePerConversion: value,
+         revenueUnit: isMonthly ? 'per_month' : isAnnual ? 'per_year' : 'per_deal',
+       };
+     }
+   }
+   // Migrate old revenueStreams text → legacyRevenueStreamsText
+   if (d.legacyRevenueStreamsText === undefined) {
+     const oldText = (d as any).revenueStreams;
+     if (typeof oldText === 'string') {
+       d.legacyRevenueStreamsText = oldText;
+     } else {
+       d.legacyRevenueStreamsText = '';
+     }
+   }
+   // Migrate revenueStreamsList → revenueStreams (array)
+   if (!Array.isArray(d.revenueStreams)) {
+     const oldList = (d as any).revenueStreamsList;
+     if (Array.isArray(oldList)) {
+       d.revenueStreams = oldList;
+       delete (d as any).revenueStreamsList;
+     } else {
+       d.revenueStreams = [];
+     }
+   }
+   // Migrate legacy single revenueModel → revenueStreams[]
+   if (d.revenueStreams.length === 0 && d.legacyRevenueModel && d.legacyRevenueModel.revenuePerConversion > 0) {
+     const rm = d.legacyRevenueModel;
+     const stream: RevenueStream = {
+       id: `rs-migrated-${Date.now()}`,
+       name: d.legacyRevenueStreamsText?.split(',')[0]?.trim() || 'Primary Revenue',
+       type: rm.revenueModelType === 'one_time' ? 'one_time' : 'recurring',
+       source: 'manual',
+     };
+     if (rm.revenueModelType === 'one_time') {
+       stream.averageDealSize = rm.revenuePerConversion;
+     } else {
+       stream.monthlyValue = rm.revenueModelType === 'monthly_recurring'
+         ? rm.revenuePerConversion
+         : Math.round(rm.revenuePerConversion / 12);
+       stream.contractLengthMonths = rm.avgContractLengthMonths;
+     }
+     d.revenueStreams = [stream];
+   }
+   return raw;
 }
 
 export function createClientRepo(): ClientRepository {

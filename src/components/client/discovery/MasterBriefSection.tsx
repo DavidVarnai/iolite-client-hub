@@ -152,8 +152,21 @@ export default function MasterBriefSection() {
 
       <p className="text-xs text-muted-foreground">
         Upload or paste a strategic document describing the business, positioning, audience, offerings, pain points, competitors, and strategic context.
-        This will be used to enhance Market Intelligence and Strategy outputs.
       </p>
+
+      {/* How This Is Used — compact info block */}
+      <div className="flex items-start gap-2 p-2.5 rounded-md bg-muted/50 border border-border/50">
+        <FileText className="h-3.5 w-3.5 text-muted-foreground shrink-0 mt-0.5" />
+        <div className="space-y-0.5">
+          <p className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider">How this is used</p>
+          <ul className="text-[10px] text-muted-foreground space-y-0.5 list-none">
+            <li>• Enhances Market Intelligence (competitors, queries)</li>
+            <li>• Improves Strategy recommendations</li>
+            <li>• Suggests revenue streams and discovery inputs</li>
+            <li>• Requires approval before being used downstream</li>
+          </ul>
+        </div>
+      </div>
 
       {/* Upload + Paste */}
       <div className="grid grid-cols-2 gap-3">

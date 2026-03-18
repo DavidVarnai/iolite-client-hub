@@ -52,6 +52,10 @@ export interface RevenueStream {
   monthlyValue?: number;
   contractLengthMonths?: number;
   notes?: string;
+  /** Provenance: where this stream originated */
+  source?: 'manual' | 'master_brief';
+  /** Original name when added from brief — used to detect significant edits */
+  originalBriefName?: string;
 }
 
 /** Canonical mapping: revenueModelType → revenueUnit. Unit is fully derived. */
@@ -148,13 +152,14 @@ export interface ClientDiscovery {
   // A. Business Overview
   businessModel: BusinessModel;
   primaryProducts: string;
-  revenueStreams: string;
-  /** @deprecated use revenueModel */
+  /** @deprecated — free-text description, kept for backward compat */
+  legacyRevenueStreamsText: string;
+  /** @deprecated use revenueStreams[] */
   avgOrderValue: string;
-  /** @deprecated use revenueStreamsList */
-  revenueModel: RevenueModelConfig;
-  /** Structured multi-stream revenue data */
-  revenueStreamsList: RevenueStream[];
+  /** @deprecated use revenueStreams[] */
+  legacyRevenueModel: RevenueModelConfig;
+  /** Structured multi-stream revenue data — single source of truth */
+  revenueStreams: RevenueStream[];
   coreCustomerSegments: string;
 
   // B. Growth Targets — Business Outcomes
@@ -218,10 +223,10 @@ export interface ClientDiscovery {
 export const EMPTY_DISCOVERY: ClientDiscovery = {
   businessModel: 'other',
   primaryProducts: '',
-  revenueStreams: '',
+  legacyRevenueStreamsText: '',
   avgOrderValue: '',
-  revenueModel: { revenueModelType: 'one_time', revenuePerConversion: 0, revenueUnit: 'per_deal' },
-  revenueStreamsList: [],
+  legacyRevenueModel: { revenueModelType: 'one_time', revenuePerConversion: 0, revenueUnit: 'per_deal' },
+  revenueStreams: [],
   coreCustomerSegments: '',
   revenueTarget: 0,
   newCustomersTarget: 0,
@@ -387,11 +392,11 @@ export function computeStageReadiness(
 
   // Discovery
   const d = onboarding.discovery;
-  const revenueStreamsSet = (d.revenueStreamsList?.length > 0) ? 'set' : (d.revenueModel && d.revenueModel.revenuePerConversion > 0 ? 'set' : '');
+  const revenueStreamsSet = (d.revenueStreams?.length > 0) ? 'set' : (d.legacyRevenueModel && d.legacyRevenueModel.revenuePerConversion > 0 ? 'set' : '');
   const revenueTargetSet = d.revenueTarget > 0 ? 'set' : (d.revenueTargets || '');
   const customersTargetSet = d.newCustomersTarget > 0 ? 'set' : (d.customerLeadTargets || '');
   const discoveryFields = [
-    d.primaryProducts, d.revenueStreams, revenueStreamsSet, d.coreCustomerSegments,
+    d.primaryProducts, d.legacyRevenueStreamsText, revenueStreamsSet, d.coreCustomerSegments,
     revenueTargetSet, customersTargetSet, d.timeHorizon,
     d.funnelType, d.closeRate, d.salesCycleLength,
     d.monthlyVisitors || d.currentTraffic, d.monthlyLeads || d.currentLeadsOrders,
@@ -448,9 +453,9 @@ export function getProposalChecklist(
   hasGrowthModel: boolean,
 ): ProposalChecklistItem[] {
   const d = onboarding.discovery;
-  const revenueStreamsSet = (d.revenueStreamsList?.length > 0) ? 'set' : (d.revenueModel && d.revenueModel.revenuePerConversion > 0 ? 'set' : '');
+  const revenueStreamsSet = (d.revenueStreams?.length > 0) ? 'set' : (d.legacyRevenueModel && d.legacyRevenueModel.revenuePerConversion > 0 ? 'set' : '');
   const revenueTargetSet = d.revenueTarget > 0 ? 'set' : (d.revenueTargets || '');
-  const dFields = [d.primaryProducts, d.revenueStreams, revenueStreamsSet, revenueTargetSet, d.newCustomersTarget > 0 ? 'set' : (d.customerLeadTargets || '')];
+  const dFields = [d.primaryProducts, d.legacyRevenueStreamsText, revenueStreamsSet, revenueTargetSet, d.newCustomersTarget > 0 ? 'set' : (d.customerLeadTargets || '')];
   const dFilled = dFields.filter(f => f && String(f).trim().length > 0).length;
 
   return [

@@ -52,7 +52,7 @@ function fmt(n: number): string {
 
 export default function RevenueModel({ model, scenario, onUpdate }: Props) {
   const { onboarding } = useClientContext();
-  const revenueModel = onboarding.discovery.revenueModel;
+  const revenueModel = onboarding.discovery.legacyRevenueModel;
   const months = useMemo(() => generateMonths(model.startMonth, model.monthCount), [model]);
   const ra = scenario.revenueAssumption;
 

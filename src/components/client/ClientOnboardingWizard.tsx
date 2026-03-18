@@ -173,12 +173,12 @@ function RevenueStreamsEditor({ streams, onChange, masterBrief }: {
     return mapBriefToRevenueStreamSuggestions(approvedSignals);
   }, [approvedSignals]);
 
-  // Filter out suggestions that already exist by name
-  const existingNames = new Set(streams.map(s => s.name.toLowerCase()));
-  const availableSuggestions = suggestions.filter(s => !existingNames.has(s.name.toLowerCase()));
+  // Case-insensitive dedup
+  const existingNames = new Set(streams.map(s => s.name.toLowerCase().trim()));
+  const availableSuggestions = suggestions.filter(s => !existingNames.has(s.name.toLowerCase().trim()));
 
   const addStream = () => {
-    onChange([...streams, { id: `rs-${Date.now()}`, name: '', type: 'one_time' }]);
+    onChange([...streams, { id: `rs-${Date.now()}`, name: '', type: 'one_time', source: 'manual' }]);
   };
 
   const updateStream = (idx: number, patch: Partial<RevenueStream>) => {
@@ -192,24 +192,53 @@ function RevenueStreamsEditor({ streams, onChange, masterBrief }: {
   };
 
   const addSuggestion = (s: { name: string; type: RevenueStreamType }) => {
-    if (existingNames.has(s.name.toLowerCase())) return;
-    onChange([...streams, { id: `rs-${Date.now()}`, name: s.name, type: s.type }]);
+    if (existingNames.has(s.name.toLowerCase().trim())) return;
+    onChange([...streams, {
+      id: `rs-${Date.now()}`,
+      name: s.name,
+      type: s.type,
+      source: 'master_brief',
+      originalBriefName: s.name,
+    }]);
   };
 
   const addAllSuggestions = () => {
-    const toAdd = availableSuggestions.map((s, i) => ({
-      id: `rs-${Date.now()}-${i}`,
-      name: s.name,
-      type: s.type,
-    }));
+    const currentNames = new Set(streams.map(s => s.name.toLowerCase().trim()));
+    const toAdd = availableSuggestions
+      .filter(s => !currentNames.has(s.name.toLowerCase().trim()))
+      .map((s, i) => ({
+        id: `rs-${Date.now()}-${i}`,
+        name: s.name,
+        type: s.type,
+        source: 'master_brief' as const,
+        originalBriefName: s.name,
+      }));
     onChange([...streams, ...toAdd]);
+  };
+
+  /** Check if name was significantly edited from brief original */
+  const isBriefSourceVisible = (stream: RevenueStream) => {
+    if (stream.source !== 'master_brief' || !stream.originalBriefName) return false;
+    // Hide badge if name changed significantly (>40% different by length)
+    const orig = stream.originalBriefName.toLowerCase();
+    const curr = stream.name.toLowerCase();
+    if (orig === curr) return true;
+    const shorter = Math.min(orig.length, curr.length);
+    const longer = Math.max(orig.length, curr.length);
+    return shorter / longer > 0.6 && curr.includes(orig.substring(0, Math.floor(orig.length * 0.5)));
+  };
+
+  const TYPE_BADGE_STYLES: Record<RevenueStreamType, string> = {
+    one_time: 'bg-accent text-accent-foreground',
+    recurring: 'bg-primary/10 text-primary',
+    hybrid: 'bg-secondary text-secondary-foreground',
   };
 
   return (
     <div className="col-span-2 space-y-4">
       <div>
         <p className="text-xs font-semibold text-foreground">Revenue Streams</p>
-        <p className="text-[10px] text-muted-foreground mt-0.5">Add one or more revenue streams to describe how this client earns revenue.</p>
+        <p className="text-[10px] text-muted-foreground mt-0.5">Define how this client generates revenue. Add one or more streams.</p>
       </div>
 
       {/* Master Brief suggestions */}
@@ -225,7 +254,7 @@ function RevenueStreamsEditor({ streams, onChange, masterBrief }: {
               onClick={addAllSuggestions}
               className="text-[10px] font-medium text-primary hover:underline"
             >
-              Add All
+              + Add All
             </button>
           </div>
           <div className="flex flex-wrap gap-1.5">
@@ -238,7 +267,7 @@ function RevenueStreamsEditor({ streams, onChange, masterBrief }: {
               >
                 <Plus className="h-3 w-3 text-primary" />
                 <span className="truncate max-w-[200px]">{s.name}</span>
-                <span className="text-[10px] px-1.5 py-0.5 rounded bg-muted text-muted-foreground">
+                <span className={`text-[10px] px-1.5 py-0.5 rounded font-medium ${TYPE_BADGE_STYLES[s.type]}`}>
                   {REVENUE_STREAM_TYPE_LABELS[s.type]}
                 </span>
               </button>
@@ -248,95 +277,98 @@ function RevenueStreamsEditor({ streams, onChange, masterBrief }: {
       )}
 
       {/* Stream cards */}
-      <div className="space-y-3">
+      <div className="space-y-2">
         {streams.map((stream, idx) => (
-          <div key={stream.id} className="border rounded-lg p-4 bg-muted/20 space-y-3">
-            <div className="flex items-start gap-3">
-              <div className="flex-1 grid grid-cols-2 gap-3">
-                <div>
-                  <label className="text-[10px] font-medium text-muted-foreground uppercase tracking-wider">Stream Name</label>
-                  <input
-                    type="text"
-                    value={stream.name}
-                    onChange={(e) => updateStream(idx, { name: e.target.value })}
-                    className="w-full rounded-md border bg-background px-3 py-2 text-sm"
-                    placeholder="e.g. Managed Services"
-                  />
-                </div>
-                <div>
-                  <label className="text-[10px] font-medium text-muted-foreground uppercase tracking-wider">Type</label>
-                  <select
-                    value={stream.type}
-                    onChange={(e) => updateStream(idx, { type: e.target.value as RevenueStreamType })}
-                    className="w-full rounded-md border bg-background px-3 py-2 text-sm"
-                  >
-                    <option value="one_time">One-time</option>
-                    <option value="recurring">Recurring</option>
-                    <option value="hybrid">Hybrid</option>
-                  </select>
-                </div>
-              </div>
+          <div key={stream.id} className="border rounded-lg p-3 bg-muted/20 space-y-2.5">
+            {/* Header row: name, type badge, remove */}
+            <div className="flex items-center gap-2">
+              <input
+                type="text"
+                value={stream.name}
+                onChange={(e) => updateStream(idx, { name: e.target.value })}
+                className="flex-1 rounded-md border bg-background px-3 py-1.5 text-sm font-medium"
+                placeholder="Stream name"
+              />
+              <select
+                value={stream.type}
+                onChange={(e) => updateStream(idx, { type: e.target.value as RevenueStreamType })}
+                className="rounded-md border bg-background px-2 py-1.5 text-xs w-28"
+              >
+                <option value="one_time">One-time</option>
+                <option value="recurring">Recurring</option>
+                <option value="hybrid">Hybrid</option>
+              </select>
+              <span className={`text-[10px] px-1.5 py-0.5 rounded font-medium shrink-0 ${TYPE_BADGE_STYLES[stream.type]}`}>
+                {REVENUE_STREAM_TYPE_LABELS[stream.type]}
+              </span>
+              {isBriefSourceVisible(stream) && (
+                <span className="text-[10px] px-1.5 py-0.5 rounded bg-primary/10 text-primary font-medium shrink-0 flex items-center gap-0.5">
+                  <FileText className="h-2.5 w-2.5" /> Brief
+                </span>
+              )}
               <button
                 type="button"
                 onClick={() => removeStream(idx)}
-                className="p-1.5 rounded-md text-muted-foreground hover:text-destructive hover:bg-destructive/10 transition-colors mt-4"
+                className="p-1 rounded-md text-muted-foreground hover:text-destructive hover:bg-destructive/10 transition-colors shrink-0"
               >
                 <Trash2 className="h-3.5 w-3.5" />
               </button>
             </div>
 
-            {/* Type-specific fields */}
-            <div className="grid grid-cols-2 gap-3">
+            {/* Type-specific value fields */}
+            <div className="flex gap-3">
               {(stream.type === 'one_time' || stream.type === 'hybrid') && (
-                <div>
-                  <label className="text-[10px] font-medium text-muted-foreground uppercase tracking-wider">Avg Deal Size ($)</label>
+                <div className="flex-1">
+                  <label className="text-[10px] font-medium text-muted-foreground uppercase tracking-wider">
+                    {stream.type === 'hybrid' ? 'Avg Deal Size ($)' : 'Avg Deal Size ($)'}
+                  </label>
                   <input
                     type="number"
                     value={stream.averageDealSize || ''}
                     onChange={(e) => updateStream(idx, { averageDealSize: parseFloat(e.target.value) || undefined })}
-                    className="w-full rounded-md border bg-background px-3 py-2 text-sm"
-                    placeholder="e.g. 5000"
+                    className="w-full rounded-md border bg-background px-3 py-1.5 text-sm tabular-nums"
+                    placeholder="e.g. 5,000"
                   />
                 </div>
               )}
               {(stream.type === 'recurring' || stream.type === 'hybrid') && (
                 <>
-                  <div>
+                  <div className="flex-1">
                     <label className="text-[10px] font-medium text-muted-foreground uppercase tracking-wider">Monthly Value ($)</label>
                     <input
                       type="number"
                       value={stream.monthlyValue || ''}
                       onChange={(e) => updateStream(idx, { monthlyValue: parseFloat(e.target.value) || undefined })}
-                      className="w-full rounded-md border bg-background px-3 py-2 text-sm"
-                      placeholder="e.g. 2000"
+                      className="w-full rounded-md border bg-background px-3 py-1.5 text-sm tabular-nums"
+                      placeholder="e.g. 2,000"
                     />
                   </div>
-                  <div>
-                    <label className="text-[10px] font-medium text-muted-foreground uppercase tracking-wider">Contract Length (months)</label>
+                  <div className="w-32">
+                    <label className="text-[10px] font-medium text-muted-foreground uppercase tracking-wider">Contract (mo)</label>
                     <input
                       type="number"
                       value={stream.contractLengthMonths || ''}
                       onChange={(e) => updateStream(idx, { contractLengthMonths: parseInt(e.target.value) || undefined })}
-                      className="w-full rounded-md border bg-background px-3 py-2 text-sm"
-                      placeholder="e.g. 12"
+                      className="w-full rounded-md border bg-background px-3 py-1.5 text-sm tabular-nums"
+                      placeholder="12"
                     />
                   </div>
                 </>
               )}
             </div>
 
-            {/* Notes collapsible */}
+            {/* Collapsible notes */}
             <Collapsible>
-              <CollapsibleTrigger className="text-[10px] text-muted-foreground hover:text-foreground transition-colors">
-                {stream.notes ? 'Notes ▾' : '+ Add notes'}
+              <CollapsibleTrigger className="text-[10px] text-muted-foreground hover:text-foreground transition-colors cursor-pointer">
+                {stream.notes ? '▾ Notes' : '+ Add notes'}
               </CollapsibleTrigger>
               <CollapsibleContent>
                 <textarea
                   value={stream.notes || ''}
                   onChange={(e) => updateStream(idx, { notes: e.target.value })}
                   rows={2}
-                  className="w-full rounded-md border bg-background px-3 py-2 text-sm mt-1 resize-y"
-                  placeholder="Optional notes about this stream"
+                  className="w-full rounded-md border bg-background px-3 py-1.5 text-sm mt-1 resize-y"
+                  placeholder="Optional notes"
                 />
               </CollapsibleContent>
             </Collapsible>
@@ -347,7 +379,7 @@ function RevenueStreamsEditor({ streams, onChange, masterBrief }: {
       <button
         type="button"
         onClick={addStream}
-        className="flex items-center gap-1.5 px-3 py-2 text-xs font-medium rounded-md border border-dashed border-border text-muted-foreground hover:text-foreground hover:border-primary/50 transition-colors"
+        className="flex items-center gap-1.5 px-3 py-2 text-xs font-medium rounded-md border border-dashed border-border text-muted-foreground hover:text-foreground hover:border-primary/50 transition-colors w-full justify-center"
       >
         <Plus className="h-3.5 w-3.5" /> Add Revenue Stream
       </button>
@@ -485,10 +517,9 @@ function DiscoveryStep() {
           ]}
           onChange={(v) => updateD({ businessModel: v as BusinessModel })} />
         <ExpandableField label="Primary Products / Services" value={d.primaryProducts} onChange={(v) => updateD({ primaryProducts: v })} />
-        <ExpandableField label="Revenue Streams (notes)" value={d.revenueStreams} onChange={(v) => updateD({ revenueStreams: v })} hint="Free-text description of revenue streams" />
         <RevenueStreamsEditor
-          streams={d.revenueStreamsList || []}
-          onChange={(streams) => updateD({ revenueStreamsList: streams })}
+          streams={d.revenueStreams || []}
+          onChange={(streams) => updateD({ revenueStreams: streams })}
           masterBrief={onboarding.masterBrief}
         />
         <ExpandableField label="Core Customer Segments" value={d.coreCustomerSegments} onChange={(v) => updateD({ coreCustomerSegments: v })} />
