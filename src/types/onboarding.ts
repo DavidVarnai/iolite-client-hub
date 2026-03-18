@@ -152,13 +152,14 @@ export interface ClientDiscovery {
   // A. Business Overview
   businessModel: BusinessModel;
   primaryProducts: string;
-  revenueStreams: string;
-  /** @deprecated use revenueModel */
+  /** @deprecated — free-text description, kept for backward compat */
+  legacyRevenueStreamsText: string;
+  /** @deprecated use revenueStreams[] */
   avgOrderValue: string;
-  /** @deprecated use revenueStreamsList */
-  revenueModel: RevenueModelConfig;
-  /** Structured multi-stream revenue data */
-  revenueStreamsList: RevenueStream[];
+  /** @deprecated use revenueStreams[] */
+  legacyRevenueModel: RevenueModelConfig;
+  /** Structured multi-stream revenue data — single source of truth */
+  revenueStreams: RevenueStream[];
   coreCustomerSegments: string;
 
   // B. Growth Targets — Business Outcomes
