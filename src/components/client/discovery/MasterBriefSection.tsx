@@ -17,6 +17,7 @@ const MAX_FILE_SIZE = 5 * 1024 * 1024; // 5 MB
 const BINARY_TYPES = ['pdf', 'docx', 'doc'];
 
 type ExtractionStatus = 'idle' | 'loading' | 'success' | 'error';
+type ParseStatus = 'idle' | 'parsing' | 'done' | 'error';
 
 export default function MasterBriefSection() {
   const { onboarding, updateOnboarding } = useClientContext();
