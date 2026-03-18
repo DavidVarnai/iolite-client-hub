@@ -65,6 +65,18 @@ export function collectMIInputs(
     return map[ch] || ch;
   });
 
+  // Build master brief signals if extracted insights exist
+  const brief = onboarding.masterBrief;
+  const masterBriefSignals = brief?.extractedInsights ? {
+    audiences: brief.extractedInsights.audiences,
+    painPoints: brief.extractedInsights.painPoints,
+    valueProps: brief.extractedInsights.valueProps,
+    differentiators: brief.extractedInsights.differentiators,
+    positioning: brief.extractedInsights.positioning,
+    industries: brief.extractedInsights.industries,
+    inferredCompetitors: brief.extractedInsights.inferredCompetitors,
+  } : undefined;
+
   return {
     industry: client.industry,
     serviceArea: onboarding.serviceArea || '',
@@ -77,5 +89,6 @@ export function collectMIInputs(
     primaryGoal: d.primaryGrowthObjective || d.majorGrowthPriorities || onboarding.primaryGrowthGoal || '',
     budgetRange: '',
     selectedChannels: channels,
+    masterBriefSignals,
   };
 }

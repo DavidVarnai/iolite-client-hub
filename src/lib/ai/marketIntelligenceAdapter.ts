@@ -109,8 +109,13 @@ export async function generateMarketIntelligence(
   onProgress?: (pct: number, label: string) => void,
 ): Promise<MarketIntelligenceOutputs> {
   const ctx = buildContext(inputs);
+  const hasBriefSignals = !!(inputs.masterBriefSignals && (
+    inputs.masterBriefSignals.audiences?.length ||
+    inputs.masterBriefSignals.painPoints?.length ||
+    inputs.masterBriefSignals.inferredCompetitors?.length
+  ));
 
-  onProgress?.(5, 'Identifying core search keywords…');
+  onProgress?.(5, hasBriefSignals ? 'Enhancing with Master Brief insights…' : 'Identifying core search keywords…');
   await delay(400);
   const coreSearchKeywords = generateCoreKeywords(inputs, ctx);
 
@@ -129,9 +134,12 @@ export async function generateMarketIntelligence(
   await delay(500);
   const keywordThemes = generateKeywordThemes(inputs, ctx);
 
+  // Merge brief-inferred competitors into knownCompetitors for search
+  const enrichedInputs = hasBriefSignals ? enrichInputsWithBrief(inputs) : inputs;
+
   onProgress?.(50, 'Searching for competitors…');
   const searchCtx: CompetitorSearchContext = {
-    inputs,
+    inputs: enrichedInputs,
     discoveryQueries,
     coreKeywords: coreSearchKeywords,
     keywordThemes,
@@ -175,7 +183,25 @@ export async function generateMarketIntelligence(
     researchSourceMode,
     researchSourceNote,
     selectedResearchMode: inputs.competitorResearchMode || 'auto',
+    enhancedWithMasterBrief: hasBriefSignals,
   };
+}
+
+/** Enrich MI inputs with Master Brief signals without overwriting existing values */
+function enrichInputsWithBrief(inputs: MarketIntelligenceInputs): MarketIntelligenceInputs {
+  const brief = inputs.masterBriefSignals;
+  if (!brief) return inputs;
+
+  const enriched = { ...inputs };
+
+  // Add inferred competitors to known list (don't duplicate)
+  if (brief.inferredCompetitors?.length) {
+    const existing = new Set((enriched.knownCompetitors || []).map(c => c.toLowerCase()));
+    const toAdd = brief.inferredCompetitors.filter(c => !existing.has(c.toLowerCase()));
+    enriched.knownCompetitors = [...(enriched.knownCompetitors || []), ...toAdd];
+  }
+
+  return enriched;
 }
 
 /* ── Context ── */
@@ -462,7 +488,31 @@ function generateDiscoveryQueries(inputs: MarketIntelligenceInputs, ctx: Generat
     queries.push(`${inputs.industry.toLowerCase()} ${loc} reviews`);
   }
 
-  return [...new Set(queries.map(q => q.trim()).filter(Boolean))].slice(0, 5);
+  // Enhance with Master Brief signals
+  const brief = inputs.masterBriefSignals;
+  if (brief) {
+    // Add pain-point-driven queries
+    if (brief.painPoints?.length) {
+      const pain = brief.painPoints[0].toLowerCase();
+      queries.push(`${product} ${pain} ${loc}`.trim());
+    }
+    // Add audience-driven queries
+    if (brief.audiences?.length) {
+      const aud = brief.audiences[0].toLowerCase();
+      if (aud !== segment) {
+        queries.push(`${product} for ${aud} ${loc}`.trim());
+      }
+    }
+    // Add industry-specific queries from brief
+    if (brief.industries?.length) {
+      const ind = brief.industries[0].toLowerCase();
+      if (ind !== inputs.industry.toLowerCase()) {
+        queries.push(`${ind} ${product} ${loc}`.trim());
+      }
+    }
+  }
+
+  return [...new Set(queries.map(q => q.trim()).filter(Boolean))].slice(0, 7);
 }
 
 /* Old competitor pool code removed — now in competitorModeledProvider.ts */

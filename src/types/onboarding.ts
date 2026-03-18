@@ -261,6 +261,30 @@ export interface OnboardingContinuation {
   returnStep: string;
 }
 
+/* ── Master Brief ── */
+
+export interface MasterBriefExtractedInsights {
+  audiences: string[];
+  painPoints: string[];
+  valueProps: string[];
+  differentiators: string[];
+  positioning: string;
+  industries: string[];
+  inferredCompetitors: string[];
+  summary: string;
+}
+
+export interface MasterBrief {
+  rawText: string;
+  uploadedFileName?: string;
+  uploadedFileType?: string;
+  uploadedFileContent?: string;
+  lastUpdatedAt?: string;
+  extractedInsights?: MasterBriefExtractedInsights;
+}
+
+export const EMPTY_MASTER_BRIEF: MasterBrief = { rawText: '' };
+
 export interface OnboardingData {
   lifecycleStage: LifecycleStage;
   stageProgress?: ClientLifecycleProgress[]; // deprecated — computed dynamically
@@ -268,6 +292,7 @@ export interface OnboardingData {
   proposalReadyAt?: string;
   activatedAt?: string;
   discovery: ClientDiscovery;
+  masterBrief?: MasterBrief;
   website?: string;
   geography?: string;
   serviceArea?: string;

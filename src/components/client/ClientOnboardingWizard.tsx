@@ -9,6 +9,7 @@ import { runMarketResearch } from '@/lib/ai/aiActions';
 import { repository } from '@/lib/repository';
 import type { AiActionStatus } from '@/types/ai';
 import FunnelVisualPreview from './discovery/FunnelVisualPreview';
+import MasterBriefSection from './discovery/MasterBriefSection';
 import { Collapsible, CollapsibleTrigger, CollapsibleContent } from '@/components/ui/collapsible';
 
 type WizardStep = 'setup' | 'discovery' | 'strategy' | 'growth_model' | 'proposal';
@@ -275,6 +276,9 @@ function DiscoveryStep() {
         <h3 className="text-lg font-semibold mb-1">Discovery</h3>
         <p className="text-sm text-muted-foreground">Capture structured discovery inputs that will feed Strategy and Growth Model.</p>
       </div>
+
+      {/* Master Brief — optional augmentation layer */}
+      <MasterBriefSection />
 
       <DiscoverySection title="A. Business Overview">
         <SelectField label="Business Model" value={d.businessModel}

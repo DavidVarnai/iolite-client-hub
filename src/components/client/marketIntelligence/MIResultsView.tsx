@@ -102,6 +102,15 @@ export default function MIResultsView({ outputs, run, onRerun, onRefine, onAppro
         selectedMode={outputs.selectedResearchMode}
       />
 
+      {/* ─── MASTER BRIEF ENHANCEMENT BADGE ─── */}
+      {outputs.enhancedWithMasterBrief && (
+        <div className="flex items-center gap-2 px-3 py-2 rounded-md bg-primary/5 border border-primary/15">
+          <FileText className="h-3.5 w-3.5 text-primary" />
+          <span className="text-xs text-primary font-medium">Enhanced with Master Brief insights</span>
+          <span className="text-[10px] text-muted-foreground">— inferred competitors, audiences, and pain points used to improve discovery queries and competitor matching</span>
+        </div>
+      )}
+
       {/* ─── DISCOVERY QUERIES ─── */}
       {outputs.discoveryQueries && outputs.discoveryQueries.length > 0 && (
         <div className="panel p-5 space-y-3">
