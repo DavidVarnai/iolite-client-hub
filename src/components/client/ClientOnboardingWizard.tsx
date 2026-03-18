@@ -558,7 +558,17 @@ function DiscoveryStep() {
             { value: 'other', label: 'Other' },
           ]}
           onChange={(v) => updateD({ businessModel: v as BusinessModel })} />
-        <ExpandableField label="Primary Products / Services" value={d.primaryProducts} onChange={(v) => updateD({ primaryProducts: v })} />
+        <div className="col-span-2">
+          <ExpandableField label="Primary Products / Services" value={d.primaryProducts} onChange={(v) => updateD({ primaryProducts: v })} />
+          {briefSuggestions?.primaryProductsHint && (
+            <BriefSuggestionChips
+              suggestions={[briefSuggestions.primaryProductsHint]}
+              currentValue={d.primaryProducts}
+              onApply={(v) => updateD({ primaryProducts: v })}
+              mode="replace"
+            />
+          )}
+        </div>
         <RevenueStreamsEditor
           streams={d.revenueStreams || []}
           onChange={(streams) => updateD({ revenueStreams: streams })}
