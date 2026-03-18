@@ -103,6 +103,10 @@ export const c2Onboarding: OnboardingData = {
     revenueStreams: 'Retainer fees (60%), project-based (40%)',
     avgOrderValue: '$25,000 avg engagement',
     revenueModel: { revenueModelType: 'one_time', revenuePerConversion: 25000, revenueUnit: 'per_deal' },
+    revenueStreamsList: [
+      { id: 'rs-c2-1', name: 'Retainer fees', type: 'recurring', monthlyValue: 5000, contractLengthMonths: 12 },
+      { id: 'rs-c2-2', name: 'Project-based engagements', type: 'one_time', averageDealSize: 25000 },
+    ],
     coreCustomerSegments: 'Mid-market companies $10M-$100M revenue, C-suite decision makers',
     revenueTarget: 0,
     newCustomersTarget: 50,
