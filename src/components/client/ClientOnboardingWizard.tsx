@@ -161,6 +161,41 @@ function ClientSetupStep() {
   );
 }
 
+// ---------- Brief Suggestion Chips ----------
+function BriefSuggestionChips({ suggestions, currentValue, onApply, mode = 'replace' }: {
+  suggestions: string[];
+  currentValue: string;
+  onApply: (value: string) => void;
+  mode?: 'replace' | 'append';
+}) {
+  const lowerCurrent = currentValue.toLowerCase();
+  const available = suggestions.filter(s => s.trim().length > 0 && !lowerCurrent.includes(s.toLowerCase().trim()));
+  if (available.length === 0) return null;
+
+  return (
+    <div className="flex items-center gap-1.5 flex-wrap mt-1">
+      <FileText className="h-3 w-3 text-primary shrink-0" />
+      <span className="text-[10px] text-primary font-medium shrink-0">From Brief:</span>
+      {available.map((s, i) => (
+        <button
+          key={i}
+          type="button"
+          onClick={() => {
+            if (mode === 'append' && currentValue.trim()) {
+              onApply(currentValue.trim() + '\n' + s);
+            } else {
+              onApply(s);
+            }
+          }}
+          className="px-2 py-0.5 text-[11px] rounded-md border border-primary/20 bg-primary/5 text-primary hover:bg-primary/10 transition-colors truncate max-w-[220px]"
+        >
+          + {s}
+        </button>
+      ))}
+    </div>
+  );
+}
+
 // ---------- Revenue Streams Editor ----------
 function RevenueStreamsEditor({ streams, onChange, masterBrief }: {
   streams: RevenueStream[];
