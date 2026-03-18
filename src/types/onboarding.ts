@@ -453,9 +453,9 @@ export function getProposalChecklist(
   hasGrowthModel: boolean,
 ): ProposalChecklistItem[] {
   const d = onboarding.discovery;
-  const revenueStreamsSet = (d.revenueStreamsList?.length > 0) ? 'set' : (d.revenueModel && d.revenueModel.revenuePerConversion > 0 ? 'set' : '');
+  const revenueStreamsSet = (d.revenueStreams?.length > 0) ? 'set' : (d.legacyRevenueModel && d.legacyRevenueModel.revenuePerConversion > 0 ? 'set' : '');
   const revenueTargetSet = d.revenueTarget > 0 ? 'set' : (d.revenueTargets || '');
-  const dFields = [d.primaryProducts, d.revenueStreams, revenueStreamsSet, revenueTargetSet, d.newCustomersTarget > 0 ? 'set' : (d.customerLeadTargets || '')];
+  const dFields = [d.primaryProducts, d.legacyRevenueStreamsText, revenueStreamsSet, revenueTargetSet, d.newCustomersTarget > 0 ? 'set' : (d.customerLeadTargets || '')];
   const dFilled = dFields.filter(f => f && String(f).trim().length > 0).length;
 
   return [
