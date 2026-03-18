@@ -6,6 +6,7 @@
 import { useState, useRef, useCallback } from 'react';
 import { FileText, Upload, Sparkles, Loader2, Check, X, ChevronDown, ChevronUp, Eye, EyeOff, ShieldCheck, AlertTriangle, Layers, Info } from 'lucide-react';
 import { useClientContext } from '@/contexts/ClientContext';
+import { supabase } from '@/integrations/supabase/client';
 import type { MasterBrief, MasterBriefExtractedInsights, MasterBriefIncludedSections, DocumentChunk, ChunkProcessingStatus } from '@/types/onboarding';
 import { EMPTY_MASTER_BRIEF, DEFAULT_INCLUDED_SECTIONS } from '@/types/onboarding';
 import { processMasterBriefExtraction, detectExtractionMode } from '@/lib/ai/masterBriefChunking';
@@ -16,6 +17,7 @@ const MAX_FILE_SIZE = 5 * 1024 * 1024; // 5 MB
 const BINARY_TYPES = ['pdf', 'docx', 'doc'];
 
 type ExtractionStatus = 'idle' | 'loading' | 'success' | 'error';
+type ParseStatus = 'idle' | 'parsing' | 'done' | 'error';
 
 export default function MasterBriefSection() {
   const { onboarding, updateOnboarding } = useClientContext();
@@ -27,6 +29,8 @@ export default function MasterBriefSection() {
   const [confirmReextract, setConfirmReextract] = useState(false);
   const [chunkProgress, setChunkProgress] = useState<ChunkProcessingStatus | null>(null);
   const [showChunkDetails, setShowChunkDetails] = useState(false);
+  const [parseStatus, setParseStatus] = useState<ParseStatus>('idle');
+  const [parseError, setParseError] = useState('');
 
   const hasBrief = !!(brief.rawText?.trim() || brief.uploadedFileName);
   const hasInsights = !!brief.extractedInsights;
@@ -55,6 +59,7 @@ export default function MasterBriefSection() {
       return;
     }
     const ext = file.name.split('.').pop()?.toLowerCase() || '';
+
     if (ext === 'txt' || ext === 'md') {
       const text = await file.text();
       updateBrief({
@@ -64,6 +69,39 @@ export default function MasterBriefSection() {
         rawText: brief.rawText ? `${brief.rawText}\n\n--- Uploaded: ${file.name} ---\n\n${text}` : text,
         extractionSourceType: 'text',
       });
+    } else if (BINARY_TYPES.includes(ext)) {
+      // Binary file — send to parse-document edge function
+      setParseStatus('parsing');
+      setParseError('');
+      try {
+        const base64 = await readFileAsBase64(file);
+        const { data, error } = await supabase.functions.invoke('parse-document', {
+          body: { fileBase64: base64, fileName: file.name, mimeType: file.type },
+        });
+        if (error) throw error;
+        if (data?.error) throw new Error(data.error);
+
+        const extractedText = data.text as string;
+        updateBrief({
+          uploadedFileName: file.name,
+          uploadedFileType: ext,
+          uploadedFileContent: extractedText,
+          rawText: brief.rawText ? `${brief.rawText}\n\n--- Uploaded: ${file.name} ---\n\n${extractedText}` : extractedText,
+          extractionSourceType: ext as any,
+        });
+        setParseStatus('done');
+      } catch (err: any) {
+        console.error('Document parse failed:', err);
+        setParseError(err?.message || 'Failed to extract text from file.');
+        setParseStatus('error');
+        // Still store metadata so user knows a file was uploaded
+        updateBrief({
+          uploadedFileName: file.name,
+          uploadedFileType: ext,
+          uploadedFileContent: undefined,
+          extractionSourceType: ext as any,
+        });
+      }
     } else {
       updateBrief({
         uploadedFileName: file.name,
@@ -74,6 +112,20 @@ export default function MasterBriefSection() {
     }
     if (fileInputRef.current) fileInputRef.current.value = '';
   };
+
+  /* Read a File as base64 (strip the data-url prefix) */
+  function readFileAsBase64(file: File): Promise<string> {
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onload = () => {
+        const result = reader.result as string;
+        const base64 = result.split(',')[1]; // strip "data:…;base64,"
+        resolve(base64);
+      };
+      reader.onerror = () => reject(new Error('Failed to read file'));
+      reader.readAsDataURL(file);
+    });
+  }
 
   const handleExtractInsights = async () => {
     if (brief.isApproved && !confirmReextract) {
@@ -218,10 +270,22 @@ export default function MasterBriefSection() {
                   <X className="h-3 w-3" />
                 </button>
               </div>
-              {isBinaryUpload && !brief.uploadedFileContent && (
+              {isBinaryUpload && !brief.uploadedFileContent && parseStatus !== 'parsing' && (
                 <span className="flex items-center gap-1 text-[10px] text-amber-600 dark:text-amber-400">
                   <AlertTriangle className="h-3 w-3" />
-                  PDF/DOCX content not auto-extracted — paste key content below
+                  {parseStatus === 'error' ? (parseError || 'Text extraction failed — paste key content below') : 'PDF/DOCX content not auto-extracted — paste key content below'}
+                </span>
+              )}
+              {parseStatus === 'parsing' && (
+                <span className="flex items-center gap-1 text-[10px] text-primary">
+                  <Loader2 className="h-3 w-3 animate-spin" />
+                  Extracting text from document…
+                </span>
+              )}
+              {parseStatus === 'done' && brief.uploadedFileContent && (
+                <span className="flex items-center gap-1 text-[10px] text-green-600 dark:text-green-400">
+                  <Check className="h-3 w-3" />
+                  Extracted {(brief.uploadedFileContent.length / 1000).toFixed(1)}k characters
                 </span>
               )}
             </div>
