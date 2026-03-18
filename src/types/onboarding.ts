@@ -151,7 +151,10 @@ export interface ClientDiscovery {
   revenueStreams: string;
   /** @deprecated use revenueModel */
   avgOrderValue: string;
+  /** @deprecated use revenueStreamsList */
   revenueModel: RevenueModelConfig;
+  /** Structured multi-stream revenue data */
+  revenueStreamsList: RevenueStream[];
   coreCustomerSegments: string;
 
   // B. Growth Targets — Business Outcomes
