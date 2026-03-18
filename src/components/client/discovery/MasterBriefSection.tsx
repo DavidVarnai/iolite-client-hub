@@ -1,16 +1,18 @@
 /**
  * MasterBriefSection — upload or paste a strategic document to enhance MI and Strategy.
  * Compact, optional augmentation layer at the top of Discovery.
+ * Includes approval workflow and per-section include/exclude toggles that actually filter downstream signals.
  */
 import { useState, useRef, useCallback } from 'react';
-import { FileText, Upload, Sparkles, Loader2, Check, X, ChevronDown, ChevronUp, Eye, EyeOff } from 'lucide-react';
+import { FileText, Upload, Sparkles, Loader2, Check, X, ChevronDown, ChevronUp, Eye, EyeOff, ShieldCheck, AlertTriangle } from 'lucide-react';
 import { useClientContext } from '@/contexts/ClientContext';
-import type { MasterBrief, MasterBriefExtractedInsights } from '@/types/onboarding';
-import { EMPTY_MASTER_BRIEF } from '@/types/onboarding';
+import type { MasterBrief, MasterBriefExtractedInsights, MasterBriefIncludedSections } from '@/types/onboarding';
+import { EMPTY_MASTER_BRIEF, DEFAULT_INCLUDED_SECTIONS } from '@/types/onboarding';
 import { supabase } from '@/integrations/supabase/client';
 
 const ACCEPTED_TYPES = '.pdf,.docx,.doc,.txt,.md';
 const MAX_FILE_SIZE = 5 * 1024 * 1024; // 5 MB
+const BINARY_TYPES = ['pdf', 'docx', 'doc'];
 
 type ExtractionStatus = 'idle' | 'loading' | 'success' | 'error';
 
@@ -21,9 +23,11 @@ export default function MasterBriefSection() {
   const [extractionStatus, setExtractionStatus] = useState<ExtractionStatus>(brief.extractedInsights ? 'success' : 'idle');
   const [extractionError, setExtractionError] = useState('');
   const [expanded, setExpanded] = useState(false);
+  const [confirmReextract, setConfirmReextract] = useState(false);
 
   const hasBrief = !!(brief.rawText?.trim() || brief.uploadedFileName);
   const hasInsights = !!brief.extractedInsights;
+  const isBinaryUpload = brief.uploadedFileType && BINARY_TYPES.includes(brief.uploadedFileType);
 
   const updateBrief = useCallback((patch: Partial<MasterBrief>) => {
     const next = { ...brief, ...patch, lastUpdatedAt: new Date().toISOString() };
@@ -34,7 +38,7 @@ export default function MasterBriefSection() {
     updateBrief({ rawText: text });
     // Clear previous extraction when content changes significantly
     if (brief.extractedInsights && Math.abs(text.length - (brief.rawText?.length || 0)) > 50) {
-      updateBrief({ rawText: text, extractedInsights: undefined });
+      updateBrief({ rawText: text, extractedInsights: undefined, isApproved: false, approvedAt: undefined });
       setExtractionStatus('idle');
     }
   };
@@ -56,17 +60,24 @@ export default function MasterBriefSection() {
         rawText: brief.rawText ? `${brief.rawText}\n\n--- Uploaded: ${file.name} ---\n\n${text}` : text,
       });
     } else {
-      // For PDF/DOCX, store the file name and note that content extraction requires parsing
+      // Binary file — store metadata only, prompt user to paste content
       updateBrief({
         uploadedFileName: file.name,
         uploadedFileType: ext,
-        uploadedFileContent: `[File uploaded: ${file.name} — paste key content below or extract insights to parse]`,
+        uploadedFileContent: undefined,
       });
     }
     if (fileInputRef.current) fileInputRef.current.value = '';
   };
 
   const handleExtractInsights = async () => {
+    // If already approved, require confirmation before re-extracting
+    if (brief.isApproved && !confirmReextract) {
+      setConfirmReextract(true);
+      return;
+    }
+    setConfirmReextract(false);
+
     const content = brief.rawText?.trim() || brief.uploadedFileContent?.trim();
     if (!content || content.length < 50) {
       setExtractionError('Please provide at least a few sentences of content.');
@@ -81,7 +92,12 @@ export default function MasterBriefSection() {
       });
       if (error) throw error;
       const insights = data as MasterBriefExtractedInsights;
-      updateBrief({ extractedInsights: insights });
+      updateBrief({
+        extractedInsights: insights,
+        includedSections: { ...DEFAULT_INCLUDED_SECTIONS },
+        isApproved: false,
+        approvedAt: undefined,
+      });
       setExtractionStatus('success');
     } catch (err: any) {
       console.error('Master Brief extraction failed:', err);
@@ -90,10 +106,23 @@ export default function MasterBriefSection() {
     }
   };
 
+  const handleApproveInsights = () => {
+    updateBrief({
+      isApproved: true,
+      approvedAt: new Date().toISOString(),
+    });
+  };
+
+  const handleUpdateIncluded = (key: string, value: boolean) => {
+    const current = brief.includedSections || { ...DEFAULT_INCLUDED_SECTIONS };
+    updateBrief({ includedSections: { ...current, [key]: value } });
+  };
+
   const clearBrief = () => {
     updateOnboarding(prev => ({ ...prev, masterBrief: undefined }));
     setExtractionStatus('idle');
     setExtractionError('');
+    setConfirmReextract(false);
   };
 
   return (
@@ -103,6 +132,11 @@ export default function MasterBriefSection() {
           <FileText className="h-4 w-4 text-primary" />
           <h4 className="text-sm font-semibold">Master Brief</h4>
           <span className="text-[10px] text-muted-foreground bg-muted px-1.5 py-0.5 rounded">Optional</span>
+          {brief.isApproved && (
+            <span className="flex items-center gap-1 text-[10px] font-medium text-green-600 dark:text-green-400 bg-green-50 dark:bg-green-900/20 px-1.5 py-0.5 rounded">
+              <ShieldCheck className="h-3 w-3" /> Approved
+            </span>
+          )}
         </div>
         {hasBrief && (
           <button
@@ -144,12 +178,20 @@ export default function MasterBriefSection() {
         </div>
         <div className="flex items-center gap-2 text-xs text-muted-foreground">
           {brief.uploadedFileName && (
-            <div className="flex items-center gap-1.5 px-2 py-1 rounded bg-muted text-foreground">
-              <FileText className="h-3 w-3" />
-              <span className="truncate max-w-[140px]">{brief.uploadedFileName}</span>
-              <button type="button" onClick={() => updateBrief({ uploadedFileName: undefined, uploadedFileType: undefined, uploadedFileContent: undefined })} className="text-muted-foreground hover:text-destructive">
-                <X className="h-3 w-3" />
-              </button>
+            <div className="flex flex-col gap-1">
+              <div className="flex items-center gap-1.5 px-2 py-1 rounded bg-muted text-foreground">
+                <FileText className="h-3 w-3" />
+                <span className="truncate max-w-[140px]">{brief.uploadedFileName}</span>
+                <button type="button" onClick={() => updateBrief({ uploadedFileName: undefined, uploadedFileType: undefined, uploadedFileContent: undefined })} className="text-muted-foreground hover:text-destructive">
+                  <X className="h-3 w-3" />
+                </button>
+              </div>
+              {isBinaryUpload && !brief.uploadedFileContent && (
+                <span className="flex items-center gap-1 text-[10px] text-amber-600 dark:text-amber-400">
+                  <AlertTriangle className="h-3 w-3" />
+                  PDF/DOCX content not auto-extracted — paste key content below
+                </span>
+              )}
             </div>
           )}
         </div>
@@ -165,21 +207,30 @@ export default function MasterBriefSection() {
 
       {/* Extract insights button */}
       {hasBrief && (
-        <div className="flex items-center gap-3">
-          <button
-            type="button"
-            onClick={handleExtractInsights}
-            disabled={extractionStatus === 'loading'}
-            className="flex items-center gap-1.5 px-4 py-2 text-xs font-medium rounded-md bg-primary/10 text-primary hover:bg-primary/20 transition-colors disabled:opacity-50"
-          >
-            {extractionStatus === 'loading' ? (
-              <><Loader2 className="h-3.5 w-3.5 animate-spin" /> Extracting…</>
-            ) : extractionStatus === 'success' ? (
-              <><Check className="h-3.5 w-3.5" /> Re-extract Insights</>
-            ) : (
-              <><Sparkles className="h-3.5 w-3.5" /> Extract Insights</>
-            )}
-          </button>
+        <div className="flex items-center gap-3 flex-wrap">
+          {confirmReextract ? (
+            <div className="flex items-center gap-2 px-3 py-2 rounded-md bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800">
+              <AlertTriangle className="h-3.5 w-3.5 text-amber-600 dark:text-amber-400" />
+              <span className="text-xs text-amber-700 dark:text-amber-400">This will replace approved insights. Continue?</span>
+              <button type="button" onClick={handleExtractInsights} className="px-2 py-1 text-xs font-medium rounded bg-amber-600 text-white hover:bg-amber-700">Yes, Re-extract</button>
+              <button type="button" onClick={() => setConfirmReextract(false)} className="text-xs text-muted-foreground hover:text-foreground">Cancel</button>
+            </div>
+          ) : (
+            <button
+              type="button"
+              onClick={handleExtractInsights}
+              disabled={extractionStatus === 'loading'}
+              className="flex items-center gap-1.5 px-4 py-2 text-xs font-medium rounded-md bg-primary/10 text-primary hover:bg-primary/20 transition-colors disabled:opacity-50"
+            >
+              {extractionStatus === 'loading' ? (
+                <><Loader2 className="h-3.5 w-3.5 animate-spin" /> Extracting…</>
+              ) : extractionStatus === 'success' ? (
+                <><Check className="h-3.5 w-3.5" /> Re-extract Insights</>
+              ) : (
+                <><Sparkles className="h-3.5 w-3.5" /> Extract Insights</>
+              )}
+            </button>
+          )}
           <button
             type="button"
             onClick={clearBrief}
@@ -194,7 +245,16 @@ export default function MasterBriefSection() {
       )}
 
       {/* Extracted Insights review */}
-      {hasInsights && <ExtractedInsightsReview insights={brief.extractedInsights!} onUpdate={(updated) => updateBrief({ extractedInsights: updated })} />}
+      {hasInsights && (
+        <ExtractedInsightsReview
+          insights={brief.extractedInsights!}
+          includedSections={brief.includedSections || { ...DEFAULT_INCLUDED_SECTIONS }}
+          isApproved={!!brief.isApproved}
+          onUpdate={(updated) => updateBrief({ extractedInsights: updated })}
+          onToggleSection={handleUpdateIncluded}
+          onApprove={handleApproveInsights}
+        />
+      )}
     </div>
   );
 }
@@ -220,7 +280,7 @@ function InsightSection({ label, items, included, onToggle, onEdit }: InsightSec
       <div className="flex items-center justify-between">
         <span className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider">{label}</span>
         <div className="flex items-center gap-1.5">
-          <button type="button" onClick={onToggle} className="p-0.5 text-muted-foreground hover:text-foreground transition-colors" title={included ? 'Exclude' : 'Include'}>
+          <button type="button" onClick={onToggle} className="p-0.5 text-muted-foreground hover:text-foreground transition-colors" title={included ? 'Exclude from downstream' : 'Include in downstream'}>
             {included ? <Eye className="h-3 w-3" /> : <EyeOff className="h-3 w-3" />}
           </button>
           {included && (
@@ -257,14 +317,16 @@ function InsightSection({ label, items, included, onToggle, onEdit }: InsightSec
   );
 }
 
-function ExtractedInsightsReview({ insights, onUpdate }: { insights: MasterBriefExtractedInsights; onUpdate: (i: MasterBriefExtractedInsights) => void }) {
-  const [included, setIncluded] = useState<Record<string, boolean>>({
-    audiences: true, painPoints: true, valueProps: true, differentiators: true,
-    positioning: true, industries: true, inferredCompetitors: true,
-  });
+interface ExtractedInsightsReviewProps {
+  insights: MasterBriefExtractedInsights;
+  includedSections: MasterBriefIncludedSections;
+  isApproved: boolean;
+  onUpdate: (i: MasterBriefExtractedInsights) => void;
+  onToggleSection: (key: string, value: boolean) => void;
+  onApprove: () => void;
+}
 
-  const toggle = (key: string) => setIncluded(prev => ({ ...prev, [key]: !prev[key] }));
-
+function ExtractedInsightsReview({ insights, includedSections, isApproved, onUpdate, onToggleSection, onApprove }: ExtractedInsightsReviewProps) {
   const sections: { key: keyof MasterBriefExtractedInsights; label: string }[] = [
     { key: 'audiences', label: 'Audience Segments' },
     { key: 'painPoints', label: 'Pain Points' },
@@ -275,22 +337,44 @@ function ExtractedInsightsReview({ insights, onUpdate }: { insights: MasterBrief
   ];
 
   return (
-    <div className="panel p-4 space-y-3 border-primary/20 bg-primary/[0.02]">
-      <div className="flex items-center gap-2">
-        <Sparkles className="h-3.5 w-3.5 text-primary" />
-        <span className="text-xs font-semibold">Extracted Insights from Master Brief</span>
+    <div className={`panel p-4 space-y-3 ${isApproved ? 'border-green-200 dark:border-green-800 bg-green-50/30 dark:bg-green-900/5' : 'border-primary/20 bg-primary/[0.02]'}`}>
+      <div className="flex items-center justify-between">
+        <div className="flex items-center gap-2">
+          <Sparkles className="h-3.5 w-3.5 text-primary" />
+          <span className="text-xs font-semibold">Extracted Insights from Master Brief</span>
+          {isApproved && (
+            <span className="flex items-center gap-1 text-[10px] font-medium text-green-600 dark:text-green-400">
+              <ShieldCheck className="h-3 w-3" /> Approved — used downstream
+            </span>
+          )}
+        </div>
+        {!isApproved && (
+          <button
+            type="button"
+            onClick={onApprove}
+            className="flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-medium bg-green-600 text-white hover:bg-green-700 transition-colors"
+          >
+            <ShieldCheck className="h-3 w-3" /> Approve Insights
+          </button>
+        )}
       </div>
+
+      {!isApproved && (
+        <p className="text-[10px] text-muted-foreground italic">
+          Review, edit, and toggle sections, then approve to make these signals available to Market Intelligence and Strategy.
+        </p>
+      )}
 
       {insights.summary && (
         <p className="text-xs text-muted-foreground leading-relaxed">{insights.summary}</p>
       )}
 
       {insights.positioning && (
-        <div className={`space-y-1 ${!included.positioning ? 'opacity-50' : ''}`}>
+        <div className={`space-y-1 ${includedSections.positioning === false ? 'opacity-50' : ''}`}>
           <div className="flex items-center justify-between">
             <span className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider">Positioning</span>
-            <button type="button" onClick={() => toggle('positioning')} className="p-0.5 text-muted-foreground hover:text-foreground">
-              {included.positioning ? <Eye className="h-3 w-3" /> : <EyeOff className="h-3 w-3" />}
+            <button type="button" onClick={() => onToggleSection('positioning', !(includedSections.positioning !== false))} className="p-0.5 text-muted-foreground hover:text-foreground">
+              {includedSections.positioning !== false ? <Eye className="h-3 w-3" /> : <EyeOff className="h-3 w-3" />}
             </button>
           </div>
           <p className="text-xs text-foreground">{insights.positioning}</p>
@@ -305,8 +389,8 @@ function ExtractedInsightsReview({ insights, onUpdate }: { insights: MasterBrief
             key={key}
             label={label}
             items={items as string[]}
-            included={included[key] !== false}
-            onToggle={() => toggle(key)}
+            included={includedSections[key] !== false}
+            onToggle={() => onToggleSection(key, !(includedSections[key] !== false))}
             onEdit={(updated) => onUpdate({ ...insights, [key]: updated })}
           />
         );

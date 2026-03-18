@@ -274,6 +274,19 @@ export interface MasterBriefExtractedInsights {
   summary: string;
 }
 
+/** Per-section include/exclude state for extracted insights */
+export type MasterBriefIncludedSections = Record<string, boolean>;
+
+export const DEFAULT_INCLUDED_SECTIONS: MasterBriefIncludedSections = {
+  audiences: true,
+  painPoints: true,
+  valueProps: true,
+  differentiators: true,
+  positioning: true,
+  industries: true,
+  inferredCompetitors: true,
+};
+
 export interface MasterBrief {
   rawText: string;
   uploadedFileName?: string;
@@ -281,9 +294,31 @@ export interface MasterBrief {
   uploadedFileContent?: string;
   lastUpdatedAt?: string;
   extractedInsights?: MasterBriefExtractedInsights;
+  /** Per-section include/exclude toggles — only included sections go downstream */
+  includedSections?: MasterBriefIncludedSections;
+  /** Whether extracted insights have been explicitly approved */
+  isApproved?: boolean;
+  approvedAt?: string;
 }
 
 export const EMPTY_MASTER_BRIEF: MasterBrief = { rawText: '' };
+
+/** Build filtered signals from approved brief — only included sections */
+export function getApprovedBriefSignals(brief?: MasterBrief): MasterBriefExtractedInsights | null {
+  if (!brief?.extractedInsights || !brief.isApproved) return null;
+  const inc = brief.includedSections || DEFAULT_INCLUDED_SECTIONS;
+  const ins = brief.extractedInsights;
+  return {
+    audiences: inc.audiences !== false ? ins.audiences : [],
+    painPoints: inc.painPoints !== false ? ins.painPoints : [],
+    valueProps: inc.valueProps !== false ? ins.valueProps : [],
+    differentiators: inc.differentiators !== false ? ins.differentiators : [],
+    positioning: inc.positioning !== false ? ins.positioning : '',
+    industries: inc.industries !== false ? ins.industries : [],
+    inferredCompetitors: inc.inferredCompetitors !== false ? ins.inferredCompetitors : [],
+    summary: ins.summary,
+  };
+}
 
 export interface OnboardingData {
   lifecycleStage: LifecycleStage;

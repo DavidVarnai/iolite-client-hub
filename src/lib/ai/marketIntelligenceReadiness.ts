@@ -4,6 +4,7 @@
  */
 import type { Client } from '@/types';
 import type { OnboardingData } from '@/types/onboarding';
+import { getApprovedBriefSignals } from '@/types/onboarding';
 import type { MarketIntelligenceInputs } from '@/types/marketIntelligence';
 
 export interface ReadinessCheck {
@@ -65,16 +66,16 @@ export function collectMIInputs(
     return map[ch] || ch;
   });
 
-  // Build master brief signals if extracted insights exist
-  const brief = onboarding.masterBrief;
-  const masterBriefSignals = brief?.extractedInsights ? {
-    audiences: brief.extractedInsights.audiences,
-    painPoints: brief.extractedInsights.painPoints,
-    valueProps: brief.extractedInsights.valueProps,
-    differentiators: brief.extractedInsights.differentiators,
-    positioning: brief.extractedInsights.positioning,
-    industries: brief.extractedInsights.industries,
-    inferredCompetitors: brief.extractedInsights.inferredCompetitors,
+  // Only pass approved + included signals downstream
+  const approvedInsights = getApprovedBriefSignals(onboarding.masterBrief);
+  const masterBriefSignals = approvedInsights ? {
+    audiences: approvedInsights.audiences,
+    painPoints: approvedInsights.painPoints,
+    valueProps: approvedInsights.valueProps,
+    differentiators: approvedInsights.differentiators,
+    positioning: approvedInsights.positioning,
+    industries: approvedInsights.industries,
+    inferredCompetitors: approvedInsights.inferredCompetitors,
   } : undefined;
 
   return {
