@@ -48,6 +48,11 @@ export default function ResearchSetupStep({ initialInputs, onRun }: Props) {
   };
 
   const activeMode = inputs.competitorResearchMode || 'auto';
+  const hasBriefSignals = !!(inputs.masterBriefSignals && (
+    inputs.masterBriefSignals.audiences?.length ||
+    inputs.masterBriefSignals.inferredCompetitors?.length ||
+    inputs.masterBriefSignals.painPoints?.length
+  ));
 
   return (
     <div className="space-y-6 max-w-2xl mx-auto py-4">
@@ -57,6 +62,21 @@ export default function ResearchSetupStep({ initialInputs, onRun }: Props) {
           Review and adjust inputs before running Market Intelligence.
         </p>
       </div>
+
+      {/* Master Brief Enhancement indicator */}
+      {hasBriefSignals && (
+        <div className="flex items-center gap-2 px-3 py-2 rounded-md bg-primary/5 border border-primary/15">
+          <FileText className="h-3.5 w-3.5 text-primary" />
+          <span className="text-xs text-primary font-medium">Enhanced with Master Brief insights</span>
+          <span className="text-[10px] text-muted-foreground">
+            — {[
+              inputs.masterBriefSignals?.inferredCompetitors?.length ? `${inputs.masterBriefSignals.inferredCompetitors.length} competitors` : '',
+              inputs.masterBriefSignals?.audiences?.length ? `${inputs.masterBriefSignals.audiences.length} audiences` : '',
+              inputs.masterBriefSignals?.painPoints?.length ? `${inputs.masterBriefSignals.painPoints.length} pain points` : '',
+            ].filter(Boolean).join(', ')} will be used to enhance discovery
+          </span>
+        </div>
+      )}
 
       {/* Competitor Research Mode */}
       <div className="panel p-4 space-y-3">
