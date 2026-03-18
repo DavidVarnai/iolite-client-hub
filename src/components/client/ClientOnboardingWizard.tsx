@@ -9,6 +9,7 @@ import { runMarketResearch } from '@/lib/ai/aiActions';
 import { repository } from '@/lib/repository';
 import type { AiActionStatus } from '@/types/ai';
 import FunnelVisualPreview from './discovery/FunnelVisualPreview';
+import MasterBriefSection from './discovery/MasterBriefSection';
 import { Collapsible, CollapsibleTrigger, CollapsibleContent } from '@/components/ui/collapsible';
 
 type WizardStep = 'setup' | 'discovery' | 'strategy' | 'growth_model' | 'proposal';
