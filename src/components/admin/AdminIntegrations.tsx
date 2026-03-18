@@ -201,18 +201,50 @@ function SearchProviderTest({ researchMode }: { researchMode: CompetitorResearch
           <Row label="Admin mode" value={RESEARCH_MODES.find(m => m.value === researchMode)?.label ?? researchMode} />
           <Row label="Effective source" value={test.effectiveMode} />
           {test.latencyMs !== undefined && <Row label="Latency" value={`${test.latencyMs}ms`} />}
-          {test.organicCount !== undefined && <Row label="Sample results" value={`${test.organicCount} organic · ${test.paidCount ?? 0} paid`} />}
+          <Row label="Test query" value={`"${test.sampleQuery}"`} />
         </div>
 
-        {/* Error message */}
-        {test.error && (
-          <div className="rounded-md bg-destructive/5 border border-destructive/20 px-3 py-2 text-xs text-destructive">
-            {test.error}
-            {researchMode === 'auto' && (
-              <p className="mt-1 text-muted-foreground">Mode is "Auto" — the system would fall back to modeled research.</p>
+        {/* Sample results + domains */}
+        {test.organicCount !== undefined && (
+          <div className="rounded-md bg-muted/50 border border-border px-3 py-2 space-y-1.5">
+            <div className="flex items-center gap-3 text-xs">
+              <span className="text-muted-foreground">Results:</span>
+              <span className="font-medium text-foreground">{test.organicCount} organic · {test.paidCount ?? 0} paid</span>
+            </div>
+            {test.topDomains && test.topDomains.length > 0 && (
+              <div className="text-xs">
+                <span className="text-muted-foreground">Top domains: </span>
+                <span className="font-mono text-[11px] text-foreground">
+                  {test.topDomains.join(', ')}
+                </span>
+              </div>
             )}
-            {researchMode === 'live_only' && (
-              <p className="mt-1 font-medium">Mode is "Live Only" — MI runs will fail until this is resolved.</p>
+          </div>
+        )}
+
+        {/* Decision reasoning */}
+        {test.reasoning && (
+          <div className="rounded-md bg-primary/5 border border-primary/10 px-3 py-2 text-xs text-muted-foreground leading-relaxed">
+            <span className="font-medium text-foreground">Decision: </span>{test.reasoning}
+          </div>
+        )}
+
+        {/* Failure detail */}
+        {test.error && (
+          <div className="rounded-md bg-destructive/5 border border-destructive/20 px-3 py-2 text-xs space-y-1">
+            <div className="flex items-start gap-1.5">
+              <AlertCircle className="h-3.5 w-3.5 text-destructive shrink-0 mt-0.5" />
+              <div>
+                <span className="font-medium text-destructive">
+                  {test.failReason === 'missing_api_key' && 'Missing API Key — '}
+                  {test.failReason === 'request_error' && 'Request Error — '}
+                  {test.failReason === 'empty_results' && 'Empty Results — '}
+                </span>
+                <span className="text-destructive">{test.error}</span>
+              </div>
+            </div>
+            {test.failReason === 'missing_api_key' && (
+              <p className="text-muted-foreground ml-5">Add the SerpAPI secret in your backend function configuration.</p>
             )}
           </div>
         )}
