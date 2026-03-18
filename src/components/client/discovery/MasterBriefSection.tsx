@@ -59,6 +59,7 @@ export default function MasterBriefSection() {
       return;
     }
     const ext = file.name.split('.').pop()?.toLowerCase() || '';
+
     if (ext === 'txt' || ext === 'md') {
       const text = await file.text();
       updateBrief({
@@ -68,6 +69,39 @@ export default function MasterBriefSection() {
         rawText: brief.rawText ? `${brief.rawText}\n\n--- Uploaded: ${file.name} ---\n\n${text}` : text,
         extractionSourceType: 'text',
       });
+    } else if (BINARY_TYPES.includes(ext)) {
+      // Binary file — send to parse-document edge function
+      setParseStatus('parsing');
+      setParseError('');
+      try {
+        const base64 = await readFileAsBase64(file);
+        const { data, error } = await supabase.functions.invoke('parse-document', {
+          body: { fileBase64: base64, fileName: file.name, mimeType: file.type },
+        });
+        if (error) throw error;
+        if (data?.error) throw new Error(data.error);
+
+        const extractedText = data.text as string;
+        updateBrief({
+          uploadedFileName: file.name,
+          uploadedFileType: ext,
+          uploadedFileContent: extractedText,
+          rawText: brief.rawText ? `${brief.rawText}\n\n--- Uploaded: ${file.name} ---\n\n${extractedText}` : extractedText,
+          extractionSourceType: ext as any,
+        });
+        setParseStatus('done');
+      } catch (err: any) {
+        console.error('Document parse failed:', err);
+        setParseError(err?.message || 'Failed to extract text from file.');
+        setParseStatus('error');
+        // Still store metadata so user knows a file was uploaded
+        updateBrief({
+          uploadedFileName: file.name,
+          uploadedFileType: ext,
+          uploadedFileContent: undefined,
+          extractionSourceType: ext as any,
+        });
+      }
     } else {
       updateBrief({
         uploadedFileName: file.name,
@@ -78,6 +112,20 @@ export default function MasterBriefSection() {
     }
     if (fileInputRef.current) fileInputRef.current.value = '';
   };
+
+  /* Read a File as base64 (strip the data-url prefix) */
+  function readFileAsBase64(file: File): Promise<string> {
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onload = () => {
+        const result = reader.result as string;
+        const base64 = result.split(',')[1]; // strip "data:…;base64,"
+        resolve(base64);
+      };
+      reader.onerror = () => reject(new Error('Failed to read file'));
+      reader.readAsDataURL(file);
+    });
+  }
 
   const handleExtractInsights = async () => {
     if (brief.isApproved && !confirmReextract) {
