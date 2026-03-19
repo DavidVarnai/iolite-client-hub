@@ -81,12 +81,12 @@ export default function AgencyFeesSummaryCard() {
         </div>
         <button
           onClick={() => {
-            const event = new CustomEvent('navigate-tab', { detail: { tab: 'proposal' } });
+            const event = new CustomEvent('navigate-tab', { detail: { tab: 'services-config' } });
             window.dispatchEvent(event);
           }}
           className="flex items-center gap-1.5 text-xs font-medium text-primary hover:underline"
         >
-          Manage in Proposal Ready <ArrowRight className="h-3 w-3" />
+          Manage in Services Config <ArrowRight className="h-3 w-3" />
         </button>
       </div>
       <div className="grid grid-cols-3 gap-4">

@@ -463,8 +463,17 @@ export function computeStageReadiness(
     percentComplete: gmPct,
   });
 
+  // Services Config — has proposed agency services?
+  const hasServices = ((onboarding as any).proposedAgencyServices || []).length > 0;
+  const svcPct = hasServices ? 100 : 0;
+  progress.push({
+    stage: 'services_config',
+    status: svcPct >= 80 ? 'complete' : svcPct > 0 ? 'in_progress' : 'not_started',
+    percentComplete: svcPct,
+  });
+
   // Proposal Ready
-  const proposalChecks = [discoveryPct >= 80, hasMeaningfulStrategy, hasGrowthModel];
+  const proposalChecks = [discoveryPct >= 80, hasMeaningfulStrategy, hasGrowthModel, hasServices];
   const proposalPct = Math.round((proposalChecks.filter(Boolean).length / proposalChecks.length) * 100);
   progress.push({
     stage: 'proposal_ready',

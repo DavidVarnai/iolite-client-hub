@@ -292,7 +292,7 @@ function ClientHubContentInner({
               activeTab === t ? 'tab-active' : 'tab-inactive'
             }`}
           >
-            {t === 'growth-model' ? 'Growth Model' : t === 'unit-economics' ? 'Unit Economics' : t === 'proposal' ? 'Proposal' : t === 'intelligence' ? 'Intelligence' : t}
+            {t === 'growth-model' ? 'Growth Model' : t === 'unit-economics' ? 'Unit Economics' : t === 'proposal' ? 'Proposal' : t === 'intelligence' ? 'Intelligence' : t === 'services-config' ? 'Services Config' : t}
           </button>
         ))}
       </div>
