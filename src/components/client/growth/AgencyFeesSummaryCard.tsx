@@ -77,7 +77,7 @@ export default function AgencyFeesSummaryCard() {
           <div className="h-8 w-8 rounded-lg bg-primary/10 flex items-center justify-center">
             <Briefcase className="h-4 w-4 text-primary" />
           </div>
-          <h4 className="text-sm font-semibold text-foreground">Agency Services</h4>
+          <h4 className="text-sm font-semibold text-foreground">Agency Fees (from Services Config)</h4>
         </div>
         <button
           onClick={() => {
