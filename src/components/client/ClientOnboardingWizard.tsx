@@ -14,14 +14,15 @@ import MasterBriefSection from './discovery/MasterBriefSection';
 import { Collapsible, CollapsibleTrigger, CollapsibleContent } from '@/components/ui/collapsible';
 import { mapBriefToRevenueStreamSuggestions, mapBriefToDiscoverySuggestions } from '@/lib/ai/masterBriefRevenueHelper';
 
-type WizardStep = 'setup' | 'discovery' | 'strategy' | 'growth_model' | 'proposal';
+type WizardStep = 'setup' | 'discovery' | 'strategy' | 'growth_model' | 'services_config' | 'proposal';
 
 const STEPS: { key: WizardStep; label: string; number: number }[] = [
   { key: 'setup', label: 'Client Setup', number: 1 },
   { key: 'discovery', label: 'Discovery', number: 2 },
   { key: 'strategy', label: 'Strategy Draft', number: 3 },
   { key: 'growth_model', label: 'Growth Model', number: 4 },
-  { key: 'proposal', label: 'Proposal Ready', number: 5 },
+  { key: 'services_config', label: 'Services Config', number: 5 },
+  { key: 'proposal', label: 'Proposal Ready', number: 6 },
 ];
 
 interface Props {
@@ -1418,6 +1419,7 @@ function ProposalReadyStep({ onNavigateTab }: { onNavigateTab: (tab: string) => 
     { key: 'discovery', label: 'Discovery complete', complete: !!(onboarding.discovery.primaryProducts && (onboarding.discovery.revenueTarget > 0 || onboarding.discovery.revenueTargets)) },
     { key: 'strategy', label: 'Strategy module summarized', complete: client.strategySections.length > 0 },
     { key: 'growth_model', label: 'Growth model populated', complete: hasGrowthModel },
+    { key: 'services_config', label: 'Services configured', complete: ((onboarding as any).proposedAgencyServices || []).length > 0 },
   ];
 
   const allComplete = checklist.every(c => c.complete);
@@ -1671,6 +1673,20 @@ export default function ClientOnboardingWizard({ onClose, onNavigateTab, initial
                 {currentStep === 'discovery' && <DiscoveryStep />}
                 {currentStep === 'strategy' && <StrategyDraftStep onNavigateTab={handleCloseAndNavigate} />}
                 {currentStep === 'growth_model' && <GrowthModelStep onNavigateTab={handleCloseAndNavigate} />}
+                {currentStep === 'services_config' && (
+                  <div className="space-y-4">
+                    <h3 className="text-base font-semibold text-foreground">Services Configuration</h3>
+                    <p className="text-sm text-muted-foreground">
+                      Configure your agency services and pricing in the dedicated Services Config tab.
+                    </p>
+                    <button
+                      onClick={() => handleCloseAndNavigate('services-config')}
+                      className="px-4 py-2 bg-primary text-primary-foreground text-sm font-medium rounded-md hover:opacity-90 transition-opacity"
+                    >
+                      Open Services Config
+                    </button>
+                  </div>
+                )}
                 {currentStep === 'proposal' && <ProposalReadyStep onNavigateTab={handleCloseAndNavigate} />}
               </motion.div>
             </AnimatePresence>

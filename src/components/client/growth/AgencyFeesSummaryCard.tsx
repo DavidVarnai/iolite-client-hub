@@ -53,18 +53,18 @@ export default function AgencyFeesSummaryCard() {
             <Briefcase className="h-4 w-4 text-muted-foreground" />
           </div>
           <div>
-            <h4 className="text-sm font-semibold text-foreground">Agency Services</h4>
+            <h4 className="text-sm font-semibold text-foreground">Agency Fees (from Services Config)</h4>
             <p className="text-xs text-muted-foreground">No agency services configured yet</p>
           </div>
         </div>
         <button
           onClick={() => {
-            const event = new CustomEvent('navigate-tab', { detail: { tab: 'proposal' } });
+            const event = new CustomEvent('navigate-tab', { detail: { tab: 'services-config' } });
             window.dispatchEvent(event);
           }}
           className="flex items-center gap-1.5 text-xs font-medium text-primary hover:underline"
         >
-          Set up in Proposal Ready <ArrowRight className="h-3 w-3" />
+          Set up in Services Config <ArrowRight className="h-3 w-3" />
         </button>
       </div>
     );
@@ -77,16 +77,16 @@ export default function AgencyFeesSummaryCard() {
           <div className="h-8 w-8 rounded-lg bg-primary/10 flex items-center justify-center">
             <Briefcase className="h-4 w-4 text-primary" />
           </div>
-          <h4 className="text-sm font-semibold text-foreground">Agency Services</h4>
+          <h4 className="text-sm font-semibold text-foreground">Agency Fees (from Services Config)</h4>
         </div>
         <button
           onClick={() => {
-            const event = new CustomEvent('navigate-tab', { detail: { tab: 'proposal' } });
+            const event = new CustomEvent('navigate-tab', { detail: { tab: 'services-config' } });
             window.dispatchEvent(event);
           }}
           className="flex items-center gap-1.5 text-xs font-medium text-primary hover:underline"
         >
-          Manage in Proposal Ready <ArrowRight className="h-3 w-3" />
+          Manage in Services Config <ArrowRight className="h-3 w-3" />
         </button>
       </div>
       <div className="grid grid-cols-3 gap-4">

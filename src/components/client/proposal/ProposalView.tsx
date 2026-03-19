@@ -1,11 +1,12 @@
 /**
  * ProposalView — main orchestrator for the proposal tab in Client Hub.
- * Delegates rendering to extracted sub-components and generation to pure functions.
+ * Proposal consumes commercial data from Services Config (read-only).
  */
 import { useState, useMemo, useCallback } from 'react';
 import {
   FileText, Sparkles, Check, Target, DollarSign,
   TrendingUp, Calendar, ChevronRight, Clock, BarChart3,
+  Briefcase, ArrowRight,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -16,6 +17,9 @@ import { useClientContext } from '@/contexts/ClientContext';
 import { repository } from '@/lib/repository';
 import type { Proposal, ProposalStatus, ProposalSummaryData, ProposalTimelineData } from '@/types/proposal';
 import { PROPOSAL_STATUS_LABELS } from '@/types/proposal';
+import { formatCurrency } from '@/lib/parsing';
+import type { ProposedAgencyService } from '@/types/commercialServices';
+import { calcPaidMediaFee, PROPOSAL_PRICING_MODEL_LABELS } from '@/types/commercialServices';
 
 import { generateProposal, type GenerationConfig } from './proposalGeneration';
 import EditableText from './EditableText';
@@ -25,8 +29,90 @@ import ProposalPricingTable from './ProposalPricingTable';
 import ProposalGrowthModelPlaceholder from './ProposalGrowthModelPlaceholder';
 import ProposalConfigPanel from './ProposalConfigPanel';
 import RevenueModelDisplay from '../RevenueModelDisplay';
-import ProposedAgencyServices from './ProposedAgencyServices';
-import type { ProposedAgencyService } from '@/types/commercialServices';
+
+/** Read-only commercial summary pulled from Services Config */
+function CommercialSummary({ services, monthlyMediaSpend }: { services: ProposedAgencyService[]; monthlyMediaSpend: number }) {
+  if (services.length === 0) {
+    return (
+      <ProposalSection>
+        <SectionHeader icon={Briefcase} title="Commercials" />
+        <div className="panel p-5 text-center">
+          <p className="text-sm text-muted-foreground">No agency services configured yet.</p>
+          <button
+            onClick={() => window.dispatchEvent(new CustomEvent('navigate-tab', { detail: { tab: 'services-config' } }))}
+            className="mt-2 inline-flex items-center gap-1.5 text-xs font-medium text-primary hover:underline"
+          >
+            Set up in Services Config <ArrowRight className="h-3 w-3" />
+          </button>
+        </div>
+      </ProposalSection>
+    );
+  }
+
+  let totalMonthly = 0;
+  let totalSetup = 0;
+  for (const svc of services) {
+    if (svc.serviceLine === 'Paid Media Management' && svc.paidMediaConfig) {
+      totalMonthly += calcPaidMediaFee(svc.paidMediaConfig, monthlyMediaSpend).fee;
+    } else {
+      totalMonthly += svc.monthlyFee;
+    }
+    totalSetup += svc.setupFee;
+  }
+
+  return (
+    <ProposalSection>
+      <div className="flex items-center justify-between mb-3">
+        <SectionHeader icon={Briefcase} title="Commercials (from Services Config)" />
+        <button
+          onClick={() => window.dispatchEvent(new CustomEvent('navigate-tab', { detail: { tab: 'services-config' } }))}
+          className="flex items-center gap-1.5 text-xs font-medium text-primary hover:underline"
+        >
+          Edit in Services Config <ArrowRight className="h-3 w-3" />
+        </button>
+      </div>
+      <div className="panel overflow-hidden">
+        <table className="w-full text-xs">
+          <thead>
+            <tr className="border-b bg-muted/30">
+              <th className="text-left px-4 py-2.5 font-medium text-muted-foreground">Service</th>
+              <th className="text-left px-3 py-2.5 font-medium text-muted-foreground">Pricing Model</th>
+              <th className="text-left px-3 py-2.5 font-medium text-muted-foreground">Billing</th>
+              <th className="text-right px-3 py-2.5 font-medium text-muted-foreground">Monthly</th>
+              <th className="text-right px-3 py-2.5 font-medium text-muted-foreground">Setup</th>
+            </tr>
+          </thead>
+          <tbody className="divide-y">
+            {services.map(svc => {
+              const fee = svc.serviceLine === 'Paid Media Management' && svc.paidMediaConfig
+                ? calcPaidMediaFee(svc.paidMediaConfig, monthlyMediaSpend).fee
+                : svc.monthlyFee;
+              return (
+                <tr key={svc.id}>
+                  <td className="px-4 py-2.5 font-medium text-foreground">{svc.serviceLine}</td>
+                  <td className="px-3 py-2.5 text-muted-foreground">{PROPOSAL_PRICING_MODEL_LABELS[svc.pricingModelType]}</td>
+                  <td className="px-3 py-2.5 text-muted-foreground capitalize">{svc.billingCadence}</td>
+                  <td className="px-3 py-2.5 text-right tabular-nums font-medium text-foreground">{formatCurrency(fee)}</td>
+                  <td className="px-3 py-2.5 text-right tabular-nums text-muted-foreground">{svc.setupFee > 0 ? formatCurrency(svc.setupFee) : '—'}</td>
+                </tr>
+              );
+            })}
+          </tbody>
+          <tfoot>
+            <tr className="border-t bg-muted/30 font-semibold">
+              <td className="px-4 py-2.5 text-foreground" colSpan={3}>Total</td>
+              <td className="px-3 py-2.5 text-right tabular-nums text-primary">{formatCurrency(totalMonthly)}</td>
+              <td className="px-3 py-2.5 text-right tabular-nums text-foreground">{totalSetup > 0 ? formatCurrency(totalSetup) : '—'}</td>
+            </tr>
+          </tfoot>
+        </table>
+      </div>
+      <p className="text-[10px] text-muted-foreground mt-2 italic">
+        This data is read-only. To edit services and pricing, go to Services Config.
+      </p>
+    </ProposalSection>
+  );
+}
 
 export default function ProposalView({ proposalMode = false }: { proposalMode?: boolean }) {
   const { client, growthModel: contextGrowthModel, onboarding } = useClientContext();
@@ -35,12 +121,18 @@ export default function ProposalView({ proposalMode = false }: { proposalMode?: 
   const [showConfig, setShowConfig] = useState(false);
   const defaults = useMemo(() => repository.proposalDefaults.get(), []);
 
-  // Proposed Agency Services state (stored on onboarding for now)
   const proposedServices: ProposedAgencyService[] = (onboarding as any).proposedAgencyServices || [];
-  const { updateOnboarding } = useClientContext();
-  const handleServicesChange = (services: ProposedAgencyService[]) => {
-    updateOnboarding({ ...onboarding, proposedAgencyServices: services } as any);
-  };
+
+  // Monthly media spend for paid media fee calc
+  const monthlyMediaSpend = useMemo(() => {
+    if (!contextGrowthModel) return 0;
+    const scenario = contextGrowthModel.scenarios.find(s => s.isDefault) || contextGrowthModel.scenarios[0];
+    if (!scenario) return 0;
+    const totalBudget = scenario.mediaChannelPlans.reduce(
+      (sum, mp) => sum + mp.monthlyRecords.reduce((s, r) => s + r.plannedBudget, 0), 0
+    );
+    return totalBudget / (contextGrowthModel.monthCount || 1);
+  }, [contextGrowthModel]);
 
   const activeProposal = proposals.find(p => p.id === activeProposalId) || null;
 
@@ -208,11 +300,9 @@ export default function ProposalView({ proposalMode = false }: { proposalMode?: 
           <PlaceholderNotice text={p.summaryData.scopeSummary} />
         </ProposalSection>
 
-        {/* Proposed Agency Services — commercial pricing layer */}
+        {/* Commercials — read-only from Services Config */}
         {!proposalMode && (
-          <ProposalSection>
-            <ProposedAgencyServices services={proposedServices} onChange={handleServicesChange} />
-          </ProposalSection>
+          <CommercialSummary services={proposedServices} monthlyMediaSpend={monthlyMediaSpend} />
         )}
 
         {/* Pricing Summary */}

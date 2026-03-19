@@ -1,6 +1,6 @@
 /* Client lifecycle, discovery, and onboarding types for Agency OS */
 
-export type LifecycleStage = 'lead' | 'discovery' | 'strategy' | 'growth_model' | 'proposal_ready' | 'active_client';
+export type LifecycleStage = 'lead' | 'discovery' | 'strategy' | 'growth_model' | 'services_config' | 'proposal_ready' | 'active_client';
 
 export type StageStatus = 'not_started' | 'in_progress' | 'complete';
 
@@ -9,7 +9,8 @@ export const LIFECYCLE_STAGES: { key: LifecycleStage; label: string; tabMapping?
   { key: 'discovery', label: 'Discovery', tabMapping: 'overview' },
   { key: 'strategy', label: 'Strategy', tabMapping: 'strategy' },
   { key: 'growth_model', label: 'Growth Model', tabMapping: 'growth-model' },
-  { key: 'proposal_ready', label: 'Proposal Ready', tabMapping: 'overview' },
+  { key: 'services_config', label: 'Services Config', tabMapping: 'services-config' },
+  { key: 'proposal_ready', label: 'Proposal Ready', tabMapping: 'proposal' },
   { key: 'active_client', label: 'Active Client', tabMapping: 'performance' },
 ];
 
@@ -462,8 +463,17 @@ export function computeStageReadiness(
     percentComplete: gmPct,
   });
 
+  // Services Config — has proposed agency services?
+  const hasServices = ((onboarding as any).proposedAgencyServices || []).length > 0;
+  const svcPct = hasServices ? 100 : 0;
+  progress.push({
+    stage: 'services_config',
+    status: svcPct >= 80 ? 'complete' : svcPct > 0 ? 'in_progress' : 'not_started',
+    percentComplete: svcPct,
+  });
+
   // Proposal Ready
-  const proposalChecks = [discoveryPct >= 80, hasMeaningfulStrategy, hasGrowthModel];
+  const proposalChecks = [discoveryPct >= 80, hasMeaningfulStrategy, hasGrowthModel, hasServices];
   const proposalPct = Math.round((proposalChecks.filter(Boolean).length / proposalChecks.length) * 100);
   progress.push({
     stage: 'proposal_ready',

@@ -1,5 +1,5 @@
 import { useParams, useNavigate } from 'react-router-dom';
-import { useState, useMemo, useCallback } from 'react';
+import { useState, useMemo, useCallback, useEffect } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
 import { ClientProvider, useOptionalClientContext } from '@/contexts/ClientContext';
 import { LIFECYCLE_STAGES } from '@/types/onboarding';
@@ -20,17 +20,18 @@ import Campaigns from '@/components/client/Campaigns';
 import GrowthModelView from '@/components/client/GrowthModel';
 import UnitEconomics from '@/components/client/UnitEconomics';
 import ProposalView from '@/components/client/proposal/ProposalView';
+import ServicesConfig from '@/components/client/ServicesConfig';
 import MarketIntelligenceTab from '@/components/client/marketIntelligence/MarketIntelligenceTab';
 
 const TABS = [
-  'overview', 'intelligence', 'strategy', 'growth-model', 'proposal', 'campaigns', 'performance', 'meetings',
+  'overview', 'intelligence', 'strategy', 'growth-model', 'services-config', 'proposal', 'campaigns', 'performance', 'meetings',
   'comments', 'tasks', 'communications', 'documents', 'unit-economics', 'settings',
 ] as const;
 
-type WizardStep = 'setup' | 'discovery' | 'strategy' | 'growth_model' | 'proposal';
+type WizardStep = 'setup' | 'discovery' | 'strategy' | 'growth_model' | 'services_config' | 'proposal';
 type ResolvedClientContext = NonNullable<ReturnType<typeof useOptionalClientContext>>;
 
-const WIZARD_STEP_ORDER: WizardStep[] = ['setup', 'discovery', 'strategy', 'growth_model', 'proposal'];
+const WIZARD_STEP_ORDER: WizardStep[] = ['setup', 'discovery', 'strategy', 'growth_model', 'services_config', 'proposal'];
 
 /** Map wizard steps to their next step */
 function getNextWizardStep(step: string): string | null {
@@ -42,11 +43,13 @@ function getNextWizardStep(step: string): string | null {
 const STEP_TO_TAB: Record<string, string> = {
   strategy: 'strategy',
   growth_model: 'growth-model',
+  services_config: 'services-config',
 };
 
 const TAB_TO_STEP: Record<string, string> = {
   strategy: 'strategy',
   'growth-model': 'growth_model',
+  'services-config': 'services_config',
 };
 
 function ClientHubContent({ clientId, tab }: { clientId: string; tab?: string }) {
@@ -88,6 +91,16 @@ function ClientHubContentInner({
     navigate(`/clients/${clientId}/${t}`);
   }, [clientId, navigate, onboardingContinuation]);
 
+  // Listen for navigate-tab custom events from child components (e.g. AgencyFeesSummaryCard CTAs)
+  useEffect(() => {
+    const handler = (e: Event) => {
+      const detail = (e as CustomEvent).detail;
+      if (detail?.tab) setTab(detail.tab);
+    };
+    window.addEventListener('navigate-tab', handler);
+    return () => window.removeEventListener('navigate-tab', handler);
+  }, [setTab]);
+
   // Compute the first incomplete wizard step from stageProgress
   const resumeStep = useMemo((): WizardStep => {
     const stageToStep: Record<string, WizardStep> = {
@@ -95,6 +108,7 @@ function ClientHubContentInner({
       discovery: 'discovery',
       strategy: 'strategy',
       growth_model: 'growth_model',
+      services_config: 'services_config',
       proposal_ready: 'proposal',
     };
 
@@ -200,6 +214,7 @@ function ClientHubContentInner({
         />
       );
       case 'proposal': return <ProposalView proposalMode={proposalMode} />;
+      case 'services-config': return <ServicesConfig />;
       case 'campaigns': return <Campaigns client={client} />;
       case 'performance': return <ClientPerformance />;
       case 'meetings': return <MeetingHub />;
@@ -288,7 +303,7 @@ function ClientHubContentInner({
               activeTab === t ? 'tab-active' : 'tab-inactive'
             }`}
           >
-            {t === 'growth-model' ? 'Growth Model' : t === 'unit-economics' ? 'Unit Economics' : t === 'proposal' ? 'Proposal' : t === 'intelligence' ? 'Intelligence' : t}
+            {t === 'growth-model' ? 'Growth Model' : t === 'unit-economics' ? 'Unit Economics' : t === 'proposal' ? 'Proposal' : t === 'intelligence' ? 'Intelligence' : t === 'services-config' ? 'Services Config' : t}
           </button>
         ))}
       </div>
