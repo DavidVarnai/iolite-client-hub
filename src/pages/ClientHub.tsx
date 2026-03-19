@@ -1,5 +1,5 @@
 import { useParams, useNavigate } from 'react-router-dom';
-import { useState, useMemo, useCallback } from 'react';
+import { useState, useMemo, useCallback, useEffect } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
 import { ClientProvider, useOptionalClientContext } from '@/contexts/ClientContext';
 import { LIFECYCLE_STAGES } from '@/types/onboarding';
