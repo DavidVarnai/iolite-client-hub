@@ -1,6 +1,6 @@
 /* Client lifecycle, discovery, and onboarding types for Agency OS */
 
-export type LifecycleStage = 'lead' | 'discovery' | 'strategy' | 'growth_model' | 'proposal_ready' | 'active_client';
+export type LifecycleStage = 'lead' | 'discovery' | 'strategy' | 'growth_model' | 'services_config' | 'proposal_ready' | 'active_client';
 
 export type StageStatus = 'not_started' | 'in_progress' | 'complete';
 
