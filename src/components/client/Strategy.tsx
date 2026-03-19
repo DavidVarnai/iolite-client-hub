@@ -11,6 +11,7 @@ import { useClientContext } from '@/contexts/ClientContext';
 import { Plus, Trash2, FileText } from 'lucide-react';
 import RunMIButton from '@/components/client/marketIntelligence/RunMIButton';
 import OnboardingContinuityPanel from './OnboardingContinuityPanel';
+import RecommendedServices from './strategy/RecommendedServices';
 
 function StrategySectionCard({ section, proposalMode }: { section: StrategySection; proposalMode: boolean }) {
   const { client, onboarding, updateClient, saveAiArtifact } = useClientContext();
