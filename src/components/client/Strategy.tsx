@@ -388,6 +388,11 @@ export default function ClientStrategy({
           ))}
         </div>
       )}
+
+      {/* Recommended Services — strategic layer */}
+      {!proposalMode && (
+        <RecommendedServices />
+      )}
       </div>
     </div>
   );
