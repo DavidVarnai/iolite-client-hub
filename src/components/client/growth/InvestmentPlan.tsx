@@ -6,8 +6,7 @@ import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/component
 import { ChevronDown } from 'lucide-react';
 import { formatCurrency } from '@/lib/parsing';
 import MediaBudgetDistribution from './MediaBudgetDistribution';
-import { currentUser } from '@/data/seed';
-import { isAdminUser } from '@/types/admin';
+import AgencyFeesSummaryCard from './AgencyFeesSummaryCard';
 
 interface Props {
   model: GrowthModel;
