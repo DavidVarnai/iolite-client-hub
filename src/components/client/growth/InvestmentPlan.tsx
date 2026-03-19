@@ -6,8 +6,7 @@ import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/component
 import { ChevronDown } from 'lucide-react';
 import { formatCurrency } from '@/lib/parsing';
 import MediaBudgetDistribution from './MediaBudgetDistribution';
-import { currentUser } from '@/data/seed';
-import { isAdminUser } from '@/types/admin';
+import AgencyFeesSummaryCard from './AgencyFeesSummaryCard';
 
 interface Props {
   model: GrowthModel;
@@ -99,12 +98,7 @@ function EditableGrid({ rows, months, onChange, label }: {
   );
 }
 export default function InvestmentPlan({ model, scenario, onUpdate }: Props) {
-  const isAdmin = isAdminUser(currentUser.role);
   const months = useMemo(() => generateMonths(model.startMonth, model.monthCount), [model.startMonth, model.monthCount]);
-
-  const agencyItems = useMemo(() => toMonthlyGrid(
-    scenario.budgetLineItems.filter(li => li.category === 'agency'), months
-  ), [scenario, months]);
 
   const otherItems = useMemo(() => toMonthlyGrid(
     scenario.budgetLineItems.filter(li => li.category === 'other'), months
@@ -148,43 +142,39 @@ export default function InvestmentPlan({ model, scenario, onUpdate }: Props) {
     onUpdate({ ...model, scenarios: updatedScenarios });
   };
 
-  // Grand totals
+  // Grand totals (agency fees now come from proposal, shown in summary card)
   const grandTotal = useMemo(() => {
-    const agency = agencyItems.reduce((s, r) => s + r.total, 0);
     const media = mediaItems.reduce((s, r) => s + r.total, 0);
     const other = otherItems.reduce((s, r) => s + r.total, 0);
-    return { agency, media, other, total: (isAdmin ? agency : 0) + media + other };
-  }, [agencyItems, mediaItems, otherItems, isAdmin]);
-
-  const summaryItems = useMemo(() => {
-    const items: { label: string; value: number; primary?: boolean }[] = [];
-    if (isAdmin) items.push({ label: 'Total Agency Fees', value: grandTotal.agency });
-    items.push({ label: 'Total Media Budget', value: grandTotal.media });
-    items.push({ label: 'Total Other Costs', value: grandTotal.other });
-    items.push({ label: 'Total Marketing Investment', value: grandTotal.total, primary: true });
-    return items;
-  }, [grandTotal, isAdmin]);
+    return { media, other, total: media + other };
+  }, [mediaItems, otherItems]);
 
   return (
     <div className="pb-8">
       <MediaBudgetDistribution model={model} scenario={scenario} months={months} onUpdate={onUpdate} />
 
-      {isAdmin && <EditableGrid rows={agencyItems} months={months} onChange={handleBudgetChange} label="Agency Services" />}
+      {/* Compact agency fees summary — reads from proposal data */}
+      <AgencyFeesSummaryCard />
+
       <EditableGrid rows={mediaItems} months={months} onChange={handleMediaChange} label="Media Budget" />
       <EditableGrid rows={otherItems} months={months} onChange={handleBudgetChange} label="Other Costs" />
 
       {/* Grand summary */}
       <div className="mx-6 mt-6 panel p-4">
         <h3 className="text-sm font-semibold text-foreground mb-3">Investment Summary</h3>
-        <div className={`grid grid-cols-${summaryItems.length} gap-4`}>
-          {summaryItems.map(item => (
-            <div key={item.label} className="text-center">
-              <p className="text-xs text-muted-foreground mb-1">{item.label}</p>
-              <p className={`text-lg font-semibold tabular-nums ${item.primary ? 'text-primary' : 'text-foreground'}`}>
-                {fmt(item.value)}
-              </p>
-            </div>
-          ))}
+        <div className="grid grid-cols-3 gap-4">
+          <div className="text-center">
+            <p className="text-xs text-muted-foreground mb-1">Total Media Budget</p>
+            <p className="text-lg font-semibold tabular-nums text-foreground">{fmt(grandTotal.media)}</p>
+          </div>
+          <div className="text-center">
+            <p className="text-xs text-muted-foreground mb-1">Total Other Costs</p>
+            <p className="text-lg font-semibold tabular-nums text-foreground">{fmt(grandTotal.other)}</p>
+          </div>
+          <div className="text-center">
+            <p className="text-xs text-muted-foreground mb-1">Total Marketing Investment</p>
+            <p className="text-lg font-semibold tabular-nums text-primary">{fmt(grandTotal.total)}</p>
+          </div>
         </div>
       </div>
     </div>

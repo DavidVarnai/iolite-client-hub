@@ -25,6 +25,8 @@ import ProposalPricingTable from './ProposalPricingTable';
 import ProposalGrowthModelPlaceholder from './ProposalGrowthModelPlaceholder';
 import ProposalConfigPanel from './ProposalConfigPanel';
 import RevenueModelDisplay from '../RevenueModelDisplay';
+import ProposedAgencyServices from './ProposedAgencyServices';
+import type { ProposedAgencyService } from '@/types/commercialServices';
 
 export default function ProposalView({ proposalMode = false }: { proposalMode?: boolean }) {
   const { client, growthModel: contextGrowthModel, onboarding } = useClientContext();
@@ -32,6 +34,13 @@ export default function ProposalView({ proposalMode = false }: { proposalMode?: 
   const [activeProposalId, setActiveProposalId] = useState<string | null>(proposals[0]?.id || null);
   const [showConfig, setShowConfig] = useState(false);
   const defaults = useMemo(() => repository.proposalDefaults.get(), []);
+
+  // Proposed Agency Services state (stored on onboarding for now)
+  const proposedServices: ProposedAgencyService[] = (onboarding as any).proposedAgencyServices || [];
+  const { updateOnboarding } = useClientContext();
+  const handleServicesChange = (services: ProposedAgencyService[]) => {
+    updateOnboarding({ ...onboarding, proposedAgencyServices: services } as any);
+  };
 
   const activeProposal = proposals.find(p => p.id === activeProposalId) || null;
 
@@ -198,6 +207,13 @@ export default function ProposalView({ proposalMode = false }: { proposalMode?: 
           )}
           <PlaceholderNotice text={p.summaryData.scopeSummary} />
         </ProposalSection>
+
+        {/* Proposed Agency Services — commercial pricing layer */}
+        {!proposalMode && (
+          <ProposalSection>
+            <ProposedAgencyServices services={proposedServices} onChange={handleServicesChange} />
+          </ProposalSection>
+        )}
 
         {/* Pricing Summary */}
         {defaults.showPricingBreakdown && (
