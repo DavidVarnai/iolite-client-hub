@@ -53,7 +53,7 @@ export default function AgencyFeesSummaryCard() {
             <Briefcase className="h-4 w-4 text-muted-foreground" />
           </div>
           <div>
-            <h4 className="text-sm font-semibold text-foreground">Agency Services</h4>
+            <h4 className="text-sm font-semibold text-foreground">Agency Fees (from Services Config)</h4>
             <p className="text-xs text-muted-foreground">No agency services configured yet</p>
           </div>
         </div>
