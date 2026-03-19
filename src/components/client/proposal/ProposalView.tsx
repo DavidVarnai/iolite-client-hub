@@ -35,6 +35,13 @@ export default function ProposalView({ proposalMode = false }: { proposalMode?: 
   const [showConfig, setShowConfig] = useState(false);
   const defaults = useMemo(() => repository.proposalDefaults.get(), []);
 
+  // Proposed Agency Services state (stored on onboarding for now)
+  const proposedServices: ProposedAgencyService[] = (onboarding as any).proposedAgencyServices || [];
+  const { updateOnboarding } = useClientContext();
+  const handleServicesChange = (services: ProposedAgencyService[]) => {
+    updateOnboarding({ ...onboarding, proposedAgencyServices: services } as any);
+  };
+
   const activeProposal = proposals.find(p => p.id === activeProposalId) || null;
 
   const refresh = useCallback(() => {
