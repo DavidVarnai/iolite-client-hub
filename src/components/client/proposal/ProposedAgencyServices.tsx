@@ -2,14 +2,16 @@
  * ProposedAgencyServices — commercial pricing layer in Proposal Ready.
  * Source of truth for agency service pricing.
  */
-import { useState } from 'react';
-import type { ProposedAgencyService, ProposalPricingModelType, BillingCadence } from '@/types/commercialServices';
-import { PROPOSAL_PRICING_MODEL_LABELS, BILLING_CADENCE_LABELS } from '@/types/commercialServices';
+import { useState, useMemo } from 'react';
+import type { ProposedAgencyService, ProposalPricingModelType, BillingCadence, RecommendedService } from '@/types/commercialServices';
+import { PROPOSAL_PRICING_MODEL_LABELS, BILLING_CADENCE_LABELS, DEFAULT_PAID_MEDIA_CONFIG, calcPaidMediaFee } from '@/types/commercialServices';
 import { useClientContext } from '@/contexts/ClientContext';
-import { Plus, Trash2, Pencil, Check, X, DollarSign } from 'lucide-react';
+import { Plus, Trash2, Pencil, Check, X, DollarSign, Download } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { formatCurrency } from '@/lib/parsing';
+import { toast } from 'sonner';
+import PaidMediaConfig from './PaidMediaConfig';
 
 const SERVICE_LINE_OPTIONS = [
   'Fractional CMO', 'Paid Media Management', 'Social Media Management',
@@ -39,13 +41,32 @@ interface Props {
 }
 
 export default function ProposedAgencyServices({ services, onChange }: Props) {
+  const { onboarding, growthModel } = useClientContext();
   const [showAdd, setShowAdd] = useState(false);
   const [draft, setDraft] = useState<ProposedAgencyService>(emptyRow());
   const [editingId, setEditingId] = useState<string | null>(null);
 
+  const recommendedServices: RecommendedService[] = (onboarding as any).recommendedServices || [];
+
+  // Monthly media spend from growth model
+  const { monthlyMediaSpend, hasMediaPlan } = useMemo(() => {
+    if (!growthModel) return { monthlyMediaSpend: 0, hasMediaPlan: false };
+    const scenario = growthModel.scenarios.find(s => s.isDefault) || growthModel.scenarios[0];
+    if (!scenario) return { monthlyMediaSpend: 0, hasMediaPlan: false };
+    const totalBudget = scenario.mediaChannelPlans.reduce(
+      (sum, mp) => sum + mp.monthlyRecords.reduce((s, r) => s + r.plannedBudget, 0), 0
+    );
+    const monthCount = growthModel.monthCount || 1;
+    return { monthlyMediaSpend: totalBudget / monthCount, hasMediaPlan: totalBudget > 0 };
+  }, [growthModel]);
+
   const handleAdd = () => {
     if (!draft.serviceLine) return;
-    onChange([...services, draft]);
+    // Auto-attach paid media config
+    const svc = draft.serviceLine === 'Paid Media Management' && !draft.paidMediaConfig
+      ? { ...draft, paidMediaConfig: { ...DEFAULT_PAID_MEDIA_CONFIG } }
+      : draft;
+    onChange([...services, svc]);
     setDraft(emptyRow());
     setShowAdd(false);
   };
@@ -59,7 +80,53 @@ export default function ProposedAgencyServices({ services, onChange }: Props) {
     setEditingId(null);
   };
 
-  const totalMonthly = services.reduce((s, r) => s + r.monthlyFee, 0);
+  const handleImportFromStrategy = () => {
+    if (recommendedServices.length === 0) {
+      toast.info('No recommended services in Strategy to import');
+      return;
+    }
+    const existingKeys = new Set(services.map(s => `${s.serviceLine}|${s.notes}`));
+    let imported = 0;
+    const now = new Date();
+    const newServices = [...services];
+
+    for (const rec of recommendedServices) {
+      const key = `${rec.serviceLine}|${rec.linkedChannel}`;
+      if (existingKeys.has(key)) continue;
+      const isPaidMedia = rec.serviceLine === 'Paid Media Management';
+      newServices.push({
+        id: `pas-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`,
+        serviceLine: rec.serviceLine,
+        pricingModelType: isPaidMedia ? 'minimum_plus_spend' : 'flat_monthly',
+        packageOrScope: rec.deliveryNotes || '',
+        billingCadence: 'monthly',
+        startMonth: `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`,
+        durationMonths: 6,
+        monthlyFee: 0,
+        setupFee: 0,
+        notes: rec.linkedChannel,
+        ...(isPaidMedia ? { paidMediaConfig: { ...DEFAULT_PAID_MEDIA_CONFIG } } : {}),
+      });
+      existingKeys.add(key);
+      imported++;
+    }
+
+    if (imported === 0) {
+      toast.info('All recommended services already imported');
+    } else {
+      onChange(newServices);
+      toast.success(`Imported ${imported} service${imported > 1 ? 's' : ''} from Strategy`);
+    }
+  };
+
+  const getDisplayFee = (svc: ProposedAgencyService) => {
+    if (svc.serviceLine === 'Paid Media Management' && svc.paidMediaConfig) {
+      return calcPaidMediaFee(svc.paidMediaConfig, monthlyMediaSpend).fee;
+    }
+    return svc.monthlyFee;
+  };
+
+  const totalMonthly = services.reduce((s, r) => s + getDisplayFee(r), 0);
   const totalSetup = services.reduce((s, r) => s + r.setupFee, 0);
 
   return (
@@ -70,18 +137,36 @@ export default function ProposedAgencyServices({ services, onChange }: Props) {
           <h3 className="text-sm font-semibold">Proposed Agency Services</h3>
           <span className="text-xs text-muted-foreground">Source of truth for pricing</span>
         </div>
-        <button
-          onClick={() => { setShowAdd(!showAdd); setDraft(emptyRow()); }}
-          className="flex items-center gap-1.5 px-3 py-1.5 bg-primary text-primary-foreground text-xs font-medium rounded-md hover:opacity-90 transition-opacity"
-        >
-          <Plus className="h-3.5 w-3.5" /> Add Service
-        </button>
+        <div className="flex items-center gap-2">
+          {recommendedServices.length > 0 && (
+            <button
+              onClick={handleImportFromStrategy}
+              className="flex items-center gap-1.5 px-3 py-1.5 border text-xs font-medium rounded-md hover:bg-muted/50 transition-colors"
+            >
+              <Download className="h-3.5 w-3.5" /> Import from Strategy
+            </button>
+          )}
+          <button
+            onClick={() => { setShowAdd(!showAdd); setDraft(emptyRow()); }}
+            className="flex items-center gap-1.5 px-3 py-1.5 bg-primary text-primary-foreground text-xs font-medium rounded-md hover:opacity-90 transition-opacity"
+          >
+            <Plus className="h-3.5 w-3.5" /> Add Service
+          </button>
+        </div>
       </div>
 
       {/* Add form */}
       {showAdd && (
         <div className="panel p-4 bg-muted/30 space-y-3">
           <ServiceRowForm draft={draft} onChange={setDraft} />
+          {draft.serviceLine === 'Paid Media Management' && (
+            <PaidMediaConfig
+              config={draft.paidMediaConfig || DEFAULT_PAID_MEDIA_CONFIG}
+              onChange={cfg => setDraft({ ...draft, paidMediaConfig: cfg })}
+              monthlyMediaSpend={monthlyMediaSpend}
+              hasMediaPlan={hasMediaPlan}
+            />
+          )}
           <div className="flex items-center gap-2">
             <button onClick={handleAdd} disabled={!draft.serviceLine}
               className="px-3 py-1.5 bg-primary text-primary-foreground text-xs font-medium rounded-md hover:opacity-90 disabled:opacity-50">
@@ -117,7 +202,8 @@ export default function ProposedAgencyServices({ services, onChange }: Props) {
               <tbody className="divide-y">
                 {services.map(svc => (
                   editingId === svc.id ? (
-                    <EditTableRow key={svc.id} service={svc} onSave={handleSaveEdit} onCancel={() => setEditingId(null)} />
+                    <EditTableRow key={svc.id} service={svc} onSave={handleSaveEdit} onCancel={() => setEditingId(null)}
+                      monthlyMediaSpend={monthlyMediaSpend} hasMediaPlan={hasMediaPlan} />
                   ) : (
                     <tr key={svc.id} className="hover:bg-muted/20 transition-colors group">
                       <td className="px-4 py-2.5 font-medium text-foreground">{svc.serviceLine}</td>
@@ -125,7 +211,12 @@ export default function ProposedAgencyServices({ services, onChange }: Props) {
                       <td className="px-3 py-2.5 text-muted-foreground">{svc.packageOrScope || '—'}</td>
                       <td className="px-3 py-2.5 text-muted-foreground">{BILLING_CADENCE_LABELS[svc.billingCadence]}</td>
                       <td className="px-3 py-2.5 text-muted-foreground">{svc.durationMonths} mo</td>
-                      <td className="px-3 py-2.5 text-right tabular-nums font-medium text-foreground">{formatCurrency(svc.monthlyFee)}</td>
+                      <td className="px-3 py-2.5 text-right tabular-nums font-medium text-foreground">
+                        {formatCurrency(getDisplayFee(svc))}
+                        {svc.paidMediaConfig && (
+                          <span className="block text-[10px] text-muted-foreground font-normal">auto-calc</span>
+                        )}
+                      </td>
                       <td className="px-3 py-2.5 text-right tabular-nums text-muted-foreground">{svc.setupFee > 0 ? formatCurrency(svc.setupFee) : '—'}</td>
                       <td className="px-3 py-2.5">
                         <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
@@ -166,7 +257,15 @@ function ServiceRowForm({ draft, onChange }: { draft: ProposedAgencyService; onC
     <div className="grid grid-cols-3 gap-3">
       <div>
         <label className="text-xs font-medium text-muted-foreground mb-1 block">Service Line</label>
-        <Select value={draft.serviceLine} onValueChange={v => onChange({ ...draft, serviceLine: v })}>
+        <Select value={draft.serviceLine} onValueChange={v => {
+          const isPaidMedia = v === 'Paid Media Management';
+          onChange({
+            ...draft,
+            serviceLine: v,
+            pricingModelType: isPaidMedia ? 'minimum_plus_spend' : draft.pricingModelType,
+            ...(isPaidMedia && !draft.paidMediaConfig ? { paidMediaConfig: { ...DEFAULT_PAID_MEDIA_CONFIG } } : {}),
+          });
+        }}>
           <SelectTrigger className="h-8 text-xs"><SelectValue placeholder="Select..." /></SelectTrigger>
           <SelectContent>
             {SERVICE_LINE_OPTIONS.map(s => <SelectItem key={s} value={s}>{s}</SelectItem>)}
@@ -206,11 +305,13 @@ function ServiceRowForm({ draft, onChange }: { draft: ProposedAgencyService; onC
         <Input type="number" value={draft.durationMonths} onChange={e => onChange({ ...draft, durationMonths: parseInt(e.target.value) || 1 })}
           className="h-8 text-xs" min={1} />
       </div>
-      <div>
-        <label className="text-xs font-medium text-muted-foreground mb-1 block">Monthly Fee</label>
-        <Input type="number" value={draft.monthlyFee || ''} onChange={e => onChange({ ...draft, monthlyFee: parseFloat(e.target.value) || 0 })}
-          placeholder="$0" className="h-8 text-xs" />
-      </div>
+      {draft.serviceLine !== 'Paid Media Management' && (
+        <div>
+          <label className="text-xs font-medium text-muted-foreground mb-1 block">Monthly Fee</label>
+          <Input type="number" value={draft.monthlyFee || ''} onChange={e => onChange({ ...draft, monthlyFee: parseFloat(e.target.value) || 0 })}
+            placeholder="$0" className="h-8 text-xs" />
+        </div>
+      )}
       <div>
         <label className="text-xs font-medium text-muted-foreground mb-1 block">Setup Fee</label>
         <Input type="number" value={draft.setupFee || ''} onChange={e => onChange({ ...draft, setupFee: parseFloat(e.target.value) || 0 })}
@@ -225,12 +326,25 @@ function ServiceRowForm({ draft, onChange }: { draft: ProposedAgencyService; onC
   );
 }
 
-function EditTableRow({ service, onSave, onCancel }: { service: ProposedAgencyService; onSave: (s: ProposedAgencyService) => void; onCancel: () => void }) {
+function EditTableRow({ service, onSave, onCancel, monthlyMediaSpend, hasMediaPlan }: {
+  service: ProposedAgencyService; onSave: (s: ProposedAgencyService) => void; onCancel: () => void;
+  monthlyMediaSpend: number; hasMediaPlan: boolean;
+}) {
   const [draft, setDraft] = useState(service);
   return (
     <tr>
       <td colSpan={8} className="p-4 bg-muted/30">
         <ServiceRowForm draft={draft} onChange={setDraft} />
+        {draft.serviceLine === 'Paid Media Management' && (
+          <div className="mt-3">
+            <PaidMediaConfig
+              config={draft.paidMediaConfig || DEFAULT_PAID_MEDIA_CONFIG}
+              onChange={cfg => setDraft({ ...draft, paidMediaConfig: cfg })}
+              monthlyMediaSpend={monthlyMediaSpend}
+              hasMediaPlan={hasMediaPlan}
+            />
+          </div>
+        )}
         <div className="flex items-center gap-2 mt-3">
           <button onClick={() => onSave(draft)} className="px-3 py-1.5 bg-primary text-primary-foreground text-xs font-medium rounded-md hover:opacity-90">
             <Check className="h-3 w-3 inline mr-1" /> Save
