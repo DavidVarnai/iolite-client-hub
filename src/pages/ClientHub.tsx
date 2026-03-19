@@ -20,6 +20,7 @@ import Campaigns from '@/components/client/Campaigns';
 import GrowthModelView from '@/components/client/GrowthModel';
 import UnitEconomics from '@/components/client/UnitEconomics';
 import ProposalView from '@/components/client/proposal/ProposalView';
+import ServicesConfig from '@/components/client/ServicesConfig';
 import MarketIntelligenceTab from '@/components/client/marketIntelligence/MarketIntelligenceTab';
 
 const TABS = [
