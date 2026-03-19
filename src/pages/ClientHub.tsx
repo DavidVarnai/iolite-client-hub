@@ -91,6 +91,16 @@ function ClientHubContentInner({
     navigate(`/clients/${clientId}/${t}`);
   }, [clientId, navigate, onboardingContinuation]);
 
+  // Listen for navigate-tab custom events from child components (e.g. AgencyFeesSummaryCard CTAs)
+  useEffect(() => {
+    const handler = (e: Event) => {
+      const detail = (e as CustomEvent).detail;
+      if (detail?.tab) setTab(detail.tab);
+    };
+    window.addEventListener('navigate-tab', handler);
+    return () => window.removeEventListener('navigate-tab', handler);
+  }, [setTab]);
+
   // Compute the first incomplete wizard step from stageProgress
   const resumeStep = useMemo((): WizardStep => {
     const stageToStep: Record<string, WizardStep> = {
