@@ -25,6 +25,8 @@ import ProposalPricingTable from './ProposalPricingTable';
 import ProposalGrowthModelPlaceholder from './ProposalGrowthModelPlaceholder';
 import ProposalConfigPanel from './ProposalConfigPanel';
 import RevenueModelDisplay from '../RevenueModelDisplay';
+import ProposedAgencyServices from './ProposedAgencyServices';
+import type { ProposedAgencyService } from '@/types/commercialServices';
 
 export default function ProposalView({ proposalMode = false }: { proposalMode?: boolean }) {
   const { client, growthModel: contextGrowthModel, onboarding } = useClientContext();
