@@ -132,7 +132,7 @@ export default function PaidMediaConfig({ config, onChange, monthlyMediaSpend, h
           <span className="text-xs text-muted-foreground">Use media plan spend</span>
         </div>
         {config.useMediaPlanSpend && !hasMediaPlan && (
-          <div className="flex items-center gap-1 text-xs text-amber-600">
+          <div className="flex items-center gap-1 text-xs text-destructive/80">
             <AlertCircle className="h-3 w-3" />
             <span>No media plan yet</span>
           </div>
