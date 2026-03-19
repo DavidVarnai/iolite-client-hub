@@ -208,6 +208,13 @@ export default function ProposalView({ proposalMode = false }: { proposalMode?: 
           <PlaceholderNotice text={p.summaryData.scopeSummary} />
         </ProposalSection>
 
+        {/* Proposed Agency Services — commercial pricing layer */}
+        {!proposalMode && (
+          <ProposalSection>
+            <ProposedAgencyServices services={proposedServices} onChange={handleServicesChange} />
+          </ProposalSection>
+        )}
+
         {/* Pricing Summary */}
         {defaults.showPricingBreakdown && (
           <ProposalSection>
