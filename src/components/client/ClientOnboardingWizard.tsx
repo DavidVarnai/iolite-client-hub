@@ -1672,6 +1672,20 @@ export default function ClientOnboardingWizard({ onClose, onNavigateTab, initial
                 {currentStep === 'discovery' && <DiscoveryStep />}
                 {currentStep === 'strategy' && <StrategyDraftStep onNavigateTab={handleCloseAndNavigate} />}
                 {currentStep === 'growth_model' && <GrowthModelStep onNavigateTab={handleCloseAndNavigate} />}
+                {currentStep === 'services_config' && (
+                  <div className="space-y-4">
+                    <h3 className="text-base font-semibold text-foreground">Services Configuration</h3>
+                    <p className="text-sm text-muted-foreground">
+                      Configure your agency services and pricing in the dedicated Services Config tab.
+                    </p>
+                    <button
+                      onClick={() => handleCloseAndNavigate('services-config')}
+                      className="px-4 py-2 bg-primary text-primary-foreground text-sm font-medium rounded-md hover:opacity-90 transition-opacity"
+                    >
+                      Open Services Config
+                    </button>
+                  </div>
+                )}
                 {currentStep === 'proposal' && <ProposalReadyStep onNavigateTab={handleCloseAndNavigate} />}
               </motion.div>
             </AnimatePresence>
