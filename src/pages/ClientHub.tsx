@@ -43,11 +43,13 @@ function getNextWizardStep(step: string): string | null {
 const STEP_TO_TAB: Record<string, string> = {
   strategy: 'strategy',
   growth_model: 'growth-model',
+  services_config: 'services-config',
 };
 
 const TAB_TO_STEP: Record<string, string> = {
   strategy: 'strategy',
   'growth-model': 'growth_model',
+  'services-config': 'services_config',
 };
 
 function ClientHubContent({ clientId, tab }: { clientId: string; tab?: string }) {
