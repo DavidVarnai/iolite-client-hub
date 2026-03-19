@@ -9,7 +9,8 @@ export const LIFECYCLE_STAGES: { key: LifecycleStage; label: string; tabMapping?
   { key: 'discovery', label: 'Discovery', tabMapping: 'overview' },
   { key: 'strategy', label: 'Strategy', tabMapping: 'strategy' },
   { key: 'growth_model', label: 'Growth Model', tabMapping: 'growth-model' },
-  { key: 'proposal_ready', label: 'Proposal Ready', tabMapping: 'overview' },
+  { key: 'services_config', label: 'Services Config', tabMapping: 'services-config' },
+  { key: 'proposal_ready', label: 'Proposal Ready', tabMapping: 'proposal' },
   { key: 'active_client', label: 'Active Client', tabMapping: 'performance' },
 ];
 
