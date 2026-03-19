@@ -1,34 +1,51 @@
 /**
- * AgencyFeesSummaryCard — compact card replacing the detailed agency services grid
- * in Growth Model. Reads from proposal/commercial data when available.
+ * AgencyFeesSummaryCard — compact card in Growth Model.
+ * Reads exclusively from ProposedAgencyServices (onboarding.proposedAgencyServices).
  */
 import { useClientContext } from '@/contexts/ClientContext';
-import { repository } from '@/lib/repository';
 import { useMemo } from 'react';
 import { Briefcase, ArrowRight } from 'lucide-react';
 import { formatCurrency } from '@/lib/parsing';
+import type { ProposedAgencyService, PaidMediaPricingConfig } from '@/types/commercialServices';
+import { calcPaidMediaFee } from '@/types/commercialServices';
 
 export default function AgencyFeesSummaryCard() {
-  const { client } = useClientContext();
+  const { onboarding, growthModel } = useClientContext();
 
-  const proposalData = useMemo(() => {
-    const proposals = repository.proposals.getByClient(client.id);
-    // Use the most recent non-archived proposal
-    const active = proposals.find(p => p.status !== 'archived') || proposals[0];
-    if (!active) return null;
+  const services: ProposedAgencyService[] = (onboarding as any).proposedAgencyServices || [];
 
-    const lines = active.pricingData.lines;
-    const monthlyFees = lines.reduce((s, l) => s + (l.monthlyPrice || 0), 0);
-    const oneTimeFees = lines.reduce((s, l) => s + (l.setupFee || 0), 0);
+  // Get total monthly media spend from growth model for Paid Media fee calculation
+  const monthlyMediaSpend = useMemo(() => {
+    if (!growthModel) return 0;
+    const scenario = growthModel.scenarios.find(s => s.isDefault) || growthModel.scenarios[0];
+    if (!scenario) return 0;
+    const totalBudget = scenario.mediaChannelPlans.reduce(
+      (sum, mp) => sum + mp.monthlyRecords.reduce((s, r) => s + r.plannedBudget, 0), 0
+    );
+    const monthCount = growthModel.monthCount || 1;
+    return totalBudget / monthCount;
+  }, [growthModel]);
 
-    return {
-      serviceCount: lines.length,
-      monthlyFees,
-      oneTimeFees,
-    };
-  }, [client.id]);
+  const summary = useMemo(() => {
+    if (services.length === 0) return null;
 
-  if (!proposalData) {
+    let monthlyFees = 0;
+    let oneTimeFees = 0;
+
+    for (const svc of services) {
+      if (svc.serviceLine === 'Paid Media Management' && svc.paidMediaConfig) {
+        const { fee } = calcPaidMediaFee(svc.paidMediaConfig, monthlyMediaSpend);
+        monthlyFees += fee;
+      } else {
+        monthlyFees += svc.monthlyFee;
+      }
+      oneTimeFees += svc.setupFee;
+    }
+
+    return { serviceCount: services.length, monthlyFees, oneTimeFees };
+  }, [services, monthlyMediaSpend]);
+
+  if (!summary) {
     return (
       <div className="mx-6 mt-4 panel p-5">
         <div className="flex items-center gap-3 mb-3">
@@ -42,7 +59,6 @@ export default function AgencyFeesSummaryCard() {
         </div>
         <button
           onClick={() => {
-            // Navigate to Proposal Ready tab
             const event = new CustomEvent('navigate-tab', { detail: { tab: 'proposal' } });
             window.dispatchEvent(event);
           }}
@@ -76,15 +92,15 @@ export default function AgencyFeesSummaryCard() {
       <div className="grid grid-cols-3 gap-4">
         <div className="text-center">
           <p className="text-xs text-muted-foreground mb-0.5">Proposed Services</p>
-          <p className="text-lg font-semibold tabular-nums text-foreground">{proposalData.serviceCount}</p>
+          <p className="text-lg font-semibold tabular-nums text-foreground">{summary.serviceCount}</p>
         </div>
         <div className="text-center">
           <p className="text-xs text-muted-foreground mb-0.5">Est. Monthly Fees</p>
-          <p className="text-lg font-semibold tabular-nums text-foreground">{formatCurrency(proposalData.monthlyFees)}</p>
+          <p className="text-lg font-semibold tabular-nums text-foreground">{formatCurrency(summary.monthlyFees)}</p>
         </div>
         <div className="text-center">
           <p className="text-xs text-muted-foreground mb-0.5">Est. One-Time Fees</p>
-          <p className="text-lg font-semibold tabular-nums text-foreground">{formatCurrency(proposalData.oneTimeFees)}</p>
+          <p className="text-lg font-semibold tabular-nums text-foreground">{formatCurrency(summary.oneTimeFees)}</p>
         </div>
       </div>
     </div>
