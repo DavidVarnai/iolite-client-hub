@@ -203,6 +203,7 @@ function ClientHubContentInner({
         />
       );
       case 'proposal': return <ProposalView proposalMode={proposalMode} />;
+      case 'services-config': return <ServicesConfig />;
       case 'campaigns': return <Campaigns client={client} />;
       case 'performance': return <ClientPerformance />;
       case 'meetings': return <MeetingHub />;
