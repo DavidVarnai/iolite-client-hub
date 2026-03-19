@@ -28,10 +28,10 @@ const TABS = [
   'comments', 'tasks', 'communications', 'documents', 'unit-economics', 'settings',
 ] as const;
 
-type WizardStep = 'setup' | 'discovery' | 'strategy' | 'growth_model' | 'proposal';
+type WizardStep = 'setup' | 'discovery' | 'strategy' | 'growth_model' | 'services_config' | 'proposal';
 type ResolvedClientContext = NonNullable<ReturnType<typeof useOptionalClientContext>>;
 
-const WIZARD_STEP_ORDER: WizardStep[] = ['setup', 'discovery', 'strategy', 'growth_model', 'proposal'];
+const WIZARD_STEP_ORDER: WizardStep[] = ['setup', 'discovery', 'strategy', 'growth_model', 'services_config', 'proposal'];
 
 /** Map wizard steps to their next step */
 function getNextWizardStep(step: string): string | null {
