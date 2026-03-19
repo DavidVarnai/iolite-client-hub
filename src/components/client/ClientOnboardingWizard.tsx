@@ -14,14 +14,15 @@ import MasterBriefSection from './discovery/MasterBriefSection';
 import { Collapsible, CollapsibleTrigger, CollapsibleContent } from '@/components/ui/collapsible';
 import { mapBriefToRevenueStreamSuggestions, mapBriefToDiscoverySuggestions } from '@/lib/ai/masterBriefRevenueHelper';
 
-type WizardStep = 'setup' | 'discovery' | 'strategy' | 'growth_model' | 'proposal';
+type WizardStep = 'setup' | 'discovery' | 'strategy' | 'growth_model' | 'services_config' | 'proposal';
 
 const STEPS: { key: WizardStep; label: string; number: number }[] = [
   { key: 'setup', label: 'Client Setup', number: 1 },
   { key: 'discovery', label: 'Discovery', number: 2 },
   { key: 'strategy', label: 'Strategy Draft', number: 3 },
   { key: 'growth_model', label: 'Growth Model', number: 4 },
-  { key: 'proposal', label: 'Proposal Ready', number: 5 },
+  { key: 'services_config', label: 'Services Config', number: 5 },
+  { key: 'proposal', label: 'Proposal Ready', number: 6 },
 ];
 
 interface Props {
