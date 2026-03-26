@@ -25,6 +25,7 @@ const c1Model: GrowthModel = {
   status: 'active', startMonth: '2026-01', monthCount: 12,
   funnelType: 'ecommerce', visibility: 'client',
   createdAt: '2025-12-15T10:00:00Z', updatedAt: '2026-03-01T10:00:00Z',
+  performanceInputs: { targetCpa: 42, closeRate: 100, avgDealValue: 88 },
   scenarios: [{
     id: 'sc-c1-base', modelId: 'gm-c1', name: 'base', isDefault: true,
     createdAt: '2025-12-15T10:00:00Z',
