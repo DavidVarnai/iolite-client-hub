@@ -1416,9 +1416,8 @@ function ProposalReadyStep({ onNavigateTab }: { onNavigateTab: (tab: string) => 
   const checklist = [
     { key: 'client_setup', label: 'Client setup complete', complete: !!client.name && !!client.company },
     { key: 'discovery', label: 'Discovery complete', complete: !!(onboarding.discovery.primaryProducts && (onboarding.discovery.revenueTarget > 0 || onboarding.discovery.revenueTargets)) },
-    { key: 'strategy', label: 'Strategy module summarized', complete: client.strategySections.length > 0 },
-    { key: 'growth_model', label: 'Growth model populated', complete: hasGrowthModel },
     { key: 'services_config', label: 'Services configured', complete: ((onboarding as any).proposedAgencyServices || []).length > 0 },
+    { key: 'growth_model', label: 'Growth model populated', complete: hasGrowthModel },
   ];
 
   const allComplete = checklist.every(c => c.complete);
