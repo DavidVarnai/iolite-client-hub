@@ -1368,19 +1368,19 @@ function StrategyDraftStep({ onNavigateTab }: { onNavigateTab: (tab: string) => 
   );
 }
 
-// ---------- STEP 4: Growth Model ----------
+// ---------- STEP 3: Growth Model ----------
 function GrowthModelStep({ onNavigateTab }: { onNavigateTab: (tab: string) => void }) {
   return (
     <div className="space-y-8">
       <div>
         <h3 className="text-lg font-semibold mb-1">Growth Model</h3>
-        <p className="text-sm text-muted-foreground">Turn the strategy into investment and outcome planning.</p>
+        <p className="text-sm text-muted-foreground">Set up media budgets, performance targets, and revenue projections.</p>
       </div>
 
       <div className="space-y-3">
-        {['Investment Plan — Agency services, media budgets, other costs',
-          'Channel Assumptions — CPC, CTR, conversion rate, CPA/CPL targets',
-          'Revenue Model — AOV, close rate, repeat multiplier, gross margin',
+        {['Media Budget — Allocate spend across channels and months',
+          'Performance Inputs — Target CPA, close rate, avg deal value',
+          'Revenue Projections — Leads, customers, and revenue forecasts',
         ].map((item, idx) => (
           <div key={idx} className="panel p-4 flex items-center gap-3">
             <div className="w-6 h-6 rounded-full bg-muted flex items-center justify-center text-xs font-semibold text-muted-foreground">
@@ -1393,7 +1393,7 @@ function GrowthModelStep({ onNavigateTab }: { onNavigateTab: (tab: string) => vo
 
       <div className="panel p-4 bg-primary/5 border-primary/20">
         <p className="text-sm text-foreground mb-1">
-          Continue to the Growth Model tab to build the investment plan, assumptions, and revenue projections.
+          Continue to the Growth Model tab to build the investment plan and revenue projections.
         </p>
         <p className="text-xs text-muted-foreground mb-3">
           You'll stay in onboarding — a progress panel will guide you back when you're ready.
