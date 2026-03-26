@@ -80,6 +80,7 @@ const c2Model: GrowthModel = {
   status: 'proposal', startMonth: '2026-04', monthCount: 6,
   funnelType: 'lead_gen', visibility: 'client',
   createdAt: '2026-03-08T10:00:00Z', updatedAt: '2026-03-10T10:00:00Z',
+  performanceInputs: { targetCpa: 85, closeRate: 15, avgDealValue: 15000 },
   scenarios: [{
     id: 'sc-c2-base', modelId: 'gm-c2', name: 'base', isDefault: true,
     createdAt: '2026-03-08T10:00:00Z',
