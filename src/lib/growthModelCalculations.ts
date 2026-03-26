@@ -3,8 +3,16 @@
 import type {
   ChannelAssumption, FunnelType, FunnelOutput, RevenueAssumption,
   MonthlyRevenueProjection, VarianceResult, BudgetLineItem, MediaChannelPlan,
-  MonthlyActual, Rollups, GrowthModelScenario, GrowthModel,
+  MonthlyActual, Rollups, GrowthModelScenario, GrowthModel, PerformanceInputs,
 } from '@/types/growthModel';
+
+/** Simple CPA-based projection: leads = spend / CPA, customers = leads * closeRate, revenue = customers * dealValue */
+export function calcSimpleProjection(mediaSpend: number, perf: PerformanceInputs) {
+  const leads = perf.targetCpa > 0 ? Math.round(mediaSpend / perf.targetCpa) : 0;
+  const customers = Math.round(leads * (perf.closeRate / 100));
+  const revenue = customers * perf.avgDealValue;
+  return { leads, customers, revenue };
+}
 
 export function calcImpressions(budget: number, cpm: number): number {
   if (cpm <= 0) return 0;

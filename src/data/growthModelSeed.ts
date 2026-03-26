@@ -25,6 +25,7 @@ const c1Model: GrowthModel = {
   status: 'active', startMonth: '2026-01', monthCount: 12,
   funnelType: 'ecommerce', visibility: 'client',
   createdAt: '2025-12-15T10:00:00Z', updatedAt: '2026-03-01T10:00:00Z',
+  performanceInputs: { targetCpa: 42, closeRate: 100, avgDealValue: 88 },
   scenarios: [{
     id: 'sc-c1-base', modelId: 'gm-c1', name: 'base', isDefault: true,
     createdAt: '2025-12-15T10:00:00Z',
@@ -79,6 +80,7 @@ const c2Model: GrowthModel = {
   status: 'proposal', startMonth: '2026-04', monthCount: 6,
   funnelType: 'lead_gen', visibility: 'client',
   createdAt: '2026-03-08T10:00:00Z', updatedAt: '2026-03-10T10:00:00Z',
+  performanceInputs: { targetCpa: 85, closeRate: 15, avgDealValue: 15000 },
   scenarios: [{
     id: 'sc-c2-base', modelId: 'gm-c2', name: 'base', isDefault: true,
     createdAt: '2026-03-08T10:00:00Z',
@@ -120,6 +122,7 @@ const c3Model: GrowthModel = {
   status: 'active', startMonth: '2026-01', monthCount: 12,
   funnelType: 'hybrid', visibility: 'client',
   createdAt: '2025-11-20T10:00:00Z', updatedAt: '2026-03-05T10:00:00Z',
+  performanceInputs: { targetCpa: 65, closeRate: 25, avgDealValue: 22000 },
   scenarios: [{
     id: 'sc-c3-base', modelId: 'gm-c3', name: 'base', isDefault: true,
     createdAt: '2025-11-20T10:00:00Z',
