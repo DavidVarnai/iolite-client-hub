@@ -443,15 +443,13 @@ export function computeStageReadiness(
     percentComplete: discoveryPct,
   });
 
-  // Strategy
-  const hasMeaningfulStrategy = client.strategySections.some(s =>
-    s.clientSummary.objective && s.clientSummary.priorities.length > 0
-  );
-  const stratPct = hasMeaningfulStrategy ? 100 : client.strategySections.length > 0 ? 40 : 0;
+  // Services Config — has proposed agency services?
+  const hasServices = ((onboarding as any).proposedAgencyServices || []).length > 0;
+  const svcPct = hasServices ? 100 : 0;
   progress.push({
-    stage: 'strategy',
-    status: stratPct >= 80 ? 'complete' : stratPct > 0 ? 'in_progress' : 'not_started',
-    percentComplete: stratPct,
+    stage: 'services_config',
+    status: svcPct >= 80 ? 'complete' : svcPct > 0 ? 'in_progress' : 'not_started',
+    percentComplete: svcPct,
   });
 
   // Growth Model
@@ -462,17 +460,8 @@ export function computeStageReadiness(
     percentComplete: gmPct,
   });
 
-  // Services Config — has proposed agency services?
-  const hasServices = ((onboarding as any).proposedAgencyServices || []).length > 0;
-  const svcPct = hasServices ? 100 : 0;
-  progress.push({
-    stage: 'services_config',
-    status: svcPct >= 80 ? 'complete' : svcPct > 0 ? 'in_progress' : 'not_started',
-    percentComplete: svcPct,
-  });
-
   // Proposal Ready
-  const proposalChecks = [discoveryPct >= 80, hasMeaningfulStrategy, hasGrowthModel, hasServices];
+  const proposalChecks = [discoveryPct >= 80, hasServices, hasGrowthModel];
   const proposalPct = Math.round((proposalChecks.filter(Boolean).length / proposalChecks.length) * 100);
   progress.push({
     stage: 'proposal_ready',
