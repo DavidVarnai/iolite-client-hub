@@ -104,7 +104,6 @@ function ClientHubContentInner({
     const stageToStep: Record<string, WizardStep> = {
       lead: 'setup',
       discovery: 'discovery',
-      strategy: 'strategy',
       growth_model: 'growth_model',
       services_config: 'services_config',
       proposal_ready: 'proposal',
