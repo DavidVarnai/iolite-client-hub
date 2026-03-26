@@ -7,9 +7,8 @@ export type StageStatus = 'not_started' | 'in_progress' | 'complete';
 export const LIFECYCLE_STAGES: { key: LifecycleStage; label: string; tabMapping?: string }[] = [
   { key: 'lead', label: 'Lead' },
   { key: 'discovery', label: 'Discovery', tabMapping: 'overview' },
-  { key: 'strategy', label: 'Strategy', tabMapping: 'strategy' },
-  { key: 'growth_model', label: 'Growth Model', tabMapping: 'growth-model' },
   { key: 'services_config', label: 'Services Config', tabMapping: 'services-config' },
+  { key: 'growth_model', label: 'Growth Model', tabMapping: 'growth-model' },
   { key: 'proposal_ready', label: 'Proposal Ready', tabMapping: 'proposal' },
   { key: 'active_client', label: 'Active Client', tabMapping: 'performance' },
 ];
