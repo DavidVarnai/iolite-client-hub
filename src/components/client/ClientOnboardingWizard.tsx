@@ -1670,22 +1670,21 @@ export default function ClientOnboardingWizard({ onClose, onNavigateTab, initial
               <motion.div key={currentStep} initial={{ opacity: 0, x: 10 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -10 }} transition={{ duration: 0.2 }}>
                 {currentStep === 'setup' && <ClientSetupStep />}
                 {currentStep === 'discovery' && <DiscoveryStep />}
-                {currentStep === 'strategy' && <StrategyDraftStep onNavigateTab={handleCloseAndNavigate} />}
-                {currentStep === 'growth_model' && <GrowthModelStep onNavigateTab={handleCloseAndNavigate} />}
                 {currentStep === 'services_config' && (
                   <div className="space-y-4">
                     <h3 className="text-base font-semibold text-foreground">Services Configuration</h3>
                     <p className="text-sm text-muted-foreground">
-                      Configure your agency services and pricing in the dedicated Services Config tab.
+                      Define the agency services you'll deliver and how they're priced.
                     </p>
                     <button
                       onClick={() => handleCloseAndNavigate('services-config')}
-                      className="px-4 py-2 bg-primary text-primary-foreground text-sm font-medium rounded-md hover:opacity-90 transition-opacity"
+                      className="flex items-center gap-1.5 px-4 py-2 bg-primary text-primary-foreground text-sm font-medium rounded-md hover:opacity-90 transition-opacity"
                     >
-                      Open Services Config
+                      Open Services Config <ArrowRight className="h-3.5 w-3.5" />
                     </button>
                   </div>
                 )}
+                {currentStep === 'growth_model' && <GrowthModelStep onNavigateTab={handleCloseAndNavigate} />}
                 {currentStep === 'proposal' && <ProposalReadyStep onNavigateTab={handleCloseAndNavigate} />}
               </motion.div>
             </AnimatePresence>
