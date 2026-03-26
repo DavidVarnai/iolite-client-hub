@@ -129,6 +129,7 @@ export default function GrowthModelView({
       visibility: 'internal',
       createdAt: now.toISOString(),
       updatedAt: now.toISOString(),
+      performanceInputs: { targetCpa: 50, closeRate: 20, avgDealValue: 1000 },
       scenarios: [{
         id: scenarioId,
         modelId,

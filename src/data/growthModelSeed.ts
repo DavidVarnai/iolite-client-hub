@@ -122,6 +122,7 @@ const c3Model: GrowthModel = {
   status: 'active', startMonth: '2026-01', monthCount: 12,
   funnelType: 'hybrid', visibility: 'client',
   createdAt: '2025-11-20T10:00:00Z', updatedAt: '2026-03-05T10:00:00Z',
+  performanceInputs: { targetCpa: 65, closeRate: 25, avgDealValue: 22000 },
   scenarios: [{
     id: 'sc-c3-base', modelId: 'gm-c3', name: 'base', isDefault: true,
     createdAt: '2025-11-20T10:00:00Z',
