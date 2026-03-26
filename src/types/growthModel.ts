@@ -25,6 +25,12 @@ export const OTHER_COST_TYPES = [
   'Call Tracking', 'Software/Platform Costs', 'Creative Production', 'Other',
 ] as const;
 
+export interface PerformanceInputs {
+  targetCpa: number;   // cost per acquisition/lead
+  closeRate: number;   // percentage (0-100)
+  avgDealValue: number; // revenue per closed customer
+}
+
 export interface GrowthModel {
   id: string;
   clientId: string;
@@ -36,6 +42,7 @@ export interface GrowthModel {
   visibility: ModelVisibility;
   createdAt: string;
   updatedAt: string;
+  performanceInputs: PerformanceInputs;
   scenarios: GrowthModelScenario[];
   actuals: MonthlyActual[];
   narratives: ModelNarrative[];
