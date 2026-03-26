@@ -1,11 +1,9 @@
 import { useState, useMemo } from 'react';
 import type { GrowthModel, GrowthModelMode, GrowthModelScenario } from '@/types/growthModel';
 import type { OnboardingContinuation } from '@/types/onboarding';
-import { calcRollups } from '@/lib/growthModelCalculations';
 import { GROWTH_MODEL_TEMPLATES, initializeFromTemplate } from '@/lib/growthModelTemplates';
 import SummaryBar from './growth/SummaryBar';
 import InvestmentPlan from './growth/InvestmentPlan';
-import ChannelAssumptions from './growth/ChannelAssumptions';
 import RevenueModel from './growth/RevenueModel';
 import ForecastVsActual from './growth/ForecastVsActual';
 import ExecutiveSummary from './growth/ExecutiveSummary';
@@ -14,13 +12,14 @@ import OnboardingContinuityPanel from './OnboardingContinuityPanel';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { FileText } from 'lucide-react';
 import { useClientContext } from '@/contexts/ClientContext';
+import type { ProposedAgencyService } from '@/types/commercialServices';
+import { calcPaidMediaFee } from '@/types/commercialServices';
 
-type SubTab = 'investment' | 'assumptions' | 'revenue' | 'forecast' | 'summary';
+type SubTab = 'investment' | 'revenue' | 'forecast' | 'summary';
 
 const SUB_TABS: { key: SubTab; label: string }[] = [
   { key: 'investment', label: 'Investment Plan' },
-  { key: 'assumptions', label: 'Channel Assumptions' },
-  { key: 'revenue', label: 'Revenue Model' },
+  { key: 'revenue', label: 'Revenue Projections' },
   { key: 'forecast', label: 'Forecast vs Actual' },
   { key: 'summary', label: 'Executive Summary' },
 ];
@@ -32,17 +31,82 @@ interface GrowthModelViewProps {
   onContinueToNext?: () => void;
 }
 
+/** Compute rollups from model + proposedAgencyServices */
+function computeRollups(model: GrowthModel, services: ProposedAgencyService[], monthlyMediaSpend: number) {
+  const scenario = model.scenarios.find(s => s.isDefault) || model.scenarios[0];
+  if (!scenario) return null;
+
+  const totalMediaBudget = scenario.mediaChannelPlans
+    .reduce((sum, mp) => sum + mp.monthlyRecords.reduce((s, r) => s + r.plannedBudget, 0), 0);
+
+  const totalOtherCosts = scenario.budgetLineItems
+    .filter(li => li.category === 'other')
+    .reduce((sum, li) => sum + li.monthlyRecords.reduce((s, r) => s + r.plannedAmount, 0), 0);
+
+  // Agency fees from proposedAgencyServices
+  let monthlyAgencyFees = 0;
+  let totalSetupFees = 0;
+  for (const svc of services) {
+    if (svc.serviceLine === 'Paid Media Management' && svc.paidMediaConfig) {
+      monthlyAgencyFees += calcPaidMediaFee(svc.paidMediaConfig, monthlyMediaSpend).fee;
+    } else {
+      monthlyAgencyFees += svc.monthlyFee;
+    }
+    totalSetupFees += svc.setupFee;
+  }
+  const totalAgencyFees = (monthlyAgencyFees * model.monthCount) + totalSetupFees;
+
+  const totalInvestment = totalAgencyFees + totalMediaBudget + totalOtherCosts;
+
+  // Simple projection: leads = spend / CPA, customers = leads * closeRate, revenue = customers * dealValue
+  const ra = scenario.revenueAssumption;
+  const targetCpa = ra.avgDealSize > 0 && ra.closeRate > 0
+    ? ra.avgDealSize // using targetCpa stored in avgDealSize for simplified model
+    : 0;
+  const forecastLeads = targetCpa > 0 ? Math.round(totalMediaBudget / targetCpa) : 0;
+  const forecastCustomers = Math.round(forecastLeads * (ra.closeRate / 100));
+  const forecastRevenue = forecastCustomers * ra.avgDealSize * ra.repeatMultiplier;
+
+  const forecastCpl = forecastLeads > 0 ? totalMediaBudget / forecastLeads : 0;
+  const forecastCpa = forecastLeads > 0 ? totalInvestment / forecastLeads : 0;
+
+  const actualSpend = model.actuals.reduce((s, a) => s + a.actualSpend, 0);
+  const actualRevenue = model.actuals.reduce((s, a) => s + a.actualRevenue, 0);
+  const variance = forecastRevenue > 0 ? ((actualRevenue - forecastRevenue) / forecastRevenue) * 100 : 0;
+
+  return {
+    totalAgencyFees, totalMediaBudget, totalOtherCosts, totalInvestment,
+    forecastRevenue: Math.round(forecastRevenue),
+    forecastCpa: Math.round(forecastCpa),
+    forecastCpl: Math.round(forecastCpl),
+    actualSpend, actualRevenue,
+    variance: Math.round(variance * 10) / 10,
+  };
+}
+
 export default function GrowthModelView({
   onboardingContinuation,
   onReturnToWizard,
   onPauseOnboarding,
   onContinueToNext,
 }: GrowthModelViewProps) {
-  const { client, growthModel: model, updateGrowthModel } = useClientContext();
+  const { client, growthModel: model, updateGrowthModel, onboarding } = useClientContext();
   const [mode, setMode] = useState<GrowthModelMode>('planning');
   const [activeTab, setActiveTab] = useState<SubTab>('investment');
 
-  const rollups = useMemo(() => model ? calcRollups(model) : null, [model]);
+  const proposedServices: ProposedAgencyService[] = (onboarding as any).proposedAgencyServices || [];
+
+  const monthlyMediaSpend = useMemo(() => {
+    if (!model) return 0;
+    const scenario = model.scenarios.find(s => s.isDefault) || model.scenarios[0];
+    if (!scenario) return 0;
+    const totalBudget = scenario.mediaChannelPlans.reduce(
+      (sum, mp) => sum + mp.monthlyRecords.reduce((s, r) => s + r.plannedBudget, 0), 0
+    );
+    return totalBudget / (model.monthCount || 1);
+  }, [model]);
+
+  const rollups = useMemo(() => model ? computeRollups(model, proposedServices, monthlyMediaSpend) : null, [model, proposedServices, monthlyMediaSpend]);
 
   const handleCreateFromTemplate = (templateId: string) => {
     const template = GROWTH_MODEL_TEMPLATES.find(t => t.id === templateId);
@@ -104,7 +168,7 @@ export default function GrowthModelView({
         <div className="panel p-8 text-center mb-6">
           <h3 className="text-lg font-semibold text-foreground mb-2">No Growth Model</h3>
           <p className="text-sm text-muted-foreground mb-6">
-            Choose a template to get started quickly, pre-loaded with service lines, media channels, and industry assumptions.
+            Choose a template to get started quickly, pre-loaded with media channels and industry assumptions.
           </p>
         </div>
 
@@ -125,7 +189,6 @@ export default function GrowthModelView({
                 <p className="text-xs text-muted-foreground mb-3">{tpl.description}</p>
                 <div className="flex flex-wrap gap-1.5">
                   <span className="status-badge bg-primary/10 text-primary text-[10px]">{tpl.funnelType.replace('_', ' ')}</span>
-                  <span className="status-badge bg-muted text-muted-foreground text-[10px]">{tpl.agencyServices.length} services</span>
                   <span className="status-badge bg-muted text-muted-foreground text-[10px]">{tpl.mediaChannels.length} channels</span>
                   <span className="status-badge bg-muted text-muted-foreground text-[10px]">{tpl.defaultMonthCount} months</span>
                 </div>
@@ -184,7 +247,6 @@ export default function GrowthModelView({
 
       <div className="flex-1 overflow-auto">
         {activeTab === 'investment' && scenario && <InvestmentPlan model={model} scenario={scenario} onUpdate={handleModelUpdate} />}
-        {activeTab === 'assumptions' && scenario && <ChannelAssumptions model={model} scenario={scenario} onUpdate={handleModelUpdate} />}
         {activeTab === 'revenue' && scenario && <RevenueModel model={model} scenario={scenario} onUpdate={handleModelUpdate} />}
         {activeTab === 'forecast' && scenario && <ForecastVsActual model={model} scenario={scenario} onUpdate={handleModelUpdate} />}
         {activeTab === 'summary' && <ExecutiveSummary model={model} mode={mode} />}

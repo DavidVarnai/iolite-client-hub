@@ -7,9 +7,8 @@ export type StageStatus = 'not_started' | 'in_progress' | 'complete';
 export const LIFECYCLE_STAGES: { key: LifecycleStage; label: string; tabMapping?: string }[] = [
   { key: 'lead', label: 'Lead' },
   { key: 'discovery', label: 'Discovery', tabMapping: 'overview' },
-  { key: 'strategy', label: 'Strategy', tabMapping: 'strategy' },
-  { key: 'growth_model', label: 'Growth Model', tabMapping: 'growth-model' },
   { key: 'services_config', label: 'Services Config', tabMapping: 'services-config' },
+  { key: 'growth_model', label: 'Growth Model', tabMapping: 'growth-model' },
   { key: 'proposal_ready', label: 'Proposal Ready', tabMapping: 'proposal' },
   { key: 'active_client', label: 'Active Client', tabMapping: 'performance' },
 ];
@@ -444,15 +443,13 @@ export function computeStageReadiness(
     percentComplete: discoveryPct,
   });
 
-  // Strategy
-  const hasMeaningfulStrategy = client.strategySections.some(s =>
-    s.clientSummary.objective && s.clientSummary.priorities.length > 0
-  );
-  const stratPct = hasMeaningfulStrategy ? 100 : client.strategySections.length > 0 ? 40 : 0;
+  // Services Config — has proposed agency services?
+  const hasServices = ((onboarding as any).proposedAgencyServices || []).length > 0;
+  const svcPct = hasServices ? 100 : 0;
   progress.push({
-    stage: 'strategy',
-    status: stratPct >= 80 ? 'complete' : stratPct > 0 ? 'in_progress' : 'not_started',
-    percentComplete: stratPct,
+    stage: 'services_config',
+    status: svcPct >= 80 ? 'complete' : svcPct > 0 ? 'in_progress' : 'not_started',
+    percentComplete: svcPct,
   });
 
   // Growth Model
@@ -463,17 +460,8 @@ export function computeStageReadiness(
     percentComplete: gmPct,
   });
 
-  // Services Config — has proposed agency services?
-  const hasServices = ((onboarding as any).proposedAgencyServices || []).length > 0;
-  const svcPct = hasServices ? 100 : 0;
-  progress.push({
-    stage: 'services_config',
-    status: svcPct >= 80 ? 'complete' : svcPct > 0 ? 'in_progress' : 'not_started',
-    percentComplete: svcPct,
-  });
-
   // Proposal Ready
-  const proposalChecks = [discoveryPct >= 80, hasMeaningfulStrategy, hasGrowthModel, hasServices];
+  const proposalChecks = [discoveryPct >= 80, hasServices, hasGrowthModel];
   const proposalPct = Math.round((proposalChecks.filter(Boolean).length / proposalChecks.length) * 100);
   progress.push({
     stage: 'proposal_ready',
@@ -505,7 +493,7 @@ export function getProposalChecklist(
   return [
     { key: 'client_setup', label: 'Client setup complete', complete: true },
     { key: 'discovery', label: 'Discovery complete', complete: dFilled >= 4 },
-    { key: 'strategy', label: 'At least one strategy module summarized', complete: client.strategySections.some(s => s.clientSummary.objective) },
+    { key: 'services_config', label: 'Services configured', complete: ((onboarding as any).proposedAgencyServices || []).length > 0 },
     { key: 'growth_model', label: 'Growth model populated', complete: hasGrowthModel },
     { key: 'investment_totals', label: 'Investment totals available', complete: hasGrowthModel },
     { key: 'projected_outcomes', label: 'Projected outcomes available', complete: hasGrowthModel },
@@ -524,13 +512,13 @@ export function getNextStepPrompt(onboarding: OnboardingData, stageProgress: Cli
       return { message: 'Start discovery to understand this client\'s business and goals.', action: 'Begin Discovery', openWizard: true };
     case 'discovery':
       if (stageInfo.percentComplete < 80) {
-        return { message: 'Complete discovery to unlock strategy recommendations.', action: 'Continue Discovery', openWizard: true };
+        return { message: 'Complete discovery to unlock services configuration.', action: 'Continue Discovery', openWizard: true };
       }
-      return { message: 'Discovery is ready. Continue onboarding to draft your strategy.', action: 'Continue to Strategy', openWizard: true };
-    case 'strategy':
-      return { message: 'Strategy is in progress. Continue onboarding to build the Growth Model.', action: 'Continue Onboarding', openWizard: true };
+      return { message: 'Discovery is ready. Continue to configure services.', action: 'Continue to Services', openWizard: true };
+    case 'services_config':
+      return { message: 'Configure your agency services and pricing.', action: 'Set Up Services', targetTab: 'services-config' };
     case 'growth_model':
-      return { message: 'Review proposal readiness before presenting to client.', action: 'Check Proposal Readiness', openWizard: true };
+      return { message: 'Build media budgets and revenue projections.', action: 'Continue Growth Model', targetTab: 'growth-model' };
     case 'proposal_ready':
       return { message: 'Activate this client after approval to begin operations.', action: 'Activate Client', targetTab: 'overview' };
     case 'active_client':

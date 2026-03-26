@@ -24,14 +24,14 @@ import ServicesConfig from '@/components/client/ServicesConfig';
 import MarketIntelligenceTab from '@/components/client/marketIntelligence/MarketIntelligenceTab';
 
 const TABS = [
-  'overview', 'intelligence', 'strategy', 'growth-model', 'services-config', 'proposal', 'campaigns', 'performance', 'meetings',
+  'overview', 'intelligence', 'strategy', 'services-config', 'growth-model', 'proposal', 'campaigns', 'performance', 'meetings',
   'comments', 'tasks', 'communications', 'documents', 'unit-economics', 'settings',
 ] as const;
 
-type WizardStep = 'setup' | 'discovery' | 'strategy' | 'growth_model' | 'services_config' | 'proposal';
+type WizardStep = 'setup' | 'discovery' | 'services_config' | 'growth_model' | 'proposal';
 type ResolvedClientContext = NonNullable<ReturnType<typeof useOptionalClientContext>>;
 
-const WIZARD_STEP_ORDER: WizardStep[] = ['setup', 'discovery', 'strategy', 'growth_model', 'services_config', 'proposal'];
+const WIZARD_STEP_ORDER: WizardStep[] = ['setup', 'discovery', 'services_config', 'growth_model', 'proposal'];
 
 /** Map wizard steps to their next step */
 function getNextWizardStep(step: string): string | null {
@@ -41,15 +41,13 @@ function getNextWizardStep(step: string): string | null {
 
 /** Map wizard steps to tab names */
 const STEP_TO_TAB: Record<string, string> = {
-  strategy: 'strategy',
-  growth_model: 'growth-model',
   services_config: 'services-config',
+  growth_model: 'growth-model',
 };
 
 const TAB_TO_STEP: Record<string, string> = {
-  strategy: 'strategy',
-  'growth-model': 'growth_model',
   'services-config': 'services_config',
+  'growth-model': 'growth_model',
 };
 
 function ClientHubContent({ clientId, tab }: { clientId: string; tab?: string }) {
@@ -106,7 +104,6 @@ function ClientHubContentInner({
     const stageToStep: Record<string, WizardStep> = {
       lead: 'setup',
       discovery: 'discovery',
-      strategy: 'strategy',
       growth_model: 'growth_model',
       services_config: 'services_config',
       proposal_ready: 'proposal',

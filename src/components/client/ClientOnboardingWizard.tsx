@@ -14,15 +14,14 @@ import MasterBriefSection from './discovery/MasterBriefSection';
 import { Collapsible, CollapsibleTrigger, CollapsibleContent } from '@/components/ui/collapsible';
 import { mapBriefToRevenueStreamSuggestions, mapBriefToDiscoverySuggestions } from '@/lib/ai/masterBriefRevenueHelper';
 
-type WizardStep = 'setup' | 'discovery' | 'strategy' | 'growth_model' | 'services_config' | 'proposal';
+type WizardStep = 'setup' | 'discovery' | 'services_config' | 'growth_model' | 'proposal';
 
 const STEPS: { key: WizardStep; label: string; number: number }[] = [
   { key: 'setup', label: 'Client Setup', number: 1 },
   { key: 'discovery', label: 'Discovery', number: 2 },
-  { key: 'strategy', label: 'Strategy Draft', number: 3 },
+  { key: 'services_config', label: 'Services Config', number: 3 },
   { key: 'growth_model', label: 'Growth Model', number: 4 },
-  { key: 'services_config', label: 'Services Config', number: 5 },
-  { key: 'proposal', label: 'Proposal Ready', number: 6 },
+  { key: 'proposal', label: 'Proposal Ready', number: 5 },
 ];
 
 interface Props {
@@ -1369,19 +1368,19 @@ function StrategyDraftStep({ onNavigateTab }: { onNavigateTab: (tab: string) => 
   );
 }
 
-// ---------- STEP 4: Growth Model ----------
+// ---------- STEP 3: Growth Model ----------
 function GrowthModelStep({ onNavigateTab }: { onNavigateTab: (tab: string) => void }) {
   return (
     <div className="space-y-8">
       <div>
         <h3 className="text-lg font-semibold mb-1">Growth Model</h3>
-        <p className="text-sm text-muted-foreground">Turn the strategy into investment and outcome planning.</p>
+        <p className="text-sm text-muted-foreground">Set up media budgets, performance targets, and revenue projections.</p>
       </div>
 
       <div className="space-y-3">
-        {['Investment Plan — Agency services, media budgets, other costs',
-          'Channel Assumptions — CPC, CTR, conversion rate, CPA/CPL targets',
-          'Revenue Model — AOV, close rate, repeat multiplier, gross margin',
+        {['Media Budget — Allocate spend across channels and months',
+          'Performance Inputs — Target CPA, close rate, avg deal value',
+          'Revenue Projections — Leads, customers, and revenue forecasts',
         ].map((item, idx) => (
           <div key={idx} className="panel p-4 flex items-center gap-3">
             <div className="w-6 h-6 rounded-full bg-muted flex items-center justify-center text-xs font-semibold text-muted-foreground">
@@ -1394,7 +1393,7 @@ function GrowthModelStep({ onNavigateTab }: { onNavigateTab: (tab: string) => vo
 
       <div className="panel p-4 bg-primary/5 border-primary/20">
         <p className="text-sm text-foreground mb-1">
-          Continue to the Growth Model tab to build the investment plan, assumptions, and revenue projections.
+          Continue to the Growth Model tab to build the investment plan and revenue projections.
         </p>
         <p className="text-xs text-muted-foreground mb-3">
           You'll stay in onboarding — a progress panel will guide you back when you're ready.
@@ -1417,9 +1416,8 @@ function ProposalReadyStep({ onNavigateTab }: { onNavigateTab: (tab: string) => 
   const checklist = [
     { key: 'client_setup', label: 'Client setup complete', complete: !!client.name && !!client.company },
     { key: 'discovery', label: 'Discovery complete', complete: !!(onboarding.discovery.primaryProducts && (onboarding.discovery.revenueTarget > 0 || onboarding.discovery.revenueTargets)) },
-    { key: 'strategy', label: 'Strategy module summarized', complete: client.strategySections.length > 0 },
-    { key: 'growth_model', label: 'Growth model populated', complete: hasGrowthModel },
     { key: 'services_config', label: 'Services configured', complete: ((onboarding as any).proposedAgencyServices || []).length > 0 },
+    { key: 'growth_model', label: 'Growth model populated', complete: hasGrowthModel },
   ];
 
   const allComplete = checklist.every(c => c.complete);
@@ -1671,22 +1669,21 @@ export default function ClientOnboardingWizard({ onClose, onNavigateTab, initial
               <motion.div key={currentStep} initial={{ opacity: 0, x: 10 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -10 }} transition={{ duration: 0.2 }}>
                 {currentStep === 'setup' && <ClientSetupStep />}
                 {currentStep === 'discovery' && <DiscoveryStep />}
-                {currentStep === 'strategy' && <StrategyDraftStep onNavigateTab={handleCloseAndNavigate} />}
-                {currentStep === 'growth_model' && <GrowthModelStep onNavigateTab={handleCloseAndNavigate} />}
                 {currentStep === 'services_config' && (
                   <div className="space-y-4">
                     <h3 className="text-base font-semibold text-foreground">Services Configuration</h3>
                     <p className="text-sm text-muted-foreground">
-                      Configure your agency services and pricing in the dedicated Services Config tab.
+                      Define the agency services you'll deliver and how they're priced.
                     </p>
                     <button
                       onClick={() => handleCloseAndNavigate('services-config')}
-                      className="px-4 py-2 bg-primary text-primary-foreground text-sm font-medium rounded-md hover:opacity-90 transition-opacity"
+                      className="flex items-center gap-1.5 px-4 py-2 bg-primary text-primary-foreground text-sm font-medium rounded-md hover:opacity-90 transition-opacity"
                     >
-                      Open Services Config
+                      Open Services Config <ArrowRight className="h-3.5 w-3.5" />
                     </button>
                   </div>
                 )}
+                {currentStep === 'growth_model' && <GrowthModelStep onNavigateTab={handleCloseAndNavigate} />}
                 {currentStep === 'proposal' && <ProposalReadyStep onNavigateTab={handleCloseAndNavigate} />}
               </motion.div>
             </AnimatePresence>
