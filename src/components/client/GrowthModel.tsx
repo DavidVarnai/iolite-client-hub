@@ -55,17 +55,13 @@ function computeRollups(model: GrowthModel, services: ProposedAgencyService[], m
     totalSetupFees += svc.setupFee;
   }
   const totalAgencyFees = (monthlyAgencyFees * model.monthCount) + totalSetupFees;
-
   const totalInvestment = totalAgencyFees + totalMediaBudget + totalOtherCosts;
 
-  // Simple projection: leads = spend / CPA, customers = leads * closeRate, revenue = customers * dealValue
-  const ra = scenario.revenueAssumption;
-  const targetCpa = ra.avgDealSize > 0 && ra.closeRate > 0
-    ? ra.avgDealSize // using targetCpa stored in avgDealSize for simplified model
-    : 0;
-  const forecastLeads = targetCpa > 0 ? Math.round(totalMediaBudget / targetCpa) : 0;
-  const forecastCustomers = Math.round(forecastLeads * (ra.closeRate / 100));
-  const forecastRevenue = forecastCustomers * ra.avgDealSize * ra.repeatMultiplier;
+  // Simple CPA-based projection
+  const perf = model.performanceInputs;
+  const forecastLeads = perf.targetCpa > 0 ? Math.round(totalMediaBudget / perf.targetCpa) : 0;
+  const forecastCustomers = Math.round(forecastLeads * (perf.closeRate / 100));
+  const forecastRevenue = forecastCustomers * perf.avgDealValue;
 
   const forecastCpl = forecastLeads > 0 ? totalMediaBudget / forecastLeads : 0;
   const forecastCpa = forecastLeads > 0 ? totalInvestment / forecastLeads : 0;
