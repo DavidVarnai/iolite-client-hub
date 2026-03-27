@@ -11,8 +11,6 @@ export const seedServiceLines: ServiceLine[] = [
     pricingType: 'hourly',
     defaultUnit: 'hour',
     status: 'active',
-    defaultRateMin: 250,
-    defaultRateMax: 250,
   },
   {
     id: 'sl2',
@@ -45,8 +43,6 @@ export const seedServiceLines: ServiceLine[] = [
     pricingType: 'hourly',
     defaultUnit: 'hour',
     status: 'active',
-    defaultRateMin: 100,
-    defaultRateMax: 150,
   },
   {
     id: 'sl6',

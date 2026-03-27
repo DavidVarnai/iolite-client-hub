@@ -45,8 +45,6 @@ export interface ServiceLine {
   pricingType: PricingType;
   defaultUnit: ServiceUnit;
   status: ServiceLineStatus;
-  defaultRateMin?: number;
-  defaultRateMax?: number;
 }
 
 /* ── Package Pricing Model ── */
