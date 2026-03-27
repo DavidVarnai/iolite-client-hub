@@ -8,7 +8,7 @@ import { repository } from '@/lib/repository';
 import type { ProposedAgencyService, PricingOverrides } from '@/types/commercialServices';
 import { DEFAULT_PAID_MEDIA_CONFIG, resolveServiceFee, resolveSetupFee } from '@/types/commercialServices';
 import type { ServiceLine, ServicePackage, PackageDeliverable } from '@/types/services';
-import { PACKAGE_PRICING_MODEL_LABELS } from '@/types/services';
+import { PACKAGE_PRICING_MODEL_LABELS, pricingModelUnit } from '@/types/services';
 import { formatCurrency } from '@/lib/parsing';
 import { Plus, Trash2, Package, ExternalLink, ChevronDown, ChevronRight, Settings2 } from 'lucide-react';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
