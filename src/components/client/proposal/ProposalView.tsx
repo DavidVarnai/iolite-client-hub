@@ -85,7 +85,7 @@ function CommercialSummary({ services, monthlyMediaSpend }: { services: Proposed
           <tbody className="divide-y">
             {services.map(svc => {
               const pkg = allPackages.find(p => p.id === svc.selectedPackageId);
-              const fee = resolveServiceFee(svc, pkg?.basePrice ?? 0, monthlyMediaSpend);
+              const fee = resolveServiceFee(svc, pkg?.basePrice ?? 0, monthlyMediaSpend, pkg?.pricingModel);
               const setup = resolveSetupFee(svc);
               return (
                 <tr key={svc.id}>
