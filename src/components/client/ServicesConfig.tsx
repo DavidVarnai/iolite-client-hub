@@ -277,6 +277,22 @@ function ServiceCard({
       {/* Expanded details */}
       {expanded && (
         <div className="border-t px-4 pb-4 pt-3 space-y-4 bg-muted/10">
+          {/* Hourly hours input */}
+          {isHourly && (
+            <div className="mb-3">
+              <Label className="text-xs text-muted-foreground">Estimated Hours / Month</Label>
+              <div className="flex items-center gap-2 mt-1">
+                <Input
+                  type="number" min={0} value={service.estimatedMonthlyHours ?? ''}
+                  onChange={e => onUpdate({ ...service, estimatedMonthlyHours: e.target.value ? parseInt(e.target.value) : undefined })}
+                  placeholder={String((pkg?.pricingRules as any)?.defaultHoursPerMonth ?? 20)}
+                  className="h-8 text-xs w-28"
+                />
+                <span className="text-xs text-muted-foreground">× {formatCurrency(pkg?.basePrice ?? 0)}/hr = <span className="font-medium text-foreground">{formatCurrency(fee)}/mo</span></span>
+              </div>
+            </div>
+          )}
+
           {/* Deliverables (read-only from package) */}
           {pkg && pkg.deliverables.length > 0 && (
             <div>
