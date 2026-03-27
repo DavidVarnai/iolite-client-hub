@@ -195,7 +195,7 @@ function AddServiceButton({
                 >
                   <div className="flex items-center justify-between">
                     <span className="text-sm font-medium text-foreground">{pkg.name}</span>
-                    <span className="text-sm font-semibold tabular-nums text-primary">{formatCurrency(pkg.basePrice)}/mo</span>
+                    <span className="text-sm font-semibold tabular-nums text-primary">{formatCurrency(pkg.basePrice)}{pricingModelUnit(pkg.pricingModel)}</span>
                   </div>
                   <p className="text-xs text-muted-foreground mt-0.5">{pkg.description}</p>
                   {pkg.deliverables.length > 0 && (
