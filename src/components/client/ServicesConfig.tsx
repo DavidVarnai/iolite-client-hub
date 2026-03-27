@@ -53,7 +53,7 @@ export default function ServicesConfig() {
     let setup = 0;
     for (const svc of services) {
       const pkg = allPackages.find(p => p.id === svc.selectedPackageId);
-      monthly += resolveServiceFee(svc, pkg?.basePrice ?? 0, monthlyMediaSpend);
+      monthly += resolveServiceFee(svc, pkg?.basePrice ?? 0, monthlyMediaSpend, pkg?.pricingModel);
       setup += resolveSetupFee(svc);
     }
     return { monthly, setup };
