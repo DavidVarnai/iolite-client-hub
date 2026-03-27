@@ -50,7 +50,7 @@ function ServiceLinesTab() {
   const openCreate = () => { setEditId(null); setForm({ ...emptyLineForm }); setDialogOpen(true); };
   const openEdit = (sl: ServiceLine) => {
     setEditId(sl.id);
-    setForm({ name: sl.name, description: sl.description, pricingType: sl.pricingType, defaultUnit: sl.defaultUnit, status: sl.status, defaultRateMin: sl.defaultRateMin, defaultRateMax: sl.defaultRateMax });
+    setForm({ name: sl.name, description: sl.description, pricingType: sl.pricingType, defaultUnit: sl.defaultUnit, status: sl.status });
     setDialogOpen(true);
   };
 
