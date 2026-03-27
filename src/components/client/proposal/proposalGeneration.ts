@@ -45,15 +45,14 @@ function buildPricingLine(
 }
 
 function buildServiceOnlyLine(sl: ServiceLine): ProposalPricingLine {
-  const price = sl.defaultRateMin || 0;
   return {
     id: `pl-sl-${sl.id}`,
     label: sl.name,
     description: sl.description,
     type: 'service',
     serviceLineId: sl.id,
-    monthlyPrice: price,
-    notes: price > 0 ? `Rate: ${fmt(price)}${sl.defaultRateMax && sl.defaultRateMax !== price ? `–${fmt(sl.defaultRateMax)}` : ''}/hr` : 'Pricing to be confirmed',
+    monthlyPrice: 0,
+    notes: 'Pricing configured in packages',
   };
 }
 

@@ -138,9 +138,6 @@ function ServiceLinesTab() {
                 <Select value={form.defaultUnit} onValueChange={v => setForm(f => ({ ...f, defaultUnit: v as ServiceUnit }))}><SelectTrigger><SelectValue /></SelectTrigger><SelectContent>{SERVICE_UNITS.map(([v, l]) => <SelectItem key={v} value={v}>{l}</SelectItem>)}</SelectContent></Select>
               </div>
             </div>
-            <div className="grid grid-cols-2 gap-4">
-              <div className="space-y-1.5"><Label>Default Rate Min ($)</Label><Input type="number" value={form.defaultRateMin ?? ''} onChange={e => setForm(f => ({ ...f, defaultRateMin: e.target.value ? Number(e.target.value) : undefined }))} placeholder="Optional" /></div>
-              <div className="space-y-1.5"><Label>Default Rate Max ($)</Label><Input type="number" value={form.defaultRateMax ?? ''} onChange={e => setForm(f => ({ ...f, defaultRateMax: e.target.value ? Number(e.target.value) : undefined }))} placeholder="Optional" /></div>
             </div>
           </div>
           <DialogFooter>
