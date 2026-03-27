@@ -19,7 +19,8 @@ import type { Proposal, ProposalStatus, ProposalSummaryData, ProposalTimelineDat
 import { PROPOSAL_STATUS_LABELS } from '@/types/proposal';
 import { formatCurrency } from '@/lib/parsing';
 import type { ProposedAgencyService } from '@/types/commercialServices';
-import { calcPaidMediaFee, PROPOSAL_PRICING_MODEL_LABELS } from '@/types/commercialServices';
+import { resolveServiceFee, resolveSetupFee } from '@/types/commercialServices';
+import { PACKAGE_PRICING_MODEL_LABELS } from '@/types/services';
 
 import { generateProposal, type GenerationConfig } from './proposalGeneration';
 import EditableText from './EditableText';
@@ -32,6 +33,8 @@ import RevenueModelDisplay from '../RevenueModelDisplay';
 
 /** Read-only commercial summary pulled from Services Config */
 function CommercialSummary({ services, monthlyMediaSpend }: { services: ProposedAgencyService[]; monthlyMediaSpend: number }) {
+  const allPackages = useMemo(() => repository.servicePackages.getAll(), []);
+
   if (services.length === 0) {
     return (
       <ProposalSection>
@@ -52,12 +55,9 @@ function CommercialSummary({ services, monthlyMediaSpend }: { services: Proposed
   let totalMonthly = 0;
   let totalSetup = 0;
   for (const svc of services) {
-    if (svc.serviceLine === 'Paid Media Management' && svc.paidMediaConfig) {
-      totalMonthly += calcPaidMediaFee(svc.paidMediaConfig, monthlyMediaSpend).fee;
-    } else {
-      totalMonthly += svc.monthlyFee;
-    }
-    totalSetup += svc.setupFee;
+    const pkg = allPackages.find(p => p.id === svc.selectedPackageId);
+    totalMonthly += resolveServiceFee(svc, pkg?.basePrice ?? 0, monthlyMediaSpend);
+    totalSetup += resolveSetupFee(svc);
   }
 
   return (
@@ -76,24 +76,24 @@ function CommercialSummary({ services, monthlyMediaSpend }: { services: Proposed
           <thead>
             <tr className="border-b bg-muted/30">
               <th className="text-left px-4 py-2.5 font-medium text-muted-foreground">Service</th>
-              <th className="text-left px-3 py-2.5 font-medium text-muted-foreground">Pricing Model</th>
-              <th className="text-left px-3 py-2.5 font-medium text-muted-foreground">Billing</th>
+              <th className="text-left px-3 py-2.5 font-medium text-muted-foreground">Package</th>
+              <th className="text-left px-3 py-2.5 font-medium text-muted-foreground">Duration</th>
               <th className="text-right px-3 py-2.5 font-medium text-muted-foreground">Monthly</th>
               <th className="text-right px-3 py-2.5 font-medium text-muted-foreground">Setup</th>
             </tr>
           </thead>
           <tbody className="divide-y">
             {services.map(svc => {
-              const fee = svc.serviceLine === 'Paid Media Management' && svc.paidMediaConfig
-                ? calcPaidMediaFee(svc.paidMediaConfig, monthlyMediaSpend).fee
-                : svc.monthlyFee;
+              const pkg = allPackages.find(p => p.id === svc.selectedPackageId);
+              const fee = resolveServiceFee(svc, pkg?.basePrice ?? 0, monthlyMediaSpend);
+              const setup = resolveSetupFee(svc);
               return (
                 <tr key={svc.id}>
                   <td className="px-4 py-2.5 font-medium text-foreground">{svc.serviceLine}</td>
-                  <td className="px-3 py-2.5 text-muted-foreground">{PROPOSAL_PRICING_MODEL_LABELS[svc.pricingModelType]}</td>
-                  <td className="px-3 py-2.5 text-muted-foreground capitalize">{svc.billingCadence}</td>
+                  <td className="px-3 py-2.5 text-muted-foreground">{pkg?.name ?? '—'}</td>
+                  <td className="px-3 py-2.5 text-muted-foreground">{svc.durationMonths} mo</td>
                   <td className="px-3 py-2.5 text-right tabular-nums font-medium text-foreground">{formatCurrency(fee)}</td>
-                  <td className="px-3 py-2.5 text-right tabular-nums text-muted-foreground">{svc.setupFee > 0 ? formatCurrency(svc.setupFee) : '—'}</td>
+                  <td className="px-3 py-2.5 text-right tabular-nums text-muted-foreground">{setup > 0 ? formatCurrency(setup) : '—'}</td>
                 </tr>
               );
             })}
@@ -123,7 +123,6 @@ export default function ProposalView({ proposalMode = false }: { proposalMode?: 
 
   const proposedServices: ProposedAgencyService[] = (onboarding as any).proposedAgencyServices || [];
 
-  // Monthly media spend for paid media fee calc
   const monthlyMediaSpend = useMemo(() => {
     if (!contextGrowthModel) return 0;
     const scenario = contextGrowthModel.scenarios.find(s => s.isDefault) || contextGrowthModel.scenarios[0];
@@ -173,7 +172,6 @@ export default function ProposalView({ proposalMode = false }: { proposalMode?: 
     handleUpdate({ ...activeProposal, timelineData: { ...activeProposal.timelineData, [key]: value } });
   };
 
-  // Show config panel
   if (showConfig || (proposals.length === 0 && !activeProposal)) {
     return <ProposalConfigPanel clientId={client.id} onGenerate={handleGenerate} />;
   }
@@ -187,28 +185,21 @@ export default function ProposalView({ proposalMode = false }: { proposalMode?: 
 
   return (
     <div className={`${proposalMode ? 'bg-background' : ''}`}>
-      {/* Proposal selector + actions bar (internal only) */}
       {!proposalMode && (
         <div className="px-6 py-4 border-b bg-muted/20 flex items-center justify-between">
           <div className="flex items-center gap-3">
             {proposals.length > 1 && (
               <Select value={activeProposalId || ''} onValueChange={setActiveProposalId}>
-                <SelectTrigger className="w-64 h-9">
-                  <SelectValue />
-                </SelectTrigger>
+                <SelectTrigger className="w-64 h-9"><SelectValue /></SelectTrigger>
                 <SelectContent>
                   {proposals.map(pr => (
-                    <SelectItem key={pr.id} value={pr.id}>
-                      {pr.name} (v{pr.version})
-                    </SelectItem>
+                    <SelectItem key={pr.id} value={pr.id}>{pr.name} (v{pr.version})</SelectItem>
                   ))}
                 </SelectContent>
               </Select>
             )}
             <Select value={p.status} onValueChange={v => handleStatusChange(v as ProposalStatus)}>
-              <SelectTrigger className="w-36 h-9">
-                <SelectValue />
-              </SelectTrigger>
+              <SelectTrigger className="w-36 h-9"><SelectValue /></SelectTrigger>
               <SelectContent>
                 {Object.entries(PROPOSAL_STATUS_LABELS).map(([k, v]) => (
                   <SelectItem key={k} value={k}>{v}</SelectItem>
@@ -224,59 +215,38 @@ export default function ProposalView({ proposalMode = false }: { proposalMode?: 
         </div>
       )}
 
-      {/* Proposal content */}
       <div className="max-w-4xl mx-auto px-6 py-8 space-y-6">
-
         <ProposalHeader proposal={p} onUpdate={handleUpdate} proposalMode={proposalMode} />
-
         <Separator />
 
-        {/* Executive Summary */}
         <ProposalSection>
           <SectionHeader icon={FileText} title="Executive Summary" />
           {proposalMode ? (
             <p className="text-sm leading-relaxed text-foreground/90">{p.summaryData.executiveSummary}</p>
           ) : (
             <>
-              <EditableText
-                value={p.summaryData.executiveSummary}
-                onChange={v => updateSummary('executiveSummary', v)}
-                multiline
-                className="text-sm leading-relaxed text-foreground/90"
-              />
+              <EditableText value={p.summaryData.executiveSummary} onChange={v => updateSummary('executiveSummary', v)} multiline className="text-sm leading-relaxed text-foreground/90" />
               <PlaceholderNotice text={p.summaryData.executiveSummary} />
             </>
           )}
         </ProposalSection>
 
-        {/* Strategy Summary */}
         <ProposalSection>
           <SectionHeader icon={Target} title="Strategy Summary" />
           {proposalMode ? (
             <div className="text-sm leading-relaxed text-foreground/90 whitespace-pre-wrap">{p.summaryData.strategySummary}</div>
           ) : (
             <>
-              <EditableText
-                value={p.summaryData.strategySummary}
-                onChange={v => updateSummary('strategySummary', v)}
-                multiline
-                className="text-sm leading-relaxed text-foreground/90"
-              />
+              <EditableText value={p.summaryData.strategySummary} onChange={v => updateSummary('strategySummary', v)} multiline className="text-sm leading-relaxed text-foreground/90" />
               <PlaceholderNotice text={p.summaryData.strategySummary} />
             </>
           )}
         </ProposalSection>
 
-        {/* Scope of Work */}
         <ProposalSection>
           <SectionHeader icon={ChevronRight} title="Scope of Work" />
           {!proposalMode && (
-            <EditableText
-              value={p.summaryData.scopeSummary}
-              onChange={v => updateSummary('scopeSummary', v)}
-              multiline
-              className="text-sm leading-relaxed text-foreground/90 mb-4"
-            />
+            <EditableText value={p.summaryData.scopeSummary} onChange={v => updateSummary('scopeSummary', v)} multiline className="text-sm leading-relaxed text-foreground/90 mb-4" />
           )}
           {proposalMode && (
             <p className="text-sm leading-relaxed text-foreground/90 mb-4">{p.summaryData.scopeSummary}</p>
@@ -300,12 +270,10 @@ export default function ProposalView({ proposalMode = false }: { proposalMode?: 
           <PlaceholderNotice text={p.summaryData.scopeSummary} />
         </ProposalSection>
 
-        {/* Commercials — read-only from Services Config */}
         {!proposalMode && (
           <CommercialSummary services={proposedServices} monthlyMediaSpend={monthlyMediaSpend} />
         )}
 
-        {/* Pricing Summary */}
         {defaults.showPricingBreakdown && (
           <ProposalSection>
             <SectionHeader icon={DollarSign} title="Investment Summary" />
@@ -313,7 +281,6 @@ export default function ProposalView({ proposalMode = false }: { proposalMode?: 
           </ProposalSection>
         )}
 
-        {/* Revenue Economics (read-only from Discovery) */}
         {onboarding.discovery.legacyRevenueModel?.revenuePerConversion > 0 && (
           <ProposalSection>
             <SectionHeader icon={BarChart3} title="Revenue Economics" />
@@ -368,7 +335,6 @@ export default function ProposalView({ proposalMode = false }: { proposalMode?: 
           </ProposalSection>
         )}
 
-        {/* Timeline */}
         {defaults.showTimeline && (
           <ProposalSection>
             <SectionHeader icon={Calendar} title="Timeline & Next Steps" />
@@ -394,31 +360,15 @@ export default function ProposalView({ proposalMode = false }: { proposalMode?: 
                 </div>
               ))}
             </div>
-            {p.timelineData.implementationNotes && (
-              <>
-                <Separator className="my-6" />
-                <div className="bg-primary/5 border border-primary/10 rounded-lg px-6 py-5 text-center">
-                  <Clock className="h-5 w-5 text-primary mx-auto mb-2" />
-                  {proposalMode ? (
-                    <p className="text-sm leading-relaxed text-foreground/90">{p.timelineData.implementationNotes}</p>
-                  ) : (
-                    <EditableText
-                      value={p.timelineData.implementationNotes}
-                      onChange={v => updateTimeline('implementationNotes', v)}
-                      multiline
-                      className="text-sm leading-relaxed text-foreground/90"
-                    />
-                  )}
-                </div>
-              </>
-            )}
           </ProposalSection>
         )}
 
-        {/* Assumptions Note */}
-        {!proposalMode && defaults.defaultAssumptionsNote && (
-          <div className="text-xs text-muted-foreground text-center px-8 py-4 italic">
-            {defaults.defaultAssumptionsNote}
+        {!proposalMode && (
+          <div className="flex justify-center pt-4">
+            <div className="flex items-center gap-2 text-xs text-muted-foreground">
+              <Clock className="h-3.5 w-3.5" />
+              Last updated: {new Date(p.updatedAt).toLocaleDateString()}
+            </div>
           </div>
         )}
       </div>

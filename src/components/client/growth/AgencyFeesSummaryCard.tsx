@@ -1,20 +1,20 @@
 /**
  * AgencyFeesSummaryCard — compact card in Growth Model.
- * Reads exclusively from ProposedAgencyServices (onboarding.proposedAgencyServices).
+ * Reads from ProposedAgencyServices + resolves fees via packages.
  */
 import { useClientContext } from '@/contexts/ClientContext';
 import { useMemo } from 'react';
 import { Briefcase, ArrowRight } from 'lucide-react';
 import { formatCurrency } from '@/lib/parsing';
-import type { ProposedAgencyService, PaidMediaPricingConfig } from '@/types/commercialServices';
-import { calcPaidMediaFee } from '@/types/commercialServices';
+import { repository } from '@/lib/repository';
+import type { ProposedAgencyService } from '@/types/commercialServices';
+import { resolveServiceFee, resolveSetupFee } from '@/types/commercialServices';
 
 export default function AgencyFeesSummaryCard() {
   const { onboarding, growthModel } = useClientContext();
-
   const services: ProposedAgencyService[] = (onboarding as any).proposedAgencyServices || [];
+  const allPackages = useMemo(() => repository.servicePackages.getAll(), []);
 
-  // Get total monthly media spend from growth model for Paid Media fee calculation
   const monthlyMediaSpend = useMemo(() => {
     if (!growthModel) return 0;
     const scenario = growthModel.scenarios.find(s => s.isDefault) || growthModel.scenarios[0];
@@ -22,28 +22,23 @@ export default function AgencyFeesSummaryCard() {
     const totalBudget = scenario.mediaChannelPlans.reduce(
       (sum, mp) => sum + mp.monthlyRecords.reduce((s, r) => s + r.plannedBudget, 0), 0
     );
-    const monthCount = growthModel.monthCount || 1;
-    return totalBudget / monthCount;
+    return totalBudget / (growthModel.monthCount || 1);
   }, [growthModel]);
 
   const summary = useMemo(() => {
     if (services.length === 0) return null;
-
     let monthlyFees = 0;
     let oneTimeFees = 0;
-
     for (const svc of services) {
-      if (svc.serviceLine === 'Paid Media Management' && svc.paidMediaConfig) {
-        const { fee } = calcPaidMediaFee(svc.paidMediaConfig, monthlyMediaSpend);
-        monthlyFees += fee;
-      } else {
-        monthlyFees += svc.monthlyFee;
-      }
-      oneTimeFees += svc.setupFee;
+      const pkg = allPackages.find(p => p.id === svc.selectedPackageId);
+      monthlyFees += resolveServiceFee(svc, pkg?.basePrice ?? 0, monthlyMediaSpend);
+      oneTimeFees += resolveSetupFee(svc);
     }
-
     return { serviceCount: services.length, monthlyFees, oneTimeFees };
-  }, [services, monthlyMediaSpend]);
+  }, [services, allPackages, monthlyMediaSpend]);
+
+  const navigateToConfig = () =>
+    window.dispatchEvent(new CustomEvent('navigate-tab', { detail: { tab: 'services-config' } }));
 
   if (!summary) {
     return (
@@ -57,13 +52,7 @@ export default function AgencyFeesSummaryCard() {
             <p className="text-xs text-muted-foreground">No agency services configured yet</p>
           </div>
         </div>
-        <button
-          onClick={() => {
-            const event = new CustomEvent('navigate-tab', { detail: { tab: 'services-config' } });
-            window.dispatchEvent(event);
-          }}
-          className="flex items-center gap-1.5 text-xs font-medium text-primary hover:underline"
-        >
+        <button onClick={navigateToConfig} className="flex items-center gap-1.5 text-xs font-medium text-primary hover:underline">
           Set up in Services Config <ArrowRight className="h-3 w-3" />
         </button>
       </div>
@@ -79,13 +68,7 @@ export default function AgencyFeesSummaryCard() {
           </div>
           <h4 className="text-sm font-semibold text-foreground">Agency Fees (from Services Config)</h4>
         </div>
-        <button
-          onClick={() => {
-            const event = new CustomEvent('navigate-tab', { detail: { tab: 'services-config' } });
-            window.dispatchEvent(event);
-          }}
-          className="flex items-center gap-1.5 text-xs font-medium text-primary hover:underline"
-        >
+        <button onClick={navigateToConfig} className="flex items-center gap-1.5 text-xs font-medium text-primary hover:underline">
           Manage in Services Config <ArrowRight className="h-3 w-3" />
         </button>
       </div>
