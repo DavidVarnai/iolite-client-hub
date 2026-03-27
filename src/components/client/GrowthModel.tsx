@@ -44,16 +44,14 @@ function computeRollups(model: GrowthModel, services: ProposedAgencyService[], m
     .filter(li => li.category === 'other')
     .reduce((sum, li) => sum + li.monthlyRecords.reduce((s, r) => s + r.plannedAmount, 0), 0);
 
-  // Agency fees from proposedAgencyServices
+  // Agency fees from proposedAgencyServices (resolved via packages)
+  const allPackages = repository.servicePackages.getAll();
   let monthlyAgencyFees = 0;
   let totalSetupFees = 0;
   for (const svc of services) {
-    if (svc.serviceLine === 'Paid Media Management' && svc.paidMediaConfig) {
-      monthlyAgencyFees += calcPaidMediaFee(svc.paidMediaConfig, monthlyMediaSpend).fee;
-    } else {
-      monthlyAgencyFees += svc.monthlyFee;
-    }
-    totalSetupFees += svc.setupFee;
+    const pkg = allPackages.find(p => p.id === svc.selectedPackageId);
+    monthlyAgencyFees += resolveServiceFee(svc, pkg?.basePrice ?? 0, monthlyMediaSpend);
+    totalSetupFees += resolveSetupFee(svc);
   }
   const totalAgencyFees = (monthlyAgencyFees * model.monthCount) + totalSetupFees;
   const totalInvestment = totalAgencyFees + totalMediaBudget + totalOtherCosts;
