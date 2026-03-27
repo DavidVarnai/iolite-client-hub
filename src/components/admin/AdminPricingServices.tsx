@@ -66,11 +66,8 @@ function ServiceLinesTab() {
     reload();
   };
 
-  const rateHint = (sl: ServiceLine) => {
-    if (sl.defaultRateMin && sl.defaultRateMax && sl.defaultRateMin !== sl.defaultRateMax)
-      return `$${sl.defaultRateMin}–$${sl.defaultRateMax}/${SERVICE_UNIT_LABELS[sl.defaultUnit]}`;
-    if (sl.defaultRateMin) return `$${sl.defaultRateMin}/${SERVICE_UNIT_LABELS[sl.defaultUnit]}`;
-    return null;
+  const rateHint = (_sl: ServiceLine) => {
+    return null; // Pricing now lives in packages
   };
 
   const activeLines = lines.filter(l => l.status === 'active');
