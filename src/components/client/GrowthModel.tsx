@@ -13,7 +13,8 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { FileText } from 'lucide-react';
 import { useClientContext } from '@/contexts/ClientContext';
 import type { ProposedAgencyService } from '@/types/commercialServices';
-import { calcPaidMediaFee } from '@/types/commercialServices';
+import { resolveServiceFee, resolveSetupFee } from '@/types/commercialServices';
+import { repository } from '@/lib/repository';
 
 type SubTab = 'investment' | 'revenue' | 'forecast' | 'summary';
 
