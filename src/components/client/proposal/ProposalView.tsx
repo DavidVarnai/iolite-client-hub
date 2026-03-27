@@ -56,7 +56,7 @@ function CommercialSummary({ services, monthlyMediaSpend }: { services: Proposed
   let totalSetup = 0;
   for (const svc of services) {
     const pkg = allPackages.find(p => p.id === svc.selectedPackageId);
-    totalMonthly += resolveServiceFee(svc, pkg?.basePrice ?? 0, monthlyMediaSpend);
+    totalMonthly += resolveServiceFee(svc, pkg?.basePrice ?? 0, monthlyMediaSpend, pkg?.pricingModel);
     totalSetup += resolveSetupFee(svc);
   }
 
@@ -85,7 +85,7 @@ function CommercialSummary({ services, monthlyMediaSpend }: { services: Proposed
           <tbody className="divide-y">
             {services.map(svc => {
               const pkg = allPackages.find(p => p.id === svc.selectedPackageId);
-              const fee = resolveServiceFee(svc, pkg?.basePrice ?? 0, monthlyMediaSpend);
+              const fee = resolveServiceFee(svc, pkg?.basePrice ?? 0, monthlyMediaSpend, pkg?.pricingModel);
               const setup = resolveSetupFee(svc);
               return (
                 <tr key={svc.id}>

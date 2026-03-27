@@ -137,6 +137,8 @@ export interface ProposedAgencyService {
   pricingOverrides: PricingOverrides;
   /** Paid Media-specific pricing config (only for Paid Media service line) */
   paidMediaConfig?: PaidMediaPricingConfig;
+  /** Estimated monthly hours (for hourly packages) */
+  estimatedMonthlyHours?: number;
 
   // ── Legacy fields (kept for backward compat, ignored in new flow) ──
   /** @deprecated Use selectedPackageId + package basePrice */
@@ -153,12 +155,13 @@ export interface ProposedAgencyService {
 
 /**
  * Resolve the effective monthly fee for a proposed service.
- * Priority: override > paid media calc > package basePrice > legacy monthlyFee > 0
+ * Priority: override > paid media calc > hourly calc > package basePrice > legacy monthlyFee > 0
  */
 export function resolveServiceFee(
   svc: ProposedAgencyService,
   packageBasePrice: number,
   monthlyMediaSpend: number,
+  pricingModel?: string,
 ): number {
   // Manual override
   if (svc.overrideEnabled && svc.pricingOverrides.monthlyFee != null) {
@@ -168,7 +171,11 @@ export function resolveServiceFee(
   if (svc.paidMediaConfig) {
     return calcPaidMediaFee(svc.paidMediaConfig, monthlyMediaSpend).fee;
   }
-  // Package base price
+  // Hourly: rate × estimated hours
+  if (pricingModel === 'hourly' && packageBasePrice > 0) {
+    return packageBasePrice * (svc.estimatedMonthlyHours ?? 0);
+  }
+  // Package base price (monthly or fixed-scope total)
   if (packageBasePrice > 0) return packageBasePrice;
   // Legacy fallback
   return svc.monthlyFee ?? 0;

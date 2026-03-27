@@ -8,7 +8,7 @@ import { repository } from '@/lib/repository';
 import type { ProposedAgencyService, PricingOverrides } from '@/types/commercialServices';
 import { DEFAULT_PAID_MEDIA_CONFIG, resolveServiceFee, resolveSetupFee } from '@/types/commercialServices';
 import type { ServiceLine, ServicePackage, PackageDeliverable } from '@/types/services';
-import { PACKAGE_PRICING_MODEL_LABELS } from '@/types/services';
+import { PACKAGE_PRICING_MODEL_LABELS, pricingModelUnit } from '@/types/services';
 import { formatCurrency } from '@/lib/parsing';
 import { Plus, Trash2, Package, ExternalLink, ChevronDown, ChevronRight, Settings2 } from 'lucide-react';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
@@ -53,7 +53,7 @@ export default function ServicesConfig() {
     let setup = 0;
     for (const svc of services) {
       const pkg = allPackages.find(p => p.id === svc.selectedPackageId);
-      monthly += resolveServiceFee(svc, pkg?.basePrice ?? 0, monthlyMediaSpend);
+      monthly += resolveServiceFee(svc, pkg?.basePrice ?? 0, monthlyMediaSpend, pkg?.pricingModel);
       setup += resolveSetupFee(svc);
     }
     return { monthly, setup };
@@ -195,7 +195,7 @@ function AddServiceButton({
                 >
                   <div className="flex items-center justify-between">
                     <span className="text-sm font-medium text-foreground">{pkg.name}</span>
-                    <span className="text-sm font-semibold tabular-nums text-primary">{formatCurrency(pkg.basePrice)}/mo</span>
+                    <span className="text-sm font-semibold tabular-nums text-primary">{formatCurrency(pkg.basePrice)}{pricingModelUnit(pkg.pricingModel)}</span>
                   </div>
                   <p className="text-xs text-muted-foreground mt-0.5">{pkg.description}</p>
                   {pkg.deliverables.length > 0 && (
@@ -236,8 +236,12 @@ function ServiceCard({
   onDelete: () => void;
 }) {
   const [expanded, setExpanded] = useState(false);
-  const fee = resolveServiceFee(service, pkg?.basePrice ?? 0, monthlyMediaSpend);
+  const fee = resolveServiceFee(service, pkg?.basePrice ?? 0, monthlyMediaSpend, pkg?.pricingModel);
   const setupFee = resolveSetupFee(service);
+  const isHourly = pkg?.pricingModel === 'hourly';
+  const isFixedScope = pkg?.pricingModel === 'fixed_scope';
+  const unit = pkg ? pricingModelUnit(pkg.pricingModel) : '/mo';
+  const feeLabel = isHourly ? formatCurrency(fee) + '/mo' : isFixedScope ? formatCurrency(fee) + ' total' : formatCurrency(fee);
 
   return (
     <div className="panel overflow-hidden">
@@ -261,7 +265,7 @@ function ServiceCard({
         </div>
         <div className="flex items-center gap-4">
           <div className="text-right">
-            <p className="text-sm font-semibold tabular-nums text-foreground">{formatCurrency(fee)}<span className="text-xs text-muted-foreground font-normal">/mo</span></p>
+            <p className="text-sm font-semibold tabular-nums text-foreground">{feeLabel}{!isHourly && !isFixedScope && <span className="text-xs text-muted-foreground font-normal">/mo</span>}</p>
             {setupFee > 0 && <p className="text-[10px] text-muted-foreground">+ {formatCurrency(setupFee)} setup</p>}
           </div>
           <button onClick={onDelete} className="p-1 text-muted-foreground hover:text-destructive">
@@ -273,6 +277,22 @@ function ServiceCard({
       {/* Expanded details */}
       {expanded && (
         <div className="border-t px-4 pb-4 pt-3 space-y-4 bg-muted/10">
+          {/* Hourly hours input */}
+          {isHourly && (
+            <div className="mb-3">
+              <Label className="text-xs text-muted-foreground">Estimated Hours / Month</Label>
+              <div className="flex items-center gap-2 mt-1">
+                <Input
+                  type="number" min={0} value={service.estimatedMonthlyHours ?? ''}
+                  onChange={e => onUpdate({ ...service, estimatedMonthlyHours: e.target.value ? parseInt(e.target.value) : undefined })}
+                  placeholder={String((pkg?.pricingRules as any)?.defaultHoursPerMonth ?? 20)}
+                  className="h-8 text-xs w-28"
+                />
+                <span className="text-xs text-muted-foreground">× {formatCurrency(pkg?.basePrice ?? 0)}/hr = <span className="font-medium text-foreground">{formatCurrency(fee)}/mo</span></span>
+              </div>
+            </div>
+          )}
+
           {/* Deliverables (read-only from package) */}
           {pkg && pkg.deliverables.length > 0 && (
             <div>
