@@ -1,5 +1,5 @@
 /**
- * Commercial services types — recommended services (Strategy) and proposed agency services (Proposal Ready).
+ * Commercial services types — recommended services (Strategy) and proposed agency services (deal builder).
  */
 
 /* ── Scope Levels (Strategy) ── */
@@ -23,7 +23,7 @@ export interface RecommendedService {
   deliveryNotes: string;
 }
 
-/* ── Pricing Model Types (Proposal Ready layer) ── */
+/* ── Pricing Model Types (kept for display labels) ── */
 
 export type ProposalPricingModelType =
   | 'flat_monthly'
@@ -56,21 +56,16 @@ export const BILLING_CADENCE_LABELS: Record<BillingCadence, string> = {
 export type PaidMediaFeeMode = 'flat' | 'percent_of_spend' | 'tiered';
 
 export interface PaidMediaSpendTier {
-  upToSpend: number;       // e.g. 10000
-  feePercent: number;       // e.g. 15
+  upToSpend: number;
+  feePercent: number;
 }
 
 export interface PaidMediaPricingConfig {
   feeMode: PaidMediaFeeMode;
-  /** Minimum monthly management fee */
   minimumFee: number;
-  /** Flat percent of spend (used when feeMode='percent_of_spend') */
   percentOfSpend: number;
-  /** Tiered fee schedule (used when feeMode='tiered') */
   tiers: PaidMediaSpendTier[];
-  /** Link to growth model media spend for auto-calculation */
   useMediaPlanSpend: boolean;
-  /** Manual override — when set, bypasses calculated fee */
   manualOverrideFee: number | null;
 }
 
@@ -85,8 +80,6 @@ export const DEFAULT_PAID_MEDIA_CONFIG: PaidMediaPricingConfig = {
 
 /**
  * Calculate Paid Media management fee from config + media spend.
- * Final fee = max(minimumFee, spend-based fee)
- * If manualOverrideFee is set, it wins.
  */
 export function calcPaidMediaFee(
   config: PaidMediaPricingConfig,
@@ -102,13 +95,11 @@ export function calcPaidMediaFee(
   if (config.feeMode === 'percent_of_spend') {
     spendBasedFee = monthlyMediaSpend * (config.percentOfSpend / 100);
   } else if (config.feeMode === 'tiered' && config.tiers.length > 0) {
-    // Find the tier that covers the spend
     const sorted = [...config.tiers].sort((a, b) => a.upToSpend - b.upToSpend);
     const tier = sorted.find(t => monthlyMediaSpend <= t.upToSpend) || sorted[sorted.length - 1];
     spendBasedFee = monthlyMediaSpend * (tier.feePercent / 100);
     source = 'tiered';
   } else if (config.feeMode === 'flat') {
-    // Flat mode uses the minimumFee directly
     return { fee: config.minimumFee, source: 'minimum_floor' };
   }
 
@@ -119,19 +110,76 @@ export function calcPaidMediaFee(
   return { fee: Math.round(spendBasedFee * 100) / 100, source };
 }
 
-/* ── Proposed Agency Service (Proposal Ready layer — source of truth for pricing) ── */
+/* ── Proposed Agency Service (Package-based deal builder) ── */
+
+export interface PricingOverrides {
+  monthlyFee?: number;
+  setupFee?: number;
+}
 
 export interface ProposedAgencyService {
   id: string;
+  /** Service line name (e.g. 'Paid Media Management') */
   serviceLine: string;
-  pricingModelType: ProposalPricingModelType;
-  packageOrScope: string;
-  billingCadence: BillingCadence;
-  startMonth: string; // YYYY-MM
+  /** Service line ID from admin */
+  serviceLineId: string;
+  /** Selected package ID from admin packages */
+  selectedPackageId: string;
+  /** Start month YYYY-MM */
+  startMonth: string;
+  /** Duration in months */
   durationMonths: number;
-  monthlyFee: number;
-  setupFee: number;
+  /** Notes */
   notes: string;
-  /** Paid Media-specific pricing config (only for 'Paid Media Management' service line) */
+  /** Whether pricing overrides are enabled */
+  overrideEnabled: boolean;
+  /** Manual pricing overrides (only used when overrideEnabled) */
+  pricingOverrides: PricingOverrides;
+  /** Paid Media-specific pricing config (only for Paid Media service line) */
   paidMediaConfig?: PaidMediaPricingConfig;
+
+  // ── Legacy fields (kept for backward compat, ignored in new flow) ──
+  /** @deprecated Use selectedPackageId + package basePrice */
+  pricingModelType?: ProposalPricingModelType;
+  /** @deprecated */
+  packageOrScope?: string;
+  /** @deprecated */
+  billingCadence?: BillingCadence;
+  /** @deprecated Use package basePrice or pricingOverrides */
+  monthlyFee?: number;
+  /** @deprecated Use package basePrice or pricingOverrides */
+  setupFee?: number;
+}
+
+/**
+ * Resolve the effective monthly fee for a proposed service.
+ * Priority: override > paid media calc > package basePrice > legacy monthlyFee > 0
+ */
+export function resolveServiceFee(
+  svc: ProposedAgencyService,
+  packageBasePrice: number,
+  monthlyMediaSpend: number,
+): number {
+  // Manual override
+  if (svc.overrideEnabled && svc.pricingOverrides.monthlyFee != null) {
+    return svc.pricingOverrides.monthlyFee;
+  }
+  // Paid media auto-calc
+  if (svc.paidMediaConfig) {
+    return calcPaidMediaFee(svc.paidMediaConfig, monthlyMediaSpend).fee;
+  }
+  // Package base price
+  if (packageBasePrice > 0) return packageBasePrice;
+  // Legacy fallback
+  return svc.monthlyFee ?? 0;
+}
+
+/**
+ * Resolve the effective setup fee for a proposed service.
+ */
+export function resolveSetupFee(svc: ProposedAgencyService): number {
+  if (svc.overrideEnabled && svc.pricingOverrides.setupFee != null) {
+    return svc.pricingOverrides.setupFee;
+  }
+  return svc.setupFee ?? 0;
 }

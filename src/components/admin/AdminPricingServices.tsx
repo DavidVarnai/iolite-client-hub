@@ -43,22 +43,20 @@ function ServiceLinesTab() {
   const [lines, setLines] = useState<ServiceLine[]>(() => repository.serviceLines.getAll());
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editId, setEditId] = useState<string | null>(null);
-  const [form, setForm] = useState<Omit<ServiceLine, 'id'> & { defaultRateMin?: number; defaultRateMax?: number }>(emptyLineForm);
+  const [form, setForm] = useState<Omit<ServiceLine, 'id'>>(emptyLineForm);
 
   const reload = () => setLines(repository.serviceLines.getAll());
 
   const openCreate = () => { setEditId(null); setForm({ ...emptyLineForm }); setDialogOpen(true); };
   const openEdit = (sl: ServiceLine) => {
     setEditId(sl.id);
-    setForm({ name: sl.name, description: sl.description, pricingType: sl.pricingType, defaultUnit: sl.defaultUnit, status: sl.status, defaultRateMin: sl.defaultRateMin, defaultRateMax: sl.defaultRateMax });
+    setForm({ name: sl.name, description: sl.description, pricingType: sl.pricingType, defaultUnit: sl.defaultUnit, status: sl.status });
     setDialogOpen(true);
   };
 
   const handleSave = () => {
     const id = editId || `sl_${Date.now()}`;
     const line: ServiceLine = { id, ...form };
-    if (!line.defaultRateMin) delete line.defaultRateMin;
-    if (!line.defaultRateMax) delete line.defaultRateMax;
     repository.serviceLines.save(line);
     reload(); setDialogOpen(false);
   };
@@ -68,11 +66,8 @@ function ServiceLinesTab() {
     reload();
   };
 
-  const rateHint = (sl: ServiceLine) => {
-    if (sl.defaultRateMin && sl.defaultRateMax && sl.defaultRateMin !== sl.defaultRateMax)
-      return `$${sl.defaultRateMin}–$${sl.defaultRateMax}/${SERVICE_UNIT_LABELS[sl.defaultUnit]}`;
-    if (sl.defaultRateMin) return `$${sl.defaultRateMin}/${SERVICE_UNIT_LABELS[sl.defaultUnit]}`;
-    return null;
+  const rateHint = (_sl: ServiceLine) => {
+    return null; // Pricing now lives in packages
   };
 
   const activeLines = lines.filter(l => l.status === 'active');
@@ -142,10 +137,6 @@ function ServiceLinesTab() {
               <div className="space-y-1.5"><Label>Default Unit</Label>
                 <Select value={form.defaultUnit} onValueChange={v => setForm(f => ({ ...f, defaultUnit: v as ServiceUnit }))}><SelectTrigger><SelectValue /></SelectTrigger><SelectContent>{SERVICE_UNITS.map(([v, l]) => <SelectItem key={v} value={v}>{l}</SelectItem>)}</SelectContent></Select>
               </div>
-            </div>
-            <div className="grid grid-cols-2 gap-4">
-              <div className="space-y-1.5"><Label>Default Rate Min ($)</Label><Input type="number" value={form.defaultRateMin ?? ''} onChange={e => setForm(f => ({ ...f, defaultRateMin: e.target.value ? Number(e.target.value) : undefined }))} placeholder="Optional" /></div>
-              <div className="space-y-1.5"><Label>Default Rate Max ($)</Label><Input type="number" value={form.defaultRateMax ?? ''} onChange={e => setForm(f => ({ ...f, defaultRateMax: e.target.value ? Number(e.target.value) : undefined }))} placeholder="Optional" /></div>
             </div>
           </div>
           <DialogFooter>

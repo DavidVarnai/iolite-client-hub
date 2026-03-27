@@ -110,8 +110,7 @@ export default function ProposalConfigPanel({ clientId, onGenerate }: ProposalCo
         pkgId => allPackages.find(p => p.id === pkgId)?.serviceLineId === slId
       );
       if (!hasPkg) {
-        const sl = serviceLines.find(s => s.id === slId);
-        if (sl?.defaultRateMin) total += sl.defaultRateMin;
+        // No rate on service line anymore; use 0
       }
     }
     return total;
