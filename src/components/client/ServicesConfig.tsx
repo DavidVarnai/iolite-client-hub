@@ -265,7 +265,7 @@ function ServiceCard({
         </div>
         <div className="flex items-center gap-4">
           <div className="text-right">
-            <p className="text-sm font-semibold tabular-nums text-foreground">{formatCurrency(fee)}<span className="text-xs text-muted-foreground font-normal">/mo</span></p>
+            <p className="text-sm font-semibold tabular-nums text-foreground">{feeLabel}{!isHourly && !isFixedScope && <span className="text-xs text-muted-foreground font-normal">/mo</span>}</p>
             {setupFee > 0 && <p className="text-[10px] text-muted-foreground">+ {formatCurrency(setupFee)} setup</p>}
           </div>
           <button onClick={onDelete} className="p-1 text-muted-foreground hover:text-destructive">
