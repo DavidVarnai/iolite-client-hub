@@ -18,4 +18,5 @@ export {
   PRICING_TYPE_LABELS,
   SERVICE_UNIT_LABELS,
   PACKAGE_PRICING_MODEL_LABELS,
+  pricingModelUnit,
 } from '@/types/services';
