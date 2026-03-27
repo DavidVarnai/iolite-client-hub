@@ -236,8 +236,12 @@ function ServiceCard({
   onDelete: () => void;
 }) {
   const [expanded, setExpanded] = useState(false);
-  const fee = resolveServiceFee(service, pkg?.basePrice ?? 0, monthlyMediaSpend);
+  const fee = resolveServiceFee(service, pkg?.basePrice ?? 0, monthlyMediaSpend, pkg?.pricingModel);
   const setupFee = resolveSetupFee(service);
+  const isHourly = pkg?.pricingModel === 'hourly';
+  const isFixedScope = pkg?.pricingModel === 'fixed_scope';
+  const unit = pkg ? pricingModelUnit(pkg.pricingModel) : '/mo';
+  const feeLabel = isHourly ? formatCurrency(fee) + '/mo' : isFixedScope ? formatCurrency(fee) + ' total' : formatCurrency(fee);
 
   return (
     <div className="panel overflow-hidden">
