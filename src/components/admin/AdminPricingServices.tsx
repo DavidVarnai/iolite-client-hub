@@ -43,7 +43,7 @@ function ServiceLinesTab() {
   const [lines, setLines] = useState<ServiceLine[]>(() => repository.serviceLines.getAll());
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editId, setEditId] = useState<string | null>(null);
-  const [form, setForm] = useState<Omit<ServiceLine, 'id'> & { defaultRateMin?: number; defaultRateMax?: number }>(emptyLineForm);
+  const [form, setForm] = useState<Omit<ServiceLine, 'id'>>(emptyLineForm);
 
   const reload = () => setLines(repository.serviceLines.getAll());
 
