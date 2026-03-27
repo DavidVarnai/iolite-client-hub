@@ -52,6 +52,7 @@ export interface ServiceLine {
 export type PackagePricingModel =
   | 'hourly'
   | 'flat_monthly'
+  | 'fixed_scope'
   | 'tier_package'
   | 'spend_percentage'
   | 'retainer_plus_volume'
@@ -60,11 +61,22 @@ export type PackagePricingModel =
 export const PACKAGE_PRICING_MODEL_LABELS: Record<PackagePricingModel, string> = {
   hourly: 'Hourly',
   flat_monthly: 'Flat Monthly',
+  fixed_scope: 'Fixed Scope',
   tier_package: 'Tier Package',
   spend_percentage: 'Spend %',
   retainer_plus_volume: 'Retainer + Volume',
   add_on_package: 'Add-on Package',
 };
+
+/** Human-readable price unit suffix per pricing model */
+export function pricingModelUnit(model: PackagePricingModel): string {
+  switch (model) {
+    case 'hourly': return '/hr';
+    case 'fixed_scope': return ' (project)';
+    case 'add_on_package': return ' (one-time)';
+    default: return '/mo';
+  }
+}
 
 /* ── Spend Tier (for spend_percentage packages) ── */
 

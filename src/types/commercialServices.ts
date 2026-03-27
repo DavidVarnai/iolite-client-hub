@@ -137,6 +137,8 @@ export interface ProposedAgencyService {
   pricingOverrides: PricingOverrides;
   /** Paid Media-specific pricing config (only for Paid Media service line) */
   paidMediaConfig?: PaidMediaPricingConfig;
+  /** Estimated monthly hours (for hourly packages) */
+  estimatedMonthlyHours?: number;
 
   // ── Legacy fields (kept for backward compat, ignored in new flow) ──
   /** @deprecated Use selectedPackageId + package basePrice */
