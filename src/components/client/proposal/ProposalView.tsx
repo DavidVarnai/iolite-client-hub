@@ -56,7 +56,7 @@ function CommercialSummary({ services, monthlyMediaSpend }: { services: Proposed
   let totalSetup = 0;
   for (const svc of services) {
     const pkg = allPackages.find(p => p.id === svc.selectedPackageId);
-    totalMonthly += resolveServiceFee(svc, pkg?.basePrice ?? 0, monthlyMediaSpend);
+    totalMonthly += resolveServiceFee(svc, pkg?.basePrice ?? 0, monthlyMediaSpend, pkg?.pricingModel);
     totalSetup += resolveSetupFee(svc);
   }
 
