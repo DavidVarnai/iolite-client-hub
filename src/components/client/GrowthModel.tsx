@@ -57,7 +57,7 @@ function computeRollups(model: GrowthModel, services: ProposedAgencyService[], m
   const totalInvestment = totalAgencyFees + totalMediaBudget + totalOtherCosts;
 
   // Simple CPA-based projection
-  const perf = model.performanceInputs;
+  const perf = model.performanceInputs ?? { targetCpa: 0, closeRate: 0, avgDealValue: 0 };
   const forecastLeads = perf.targetCpa > 0 ? Math.round(totalMediaBudget / perf.targetCpa) : 0;
   const forecastCustomers = Math.round(forecastLeads * (perf.closeRate / 100));
   const forecastRevenue = forecastCustomers * perf.avgDealValue;
