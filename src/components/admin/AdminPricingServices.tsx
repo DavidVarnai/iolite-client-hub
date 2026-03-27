@@ -138,7 +138,6 @@ function ServiceLinesTab() {
                 <Select value={form.defaultUnit} onValueChange={v => setForm(f => ({ ...f, defaultUnit: v as ServiceUnit }))}><SelectTrigger><SelectValue /></SelectTrigger><SelectContent>{SERVICE_UNITS.map(([v, l]) => <SelectItem key={v} value={v}>{l}</SelectItem>)}</SelectContent></Select>
               </div>
             </div>
-            </div>
           </div>
           <DialogFooter>
             <Button variant="outline" onClick={() => setDialogOpen(false)}>Cancel</Button>
