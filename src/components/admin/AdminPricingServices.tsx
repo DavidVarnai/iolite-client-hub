@@ -57,8 +57,6 @@ function ServiceLinesTab() {
   const handleSave = () => {
     const id = editId || `sl_${Date.now()}`;
     const line: ServiceLine = { id, ...form };
-    if (!line.defaultRateMin) delete line.defaultRateMin;
-    if (!line.defaultRateMax) delete line.defaultRateMax;
     repository.serviceLines.save(line);
     reload(); setDialogOpen(false);
   };
