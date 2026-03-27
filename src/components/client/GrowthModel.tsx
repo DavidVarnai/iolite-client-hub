@@ -50,7 +50,7 @@ function computeRollups(model: GrowthModel, services: ProposedAgencyService[], m
   let totalSetupFees = 0;
   for (const svc of services) {
     const pkg = allPackages.find(p => p.id === svc.selectedPackageId);
-    monthlyAgencyFees += resolveServiceFee(svc, pkg?.basePrice ?? 0, monthlyMediaSpend);
+    monthlyAgencyFees += resolveServiceFee(svc, pkg?.basePrice ?? 0, monthlyMediaSpend, pkg?.pricingModel);
     totalSetupFees += resolveSetupFee(svc);
   }
   const totalAgencyFees = (monthlyAgencyFees * model.monthCount) + totalSetupFees;

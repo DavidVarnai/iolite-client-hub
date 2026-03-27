@@ -31,7 +31,7 @@ export default function AgencyFeesSummaryCard() {
     let oneTimeFees = 0;
     for (const svc of services) {
       const pkg = allPackages.find(p => p.id === svc.selectedPackageId);
-      monthlyFees += resolveServiceFee(svc, pkg?.basePrice ?? 0, monthlyMediaSpend);
+      monthlyFees += resolveServiceFee(svc, pkg?.basePrice ?? 0, monthlyMediaSpend, pkg?.pricingModel);
       oneTimeFees += resolveSetupFee(svc);
     }
     return { serviceCount: services.length, monthlyFees, oneTimeFees };
