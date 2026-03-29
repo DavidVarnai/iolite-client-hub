@@ -4,9 +4,8 @@
  */
 import { useState, useMemo, useCallback } from 'react';
 import {
-  FileText, Sparkles, Check, Target, DollarSign,
+  FileText, Sparkles, Check, DollarSign,
   TrendingUp, Calendar, ChevronRight, Clock, BarChart3,
-  Briefcase, ArrowRight,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -17,10 +16,7 @@ import { useClientContext } from '@/contexts/ClientContext';
 import { repository } from '@/lib/repository';
 import type { Proposal, ProposalStatus, ProposalSummaryData, ProposalTimelineData } from '@/types/proposal';
 import { PROPOSAL_STATUS_LABELS } from '@/types/proposal';
-import { formatCurrency } from '@/lib/parsing';
 import type { ProposedAgencyService } from '@/types/commercialServices';
-import { resolveServiceFee, resolveSetupFee } from '@/types/commercialServices';
-import { PACKAGE_PRICING_MODEL_LABELS } from '@/types/services';
 
 import { generateProposal, type GenerationConfig } from './proposalGeneration';
 import EditableText from './EditableText';
