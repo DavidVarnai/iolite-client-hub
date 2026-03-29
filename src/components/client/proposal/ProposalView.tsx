@@ -189,9 +189,6 @@ export default function ProposalView({ proposalMode = false }: { proposalMode?: 
           <PlaceholderNotice text={p.summaryData.scopeSummary} />
         </ProposalSection>
 
-        {!proposalMode && (
-          <CommercialSummary services={proposedServices} monthlyMediaSpend={monthlyMediaSpend} />
-        )}
 
         {defaults.showPricingBreakdown && (
           <ProposalSection>
