@@ -1,16 +1,16 @@
 /**
  * ServicesConfig — deal builder tab.
- * Users select admin packages (source of truth for pricing), not configure pricing manually.
+ * Supports package-based services (from Admin catalog) and flexible-priced services.
  */
 import { useState, useMemo } from 'react';
 import { useClientContext } from '@/contexts/ClientContext';
 import { repository } from '@/lib/repository';
-import type { ProposedAgencyService, PricingOverrides } from '@/types/commercialServices';
-import { DEFAULT_PAID_MEDIA_CONFIG, resolveServiceFee, resolveSetupFee } from '@/types/commercialServices';
+import type { ProposedAgencyService, PricingOverrides, FlexPricing, FlexPricingMode } from '@/types/commercialServices';
+import { DEFAULT_PAID_MEDIA_CONFIG, resolveServiceFee, resolveSetupFee, FLEX_PRICING_MODE_LABELS } from '@/types/commercialServices';
 import type { ServiceLine, ServicePackage, PackageDeliverable } from '@/types/services';
 import { PACKAGE_PRICING_MODEL_LABELS, pricingModelUnit } from '@/types/services';
 import { formatCurrency } from '@/lib/parsing';
-import { Plus, Trash2, Package, ExternalLink, ChevronDown, ChevronRight, Settings2 } from 'lucide-react';
+import { Plus, Trash2, Package, ExternalLink, ChevronDown, ChevronRight, Settings2, Pencil } from 'lucide-react';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Input } from '@/components/ui/input';
 import { Switch } from '@/components/ui/switch';
@@ -26,7 +26,6 @@ export default function ServicesConfig() {
   const allLines = useMemo(() => repository.serviceLines.getAll().filter(l => l.status === 'active'), []);
   const allPackages = useMemo(() => repository.servicePackages.getAll().filter(p => p.active), []);
 
-  // Monthly media spend from growth model
   const monthlyMediaSpend = useMemo(() => {
     if (!growthModel) return 0;
     const scenario = growthModel.scenarios.find(s => s.isDefault) || growthModel.scenarios[0];
@@ -47,7 +46,6 @@ export default function ServicesConfig() {
     handleChange(services.map(s => s.id === updated.id ? updated : s));
   };
 
-  // Totals
   const totals = useMemo(() => {
     let monthly = 0;
     let setup = 0;
@@ -65,7 +63,7 @@ export default function ServicesConfig() {
         <div>
           <h2 className="text-lg font-semibold tracking-tight text-foreground">Services Configuration</h2>
           <p className="text-sm text-muted-foreground mt-1">
-            Select packages from your admin catalog. Pricing comes from packages — override only when needed.
+            Select packages from your catalog or add custom-priced services.
           </p>
         </div>
         <AddServiceButton
@@ -81,7 +79,7 @@ export default function ServicesConfig() {
           <Package className="h-8 w-8 text-muted-foreground mx-auto mb-3" />
           <p className="text-sm font-medium text-foreground">No services selected yet</p>
           <p className="text-xs text-muted-foreground mt-1">
-            Add services from your admin package catalog using the button above.
+            Add services from your package catalog or create custom-priced services.
           </p>
         </div>
       ) : (
@@ -99,7 +97,6 @@ export default function ServicesConfig() {
             />
           ))}
 
-          {/* Totals */}
           <div className="panel p-4 bg-muted/30">
             <div className="flex items-center justify-between">
               <span className="text-sm font-semibold text-foreground">Total</span>
@@ -123,7 +120,9 @@ export default function ServicesConfig() {
   );
 }
 
-/* ── Add Service Button (multi-step: line → package) ── */
+/* ── Add Service Button ── */
+
+type AddMode = 'choose' | 'package' | 'flexible';
 
 function AddServiceButton({
   allLines, allPackages, existingServices, onAdd,
@@ -134,19 +133,37 @@ function AddServiceButton({
   onAdd: (svc: ProposedAgencyService) => void;
 }) {
   const [open, setOpen] = useState(false);
+  const [mode, setMode] = useState<AddMode>('choose');
   const [selectedLineId, setSelectedLineId] = useState<string>('');
+  const [flexMode, setFlexMode] = useState<FlexPricingMode>('hourly');
+  const [flexRate, setFlexRate] = useState<string>('');
+  const [flexHours, setFlexHours] = useState<string>('');
+  const [flexLabel, setFlexLabel] = useState<string>('');
+
   const linePackages = allPackages.filter(p => p.serviceLineId === selectedLineId);
   const selectedLine = allLines.find(l => l.id === selectedLineId);
 
+  const reset = () => {
+    setOpen(false);
+    setMode('choose');
+    setSelectedLineId('');
+    setFlexMode('hourly');
+    setFlexRate('');
+    setFlexHours('');
+    setFlexLabel('');
+  };
+
+  const now = new Date();
+  const defaultStart = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
+
   const handleSelectPackage = (pkg: ServicePackage) => {
-    const now = new Date();
     const isPaidMedia = selectedLine?.name === 'Paid Media Management';
     const svc: ProposedAgencyService = {
       id: `pas-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`,
       serviceLine: selectedLine?.name || '',
       serviceLineId: selectedLineId,
       selectedPackageId: pkg.id,
-      startMonth: `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`,
+      startMonth: defaultStart,
       durationMonths: 6,
       notes: '',
       overrideEnabled: false,
@@ -154,9 +171,33 @@ function AddServiceButton({
       ...(isPaidMedia ? { paidMediaConfig: { ...DEFAULT_PAID_MEDIA_CONFIG } } : {}),
     };
     onAdd(svc);
-    setOpen(false);
-    setSelectedLineId('');
+    reset();
     toast.success(`Added ${selectedLine?.name} — ${pkg.name}`);
+  };
+
+  const handleAddFlexible = () => {
+    const rate = parseFloat(flexRate) || 0;
+    if (rate <= 0) { toast.error('Enter a valid rate/fee'); return; }
+    const svc: ProposedAgencyService = {
+      id: `pas-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`,
+      serviceLine: selectedLine?.name || 'Custom Service',
+      serviceLineId: selectedLineId || '',
+      selectedPackageId: '',
+      startMonth: defaultStart,
+      durationMonths: flexMode === 'fixed_scope' || flexMode === 'one_time' ? 1 : 6,
+      notes: '',
+      overrideEnabled: false,
+      pricingOverrides: {},
+      flexPricing: {
+        mode: flexMode,
+        rate,
+        ...(flexMode === 'hourly' ? { estimatedHours: parseInt(flexHours) || 0 } : {}),
+        ...(flexLabel ? { label: flexLabel } : {}),
+      },
+    };
+    onAdd(svc);
+    reset();
+    toast.success(`Added custom ${FLEX_PRICING_MODE_LABELS[flexMode]} service`);
   };
 
   if (!open) {
@@ -172,50 +213,146 @@ function AddServiceButton({
 
   return (
     <div className="panel p-4 bg-muted/30 space-y-3 w-full max-w-md">
-      <p className="text-xs font-medium text-muted-foreground">Step 1: Select Service Line</p>
-      <Select value={selectedLineId} onValueChange={setSelectedLineId}>
-        <SelectTrigger className="h-8 text-xs"><SelectValue placeholder="Choose service line..." /></SelectTrigger>
-        <SelectContent>
-          {allLines.map(l => <SelectItem key={l.id} value={l.id}>{l.name}</SelectItem>)}
-        </SelectContent>
-      </Select>
-
-      {selectedLineId && (
+      {mode === 'choose' && (
         <>
-          <p className="text-xs font-medium text-muted-foreground mt-2">Step 2: Select Package</p>
-          {linePackages.length === 0 ? (
-            <p className="text-xs text-muted-foreground">No packages defined for this service line. <a href="/admin" className="text-primary hover:underline inline-flex items-center gap-0.5">Create in Admin <ExternalLink className="h-3 w-3" /></a></p>
-          ) : (
-            <div className="grid gap-2">
-              {linePackages.map(pkg => (
-                <button
-                  key={pkg.id}
-                  onClick={() => handleSelectPackage(pkg)}
-                  className="text-left panel p-3 hover:bg-muted/50 transition-colors"
-                >
-                  <div className="flex items-center justify-between">
-                    <span className="text-sm font-medium text-foreground">{pkg.name}</span>
-                    <span className="text-sm font-semibold tabular-nums text-primary">{formatCurrency(pkg.basePrice)}{pricingModelUnit(pkg.pricingModel)}</span>
-                  </div>
-                  <p className="text-xs text-muted-foreground mt-0.5">{pkg.description}</p>
-                  {pkg.deliverables.length > 0 && (
-                    <div className="flex flex-wrap gap-1 mt-1.5">
-                      {pkg.deliverables.slice(0, 3).map(d => (
-                        <Badge key={d.key} variant="secondary" className="text-[10px]">{d.label}: {String(d.value)}</Badge>
-                      ))}
-                      {pkg.deliverables.length > 3 && (
-                        <Badge variant="outline" className="text-[10px]">+{pkg.deliverables.length - 3} more</Badge>
+          <p className="text-xs font-medium text-muted-foreground">How would you like to add this service?</p>
+          <div className="grid grid-cols-2 gap-2">
+            <button onClick={() => setMode('package')} className="panel p-3 hover:bg-muted/50 transition-colors text-left">
+              <Package className="h-4 w-4 text-primary mb-1" />
+              <p className="text-sm font-medium text-foreground">From Package</p>
+              <p className="text-[10px] text-muted-foreground">Select a pre-defined package from your admin catalog</p>
+            </button>
+            <button onClick={() => setMode('flexible')} className="panel p-3 hover:bg-muted/50 transition-colors text-left">
+              <Pencil className="h-4 w-4 text-primary mb-1" />
+              <p className="text-sm font-medium text-foreground">Custom Pricing</p>
+              <p className="text-[10px] text-muted-foreground">Hourly, retainer, fixed-scope, or one-time fee</p>
+            </button>
+          </div>
+        </>
+      )}
+
+      {/* Package flow */}
+      {mode === 'package' && (
+        <>
+          <p className="text-xs font-medium text-muted-foreground">Step 1: Select Service Line</p>
+          <Select value={selectedLineId} onValueChange={setSelectedLineId}>
+            <SelectTrigger className="h-8 text-xs"><SelectValue placeholder="Choose service line..." /></SelectTrigger>
+            <SelectContent>
+              {allLines.map(l => <SelectItem key={l.id} value={l.id}>{l.name}</SelectItem>)}
+            </SelectContent>
+          </Select>
+
+          {selectedLineId && (
+            <>
+              <p className="text-xs font-medium text-muted-foreground mt-2">Step 2: Select Package</p>
+              {linePackages.length === 0 ? (
+                <p className="text-xs text-muted-foreground">No packages defined for this service line. <a href="/admin" className="text-primary hover:underline inline-flex items-center gap-0.5">Create in Admin <ExternalLink className="h-3 w-3" /></a></p>
+              ) : (
+                <div className="grid gap-2">
+                  {linePackages.map(pkg => (
+                    <button
+                      key={pkg.id}
+                      onClick={() => handleSelectPackage(pkg)}
+                      className="text-left panel p-3 hover:bg-muted/50 transition-colors"
+                    >
+                      <div className="flex items-center justify-between">
+                        <span className="text-sm font-medium text-foreground">{pkg.name}</span>
+                        <span className="text-sm font-semibold tabular-nums text-primary">{formatCurrency(pkg.basePrice)}{pricingModelUnit(pkg.pricingModel)}</span>
+                      </div>
+                      <p className="text-xs text-muted-foreground mt-0.5">{pkg.description}</p>
+                      {pkg.deliverables.length > 0 && (
+                        <div className="flex flex-wrap gap-1 mt-1.5">
+                          {pkg.deliverables.slice(0, 3).map(d => (
+                            <Badge key={d.key} variant="secondary" className="text-[10px]">{d.label}: {String(d.value)}</Badge>
+                          ))}
+                          {pkg.deliverables.length > 3 && (
+                            <Badge variant="outline" className="text-[10px]">+{pkg.deliverables.length - 3} more</Badge>
+                          )}
+                        </div>
                       )}
-                    </div>
-                  )}
-                </button>
-              ))}
-            </div>
+                    </button>
+                  ))}
+                </div>
+              )}
+            </>
           )}
         </>
       )}
 
-      <button onClick={() => { setOpen(false); setSelectedLineId(''); }} className="text-xs text-muted-foreground hover:text-foreground">
+      {/* Flexible pricing flow */}
+      {mode === 'flexible' && (
+        <>
+          <p className="text-xs font-medium text-muted-foreground">Service Line (optional)</p>
+          <Select value={selectedLineId} onValueChange={setSelectedLineId}>
+            <SelectTrigger className="h-8 text-xs"><SelectValue placeholder="None — custom service" /></SelectTrigger>
+            <SelectContent>
+              {allLines.map(l => <SelectItem key={l.id} value={l.id}>{l.name}</SelectItem>)}
+            </SelectContent>
+          </Select>
+
+          <div>
+            <Label className="text-xs text-muted-foreground">Service Label</Label>
+            <Input
+              value={flexLabel}
+              onChange={e => setFlexLabel(e.target.value)}
+              placeholder={selectedLine?.name || 'e.g. Strategy Workshop'}
+              className="h-8 text-xs mt-1"
+            />
+          </div>
+
+          <div>
+            <Label className="text-xs text-muted-foreground">Pricing Model</Label>
+            <Select value={flexMode} onValueChange={v => setFlexMode(v as FlexPricingMode)}>
+              <SelectTrigger className="h-8 text-xs mt-1"><SelectValue /></SelectTrigger>
+              <SelectContent>
+                {(Object.entries(FLEX_PRICING_MODE_LABELS) as [FlexPricingMode, string][]).map(([k, v]) => (
+                  <SelectItem key={k} value={k}>{v}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+
+          <div className="grid grid-cols-2 gap-3">
+            <div>
+              <Label className="text-xs text-muted-foreground">
+                {flexMode === 'hourly' ? 'Hourly Rate ($)' : 'Fee ($)'}
+              </Label>
+              <Input
+                type="number" min={0} value={flexRate}
+                onChange={e => setFlexRate(e.target.value)}
+                placeholder="0"
+                className="h-8 text-xs mt-1"
+              />
+            </div>
+            {flexMode === 'hourly' && (
+              <div>
+                <Label className="text-xs text-muted-foreground">Est. Hours / Month</Label>
+                <Input
+                  type="number" min={0} value={flexHours}
+                  onChange={e => setFlexHours(e.target.value)}
+                  placeholder="20"
+                  className="h-8 text-xs mt-1"
+                />
+              </div>
+            )}
+          </div>
+
+          {flexMode === 'hourly' && flexRate && flexHours && (
+            <p className="text-xs text-muted-foreground">
+              Estimated: <span className="font-medium text-foreground">{formatCurrency((parseFloat(flexRate) || 0) * (parseInt(flexHours) || 0))}/mo</span>
+            </p>
+          )}
+
+          <button
+            onClick={handleAddFlexible}
+            className="w-full px-3 py-2 bg-primary text-primary-foreground text-xs font-medium rounded-md hover:opacity-90 transition-opacity"
+          >
+            Add Service
+          </button>
+        </>
+      )}
+
+      <button onClick={reset} className="text-xs text-muted-foreground hover:text-foreground">
         Cancel
       </button>
     </div>
@@ -238,14 +375,15 @@ function ServiceCard({
   const [expanded, setExpanded] = useState(false);
   const fee = resolveServiceFee(service, pkg?.basePrice ?? 0, monthlyMediaSpend, pkg?.pricingModel);
   const setupFee = resolveSetupFee(service);
-  const isHourly = pkg?.pricingModel === 'hourly';
-  const isFixedScope = pkg?.pricingModel === 'fixed_scope';
-  const unit = pkg ? pricingModelUnit(pkg.pricingModel) : '/mo';
+  const isFlex = !!service.flexPricing;
+  const flexMode = service.flexPricing?.mode;
+  const isHourly = isFlex ? flexMode === 'hourly' : pkg?.pricingModel === 'hourly';
+  const isFixedScope = isFlex ? (flexMode === 'fixed_scope' || flexMode === 'one_time') : pkg?.pricingModel === 'fixed_scope';
   const feeLabel = isHourly ? formatCurrency(fee) + '/mo' : isFixedScope ? formatCurrency(fee) + ' total' : formatCurrency(fee);
+  const displayName = isFlex ? (service.flexPricing?.label || service.serviceLine || 'Custom Service') : service.serviceLine;
 
   return (
     <div className="panel overflow-hidden">
-      {/* Header row */}
       <div className="flex items-center justify-between p-4">
         <div className="flex items-center gap-3">
           <button onClick={() => setExpanded(!expanded)} className="text-muted-foreground hover:text-foreground">
@@ -253,9 +391,16 @@ function ServiceCard({
           </button>
           <div>
             <div className="flex items-center gap-2">
-              <span className="text-sm font-semibold text-foreground">{service.serviceLine}</span>
-              {pkg && <Badge variant="secondary" className="text-[10px]">{pkg.name}</Badge>}
-              {pkg && <Badge variant="outline" className="text-[10px]">{PACKAGE_PRICING_MODEL_LABELS[pkg.pricingModel]}</Badge>}
+              <span className="text-sm font-semibold text-foreground">{displayName}</span>
+              {isFlex ? (
+                <Badge variant="outline" className="text-[10px]">{FLEX_PRICING_MODE_LABELS[flexMode!]}</Badge>
+              ) : (
+                <>
+                  {pkg && <Badge variant="secondary" className="text-[10px]">{pkg.name}</Badge>}
+                  {pkg && <Badge variant="outline" className="text-[10px]">{PACKAGE_PRICING_MODEL_LABELS[pkg.pricingModel]}</Badge>}
+                </>
+              )}
+              {isFlex && <Badge className="text-[10px] bg-accent text-accent-foreground">Custom</Badge>}
             </div>
             <p className="text-xs text-muted-foreground mt-0.5">
               {service.durationMonths} mo · starts {service.startMonth}
@@ -274,11 +419,49 @@ function ServiceCard({
         </div>
       </div>
 
-      {/* Expanded details */}
       {expanded && (
         <div className="border-t px-4 pb-4 pt-3 space-y-4 bg-muted/10">
-          {/* Hourly hours input */}
-          {isHourly && (
+          {/* Flex pricing inline editor */}
+          {isFlex && service.flexPricing && (
+            <div className="space-y-3">
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <Label className="text-xs text-muted-foreground">
+                    {flexMode === 'hourly' ? 'Hourly Rate' : 'Fee'}
+                  </Label>
+                  <Input
+                    type="number" min={0} value={service.flexPricing.rate}
+                    onChange={e => onUpdate({
+                      ...service,
+                      flexPricing: { ...service.flexPricing!, rate: parseFloat(e.target.value) || 0 },
+                    })}
+                    className="h-8 text-xs mt-1"
+                  />
+                </div>
+                {flexMode === 'hourly' && (
+                  <div>
+                    <Label className="text-xs text-muted-foreground">Est. Hours / Month</Label>
+                    <Input
+                      type="number" min={0} value={service.flexPricing.estimatedHours ?? ''}
+                      onChange={e => onUpdate({
+                        ...service,
+                        flexPricing: { ...service.flexPricing!, estimatedHours: parseInt(e.target.value) || 0 },
+                      })}
+                      className="h-8 text-xs mt-1"
+                    />
+                  </div>
+                )}
+              </div>
+              {flexMode === 'hourly' && (
+                <p className="text-xs text-muted-foreground">
+                  {formatCurrency(service.flexPricing.rate)}/hr × {service.flexPricing.estimatedHours ?? 0} hrs = <span className="font-medium text-foreground">{formatCurrency(fee)}/mo</span>
+                </p>
+              )}
+            </div>
+          )}
+
+          {/* Hourly hours input (package-based) */}
+          {!isFlex && isHourly && (
             <div className="mb-3">
               <Label className="text-xs text-muted-foreground">Estimated Hours / Month</Label>
               <div className="flex items-center gap-2 mt-1">
@@ -293,8 +476,8 @@ function ServiceCard({
             </div>
           )}
 
-          {/* Deliverables (read-only from package) */}
-          {pkg && pkg.deliverables.length > 0 && (
+          {/* Deliverables (package only) */}
+          {!isFlex && pkg && pkg.deliverables.length > 0 && (
             <div>
               <p className="text-xs font-medium text-muted-foreground mb-1.5">Deliverables (from package)</p>
               <div className="grid grid-cols-2 gap-1.5">
@@ -346,51 +529,55 @@ function ServiceCard({
             />
           )}
 
-          {/* Override toggle */}
-          <div className="border-t pt-3">
-            <div className="flex items-center gap-2">
-              <Switch
-                checked={service.overrideEnabled}
-                onCheckedChange={v => onUpdate({ ...service, overrideEnabled: v, pricingOverrides: v ? service.pricingOverrides : {} })}
-              />
-              <Label className="text-xs text-muted-foreground flex items-center gap-1">
-                <Settings2 className="h-3 w-3" /> Pricing override
-              </Label>
-            </div>
-            {service.overrideEnabled && (
-              <div className="grid grid-cols-2 gap-3 mt-2">
-                <div>
-                  <Label className="text-xs text-muted-foreground">Monthly Fee Override</Label>
-                  <Input
-                    type="number" placeholder={pkg ? formatCurrency(pkg.basePrice) : '$0'}
-                    value={service.pricingOverrides.monthlyFee ?? ''}
-                    onChange={e => onUpdate({
-                      ...service,
-                      pricingOverrides: { ...service.pricingOverrides, monthlyFee: e.target.value ? parseFloat(e.target.value) : undefined },
-                    })}
-                    className="h-8 text-xs mt-1"
-                  />
-                </div>
-                <div>
-                  <Label className="text-xs text-muted-foreground">Setup Fee Override</Label>
-                  <Input
-                    type="number" placeholder="$0"
-                    value={service.pricingOverrides.setupFee ?? ''}
-                    onChange={e => onUpdate({
-                      ...service,
-                      pricingOverrides: { ...service.pricingOverrides, setupFee: e.target.value ? parseFloat(e.target.value) : undefined },
-                    })}
-                    className="h-8 text-xs mt-1"
-                  />
-                </div>
+          {/* Override toggle (package-based only) */}
+          {!isFlex && (
+            <div className="border-t pt-3">
+              <div className="flex items-center gap-2">
+                <Switch
+                  checked={service.overrideEnabled}
+                  onCheckedChange={v => onUpdate({ ...service, overrideEnabled: v, pricingOverrides: v ? service.pricingOverrides : {} })}
+                />
+                <Label className="text-xs text-muted-foreground flex items-center gap-1">
+                  <Settings2 className="h-3 w-3" /> Pricing override
+                </Label>
               </div>
-            )}
-          </div>
+              {service.overrideEnabled && (
+                <div className="grid grid-cols-2 gap-3 mt-2">
+                  <div>
+                    <Label className="text-xs text-muted-foreground">Monthly Fee Override</Label>
+                    <Input
+                      type="number" placeholder={pkg ? formatCurrency(pkg.basePrice) : '$0'}
+                      value={service.pricingOverrides.monthlyFee ?? ''}
+                      onChange={e => onUpdate({
+                        ...service,
+                        pricingOverrides: { ...service.pricingOverrides, monthlyFee: e.target.value ? parseFloat(e.target.value) : undefined },
+                      })}
+                      className="h-8 text-xs mt-1"
+                    />
+                  </div>
+                  <div>
+                    <Label className="text-xs text-muted-foreground">Setup Fee Override</Label>
+                    <Input
+                      type="number" placeholder="$0"
+                      value={service.pricingOverrides.setupFee ?? ''}
+                      onChange={e => onUpdate({
+                        ...service,
+                        pricingOverrides: { ...service.pricingOverrides, setupFee: e.target.value ? parseFloat(e.target.value) : undefined },
+                      })}
+                      className="h-8 text-xs mt-1"
+                    />
+                  </div>
+                </div>
+              )}
+            </div>
+          )}
 
-          {/* Admin link */}
-          <p className="text-[10px] text-muted-foreground">
-            Package pricing managed in <a href="/admin" className="text-primary hover:underline inline-flex items-center gap-0.5">Admin → Packages <ExternalLink className="h-2.5 w-2.5" /></a>
-          </p>
+          {/* Admin link (package only) */}
+          {!isFlex && (
+            <p className="text-[10px] text-muted-foreground">
+              Package pricing managed in <a href="/admin" className="text-primary hover:underline inline-flex items-center gap-0.5">Admin → Packages <ExternalLink className="h-2.5 w-2.5" /></a>
+            </p>
+          )}
         </div>
       )}
     </div>
