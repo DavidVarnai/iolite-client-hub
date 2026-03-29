@@ -190,6 +190,12 @@ export function resolveServiceFee(
   if (svc.paidMediaConfig) {
     return calcPaidMediaFee(svc.paidMediaConfig, monthlyMediaSpend).fee;
   }
+  // Flexible pricing (no package)
+  if (svc.flexPricing) {
+    const fp = svc.flexPricing;
+    if (fp.mode === 'hourly') return fp.rate * (fp.estimatedHours ?? 0);
+    return fp.rate;
+  }
   // Hourly: rate × estimated hours
   if (pricingModel === 'hourly' && packageBasePrice > 0) {
     return packageBasePrice * (svc.estimatedMonthlyHours ?? 0);
