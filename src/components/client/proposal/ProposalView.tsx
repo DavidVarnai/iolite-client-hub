@@ -38,16 +38,6 @@ export default function ProposalView({ proposalMode = false }: { proposalMode?: 
 
   const proposedServices: ProposedAgencyService[] = (onboarding as any).proposedAgencyServices || [];
 
-  const monthlyMediaSpend = useMemo(() => {
-    if (!contextGrowthModel) return 0;
-    const scenario = contextGrowthModel.scenarios.find(s => s.isDefault) || contextGrowthModel.scenarios[0];
-    if (!scenario) return 0;
-    const totalBudget = scenario.mediaChannelPlans.reduce(
-      (sum, mp) => sum + mp.monthlyRecords.reduce((s, r) => s + r.plannedBudget, 0), 0
-    );
-    return totalBudget / (contextGrowthModel.monthCount || 1);
-  }, [contextGrowthModel]);
-
   const activeProposal = proposals.find(p => p.id === activeProposalId) || null;
 
   const refresh = useCallback(() => {
