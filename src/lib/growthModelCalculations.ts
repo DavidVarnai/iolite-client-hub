@@ -7,7 +7,8 @@ import type {
 } from '@/types/growthModel';
 
 /** Simple CPA-based projection: leads = spend / CPA, customers = leads * closeRate, revenue = customers * dealValue */
-export function calcSimpleProjection(mediaSpend: number, perf: PerformanceInputs) {
+export function calcSimpleProjection(mediaSpend: number, perf: PerformanceInputs | undefined) {
+  if (!perf) return { leads: 0, customers: 0, revenue: 0 };
   const leads = perf.targetCpa > 0 ? Math.round(mediaSpend / perf.targetCpa) : 0;
   const customers = Math.round(leads * (perf.closeRate / 100));
   const revenue = customers * perf.avgDealValue;
