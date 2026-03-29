@@ -117,13 +117,30 @@ export interface PricingOverrides {
   setupFee?: number;
 }
 
+export type FlexPricingMode = 'hourly' | 'flat_monthly' | 'fixed_scope' | 'one_time';
+
+export const FLEX_PRICING_MODE_LABELS: Record<FlexPricingMode, string> = {
+  hourly: 'Hourly',
+  flat_monthly: 'Monthly Retainer',
+  fixed_scope: 'Fixed-Scope Project',
+  one_time: 'One-Time Fee',
+};
+
+/** Flexible pricing config for services added without an admin package */
+export interface FlexPricing {
+  mode: FlexPricingMode;
+  rate: number;           // hourly rate OR flat fee
+  estimatedHours?: number; // for hourly mode
+  label?: string;         // custom service name/description
+}
+
 export interface ProposedAgencyService {
   id: string;
   /** Service line name (e.g. 'Paid Media Management') */
   serviceLine: string;
   /** Service line ID from admin */
   serviceLineId: string;
-  /** Selected package ID from admin packages */
+  /** Selected package ID from admin packages — empty string for flexible services */
   selectedPackageId: string;
   /** Start month YYYY-MM */
   startMonth: string;
@@ -139,6 +156,8 @@ export interface ProposedAgencyService {
   paidMediaConfig?: PaidMediaPricingConfig;
   /** Estimated monthly hours (for hourly packages) */
   estimatedMonthlyHours?: number;
+  /** Flexible pricing — used when no admin package is selected */
+  flexPricing?: FlexPricing;
 
   // ── Legacy fields (kept for backward compat, ignored in new flow) ──
   /** @deprecated Use selectedPackageId + package basePrice */
