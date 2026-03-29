@@ -1,58 +1,47 @@
 /**
  * Proposal generation — pure functions to build a Proposal from source data.
- * No side effects, no repository writes.
+ * Now generates from proposedAgencyServices (Services Config) instead of package selection.
  */
 import { repository } from '@/lib/repository';
 import { calcRollups } from '@/lib/growthModelCalculations';
 import type { Proposal, ProposalPricingLine } from '@/types/proposal';
-import type { ServiceLine, ServicePackage } from '@/types/services';
-import { PACKAGE_PRICING_MODEL_LABELS } from '@/types/services';
 import type { GrowthModel } from '@/types/growthModel';
+import type { ProposedAgencyService } from '@/types/commercialServices';
+import { resolveServiceFee, resolveSetupFee, FLEX_PRICING_MODE_LABELS } from '@/types/commercialServices';
 import { fmt } from './proposalHelpers';
 
 /* ── Types ── */
 
 export interface GenerationConfig {
-  bundleId?: string;
-  selectedServiceLineIds: string[];
-  selectedPackageIds: string[];
-  selectedAddOnIds: string[];
+  services: ProposedAgencyService[];
 }
 
 /* ── Pricing line builders ── */
 
-function resolvePackagePrice(pkg: ServicePackage): number {
-  return pkg.basePrice;
-}
-
-function buildPricingLine(
-  pkg: ServicePackage,
-  sl: ServiceLine | null,
-  type: 'service' | 'package' | 'add_on',
+function buildPricingLineFromService(
+  svc: ProposedAgencyService,
+  packageBasePrice: number,
+  monthlyMediaSpend: number,
+  packageName: string | null,
+  pricingModel?: string,
 ): ProposalPricingLine {
-  return {
-    id: `pl-${pkg.id}`,
-    label: `${sl?.name || 'Service'} — ${pkg.name}`,
-    description: pkg.description,
-    type,
-    serviceLineId: pkg.serviceLineId,
-    packageId: pkg.id,
-    monthlyPrice: resolvePackagePrice(pkg),
-    notes: pkg.pricingModel !== 'flat_monthly' && pkg.pricingModel !== 'add_on_package'
-      ? `Pricing model: ${PACKAGE_PRICING_MODEL_LABELS[pkg.pricingModel]}${pkg.minimumFee ? ` (min ${fmt(pkg.minimumFee)})` : ''}`
-      : undefined,
-  };
-}
+  const monthlyPrice = resolveServiceFee(svc, packageBasePrice, monthlyMediaSpend, pricingModel);
+  const setupFee = resolveSetupFee(svc);
 
-function buildServiceOnlyLine(sl: ServiceLine): ProposalPricingLine {
+  let pricingLabel = packageName || 'Custom';
+  if (svc.flexPricing) {
+    pricingLabel = svc.flexPricing.label || FLEX_PRICING_MODE_LABELS[svc.flexPricing.mode];
+  }
+
   return {
-    id: `pl-sl-${sl.id}`,
-    label: sl.name,
-    description: sl.description,
-    type: 'service',
-    serviceLineId: sl.id,
-    monthlyPrice: 0,
-    notes: 'Pricing configured in packages',
+    id: `pl-${svc.id}`,
+    label: `${svc.serviceLine} — ${pricingLabel}`,
+    description: svc.notes || undefined,
+    type: svc.flexPricing ? 'service' : 'package',
+    serviceLineId: svc.serviceLineId,
+    packageId: svc.selectedPackageId || undefined,
+    monthlyPrice,
+    notes: setupFee > 0 ? `Setup fee: ${fmt(setupFee)}` : undefined,
   };
 }
 
@@ -101,12 +90,23 @@ export function generateProposal(clientId: string, config: GenerationConfig): Pr
   const client = repository.clients.getById(clientId);
   const defaults = repository.proposalDefaults.get();
   const allPackages = repository.servicePackages.getAll();
-  const allServiceLines = repository.serviceLines.getAll();
   const growthModel = repository.growthModels.get(clientId) || null;
   const now = new Date().toISOString();
 
   const clientName = client?.name || 'Client';
   const title = defaults.titleFormat.replace('{clientName}', clientName);
+
+  // ── Media spend for paid media fee calc ──
+  let monthlyMediaSpend = 0;
+  if (growthModel) {
+    const scenario = growthModel.scenarios.find(s => s.isDefault) || growthModel.scenarios[0];
+    if (scenario) {
+      const totalBudget = scenario.mediaChannelPlans.reduce(
+        (sum, mp) => sum + mp.monthlyRecords.reduce((s, r) => s + r.plannedBudget, 0), 0
+      );
+      monthlyMediaSpend = totalBudget / (growthModel.monthCount || 1);
+    }
+  }
 
   // ── Strategy ──
   const strategies = client?.strategySections || [];
@@ -118,48 +118,37 @@ export function generateProposal(clientId: string, config: GenerationConfig): Pr
 
   const expectedOutcomes = strategies.flatMap(s => s.clientSummary.expectedOutcomes);
 
-  // ── Pricing lines from selected packages ──
+  // ── Pricing lines from proposedAgencyServices ──
   const pricingLines: ProposalPricingLine[] = [];
 
-  const pkgIds = [...config.selectedPackageIds, ...config.selectedAddOnIds];
-  for (const pkgId of pkgIds) {
-    const pkg = allPackages.find(p => p.id === pkgId);
-    if (!pkg) continue;
-    const sl = allServiceLines.find(s => s.id === pkg.serviceLineId);
-    const isAddOn = config.selectedAddOnIds.includes(pkgId);
-    pricingLines.push(buildPricingLine(pkg, sl || null, isAddOn ? 'add_on' : 'package'));
-  }
-
-  for (const slId of config.selectedServiceLineIds) {
-    const hasPackage = pricingLines.some(l => l.serviceLineId === slId);
-    if (hasPackage) continue;
-    const sl = allServiceLines.find(s => s.id === slId);
-    if (sl) pricingLines.push(buildServiceOnlyLine(sl));
+  for (const svc of config.services) {
+    const pkg = allPackages.find(p => p.id === svc.selectedPackageId);
+    pricingLines.push(buildPricingLineFromService(
+      svc,
+      pkg?.basePrice ?? 0,
+      monthlyMediaSpend,
+      pkg?.name ?? null,
+      pkg?.pricingModel,
+    ));
   }
 
   const subtotal = pricingLines.reduce((s, l) => s + l.monthlyPrice, 0);
 
-  // ── Scope summary from deliverables ──
-  const deliverableSummaries: string[] = [];
-  for (const line of pricingLines) {
-    if (!line.packageId) {
-      deliverableSummaries.push(line.label);
-      continue;
-    }
-    const pkg = allPackages.find(p => p.id === line.packageId);
+  // ── Scope summary from services ──
+  const scopeItems = config.services.map(svc => {
+    const pkg = allPackages.find(p => p.id === svc.selectedPackageId);
     if (pkg && pkg.deliverables.length > 0) {
       const dels = pkg.deliverables
         .filter(d => d.value !== false && d.value !== '0' && d.value !== 0)
         .map(d => `${d.label}: ${d.value}`)
         .join(', ');
-      deliverableSummaries.push(`${line.label} (${dels})`);
-    } else {
-      deliverableSummaries.push(line.label);
+      return `${svc.serviceLine} (${dels})`;
     }
-  }
-  const scopeSummary = deliverableSummaries.length > 0
-    ? deliverableSummaries.join('. ') + '. Includes monthly reporting and regular strategy reviews.'
-    : '[Scope will be populated when services are selected.]';
+    return svc.serviceLine;
+  });
+  const scopeSummary = scopeItems.length > 0
+    ? scopeItems.join('. ') + '. Includes monthly reporting and regular strategy reviews.'
+    : '[Scope will be populated when services are configured.]';
 
   // ── Growth model projections ──
   let projectionData;
@@ -190,11 +179,10 @@ export function generateProposal(clientId: string, config: GenerationConfig): Pr
 
   // ── Exec summary ──
   const execParts: string[] = [defaults.defaultExecutiveIntro.replace('your team', clientName)];
-  if (pricingLines.length > 0) {
-    const serviceNames = pricingLines.map(l => l.label.split(' — ')[0]);
-    const unique = [...new Set(serviceNames)];
+  if (config.services.length > 0) {
+    const serviceNames = [...new Set(config.services.map(s => s.serviceLine))];
     execParts.push(
-      `This engagement encompasses ${unique.join(', ')} — designed to drive measurable growth for ${clientName}.`
+      `This engagement encompasses ${serviceNames.join(', ')} — designed to drive measurable growth for ${clientName}.`
     );
   }
 
@@ -207,10 +195,10 @@ export function generateProposal(clientId: string, config: GenerationConfig): Pr
     createdAt: now,
     updatedAt: now,
     generatedAt: now,
-    selectedBundleId: config.bundleId,
-    selectedServiceLineIds: config.selectedServiceLineIds,
-    selectedPackageIds: config.selectedPackageIds,
-    selectedAddOnIds: config.selectedAddOnIds,
+    selectedBundleId: undefined,
+    selectedServiceLineIds: config.services.map(s => s.serviceLineId),
+    selectedPackageIds: config.services.map(s => s.selectedPackageId).filter(Boolean),
+    selectedAddOnIds: [],
     summaryData: {
       executiveSummary: execParts.join('\n\n'),
       strategySummary,

@@ -6,7 +6,6 @@ import { useState, useMemo, useCallback } from 'react';
 import {
   FileText, Sparkles, Check, Target, DollarSign,
   TrendingUp, Calendar, ChevronRight, Clock, BarChart3,
-  Briefcase, ArrowRight,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -17,10 +16,7 @@ import { useClientContext } from '@/contexts/ClientContext';
 import { repository } from '@/lib/repository';
 import type { Proposal, ProposalStatus, ProposalSummaryData, ProposalTimelineData } from '@/types/proposal';
 import { PROPOSAL_STATUS_LABELS } from '@/types/proposal';
-import { formatCurrency } from '@/lib/parsing';
 import type { ProposedAgencyService } from '@/types/commercialServices';
-import { resolveServiceFee, resolveSetupFee } from '@/types/commercialServices';
-import { PACKAGE_PRICING_MODEL_LABELS } from '@/types/services';
 
 import { generateProposal, type GenerationConfig } from './proposalGeneration';
 import EditableText from './EditableText';
@@ -31,88 +27,7 @@ import ProposalGrowthModelPlaceholder from './ProposalGrowthModelPlaceholder';
 import ProposalConfigPanel from './ProposalConfigPanel';
 import RevenueModelDisplay from '../RevenueModelDisplay';
 
-/** Read-only commercial summary pulled from Services Config */
-function CommercialSummary({ services, monthlyMediaSpend }: { services: ProposedAgencyService[]; monthlyMediaSpend: number }) {
-  const allPackages = useMemo(() => repository.servicePackages.getAll(), []);
-
-  if (services.length === 0) {
-    return (
-      <ProposalSection>
-        <SectionHeader icon={Briefcase} title="Commercials" />
-        <div className="panel p-5 text-center">
-          <p className="text-sm text-muted-foreground">No agency services configured yet.</p>
-          <button
-            onClick={() => window.dispatchEvent(new CustomEvent('navigate-tab', { detail: { tab: 'services-config' } }))}
-            className="mt-2 inline-flex items-center gap-1.5 text-xs font-medium text-primary hover:underline"
-          >
-            Set up in Services Config <ArrowRight className="h-3 w-3" />
-          </button>
-        </div>
-      </ProposalSection>
-    );
-  }
-
-  let totalMonthly = 0;
-  let totalSetup = 0;
-  for (const svc of services) {
-    const pkg = allPackages.find(p => p.id === svc.selectedPackageId);
-    totalMonthly += resolveServiceFee(svc, pkg?.basePrice ?? 0, monthlyMediaSpend, pkg?.pricingModel);
-    totalSetup += resolveSetupFee(svc);
-  }
-
-  return (
-    <ProposalSection>
-      <div className="flex items-center justify-between mb-3">
-        <SectionHeader icon={Briefcase} title="Commercials (from Services Config)" />
-        <button
-          onClick={() => window.dispatchEvent(new CustomEvent('navigate-tab', { detail: { tab: 'services-config' } }))}
-          className="flex items-center gap-1.5 text-xs font-medium text-primary hover:underline"
-        >
-          Edit in Services Config <ArrowRight className="h-3 w-3" />
-        </button>
-      </div>
-      <div className="panel overflow-hidden">
-        <table className="w-full text-xs">
-          <thead>
-            <tr className="border-b bg-muted/30">
-              <th className="text-left px-4 py-2.5 font-medium text-muted-foreground">Service</th>
-              <th className="text-left px-3 py-2.5 font-medium text-muted-foreground">Package</th>
-              <th className="text-left px-3 py-2.5 font-medium text-muted-foreground">Duration</th>
-              <th className="text-right px-3 py-2.5 font-medium text-muted-foreground">Monthly</th>
-              <th className="text-right px-3 py-2.5 font-medium text-muted-foreground">Setup</th>
-            </tr>
-          </thead>
-          <tbody className="divide-y">
-            {services.map(svc => {
-              const pkg = allPackages.find(p => p.id === svc.selectedPackageId);
-              const fee = resolveServiceFee(svc, pkg?.basePrice ?? 0, monthlyMediaSpend, pkg?.pricingModel);
-              const setup = resolveSetupFee(svc);
-              return (
-                <tr key={svc.id}>
-                  <td className="px-4 py-2.5 font-medium text-foreground">{svc.serviceLine}</td>
-                  <td className="px-3 py-2.5 text-muted-foreground">{pkg?.name ?? '—'}</td>
-                  <td className="px-3 py-2.5 text-muted-foreground">{svc.durationMonths} mo</td>
-                  <td className="px-3 py-2.5 text-right tabular-nums font-medium text-foreground">{formatCurrency(fee)}</td>
-                  <td className="px-3 py-2.5 text-right tabular-nums text-muted-foreground">{setup > 0 ? formatCurrency(setup) : '—'}</td>
-                </tr>
-              );
-            })}
-          </tbody>
-          <tfoot>
-            <tr className="border-t bg-muted/30 font-semibold">
-              <td className="px-4 py-2.5 text-foreground" colSpan={3}>Total</td>
-              <td className="px-3 py-2.5 text-right tabular-nums text-primary">{formatCurrency(totalMonthly)}</td>
-              <td className="px-3 py-2.5 text-right tabular-nums text-foreground">{totalSetup > 0 ? formatCurrency(totalSetup) : '—'}</td>
-            </tr>
-          </tfoot>
-        </table>
-      </div>
-      <p className="text-[10px] text-muted-foreground mt-2 italic">
-        This data is read-only. To edit services and pricing, go to Services Config.
-      </p>
-    </ProposalSection>
-  );
-}
+/* CommercialSummary removed — pricing is now shown in ProposalConfigPanel and ProposalPricingTable */
 
 export default function ProposalView({ proposalMode = false }: { proposalMode?: boolean }) {
   const { client, growthModel: contextGrowthModel, onboarding } = useClientContext();
@@ -122,16 +37,6 @@ export default function ProposalView({ proposalMode = false }: { proposalMode?: 
   const defaults = useMemo(() => repository.proposalDefaults.get(), []);
 
   const proposedServices: ProposedAgencyService[] = (onboarding as any).proposedAgencyServices || [];
-
-  const monthlyMediaSpend = useMemo(() => {
-    if (!contextGrowthModel) return 0;
-    const scenario = contextGrowthModel.scenarios.find(s => s.isDefault) || contextGrowthModel.scenarios[0];
-    if (!scenario) return 0;
-    const totalBudget = scenario.mediaChannelPlans.reduce(
-      (sum, mp) => sum + mp.monthlyRecords.reduce((s, r) => s + r.plannedBudget, 0), 0
-    );
-    return totalBudget / (contextGrowthModel.monthCount || 1);
-  }, [contextGrowthModel]);
 
   const activeProposal = proposals.find(p => p.id === activeProposalId) || null;
 
@@ -147,7 +52,7 @@ export default function ProposalView({ proposalMode = false }: { proposalMode?: 
     refresh();
     setActiveProposalId(proposal.id);
     setShowConfig(false);
-    toast.success('Proposal generated from system data');
+    toast.success('Proposal generated from Services Config data');
   }, [client.id, refresh]);
 
   const handleUpdate = (proposal: Proposal) => {
@@ -270,9 +175,6 @@ export default function ProposalView({ proposalMode = false }: { proposalMode?: 
           <PlaceholderNotice text={p.summaryData.scopeSummary} />
         </ProposalSection>
 
-        {!proposalMode && (
-          <CommercialSummary services={proposedServices} monthlyMediaSpend={monthlyMediaSpend} />
-        )}
 
         {defaults.showPricingBreakdown && (
           <ProposalSection>
