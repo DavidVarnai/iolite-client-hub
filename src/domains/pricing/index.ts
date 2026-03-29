@@ -1,5 +1,5 @@
 /**
- * Pricing domain barrel — service lines, packages, bundles.
+ * Pricing domain barrel — service lines, packages, bundles, commercial types.
  */
 export type {
   ServiceLine,
@@ -20,3 +20,6 @@ export {
   PACKAGE_PRICING_MODEL_LABELS,
   pricingModelUnit,
 } from '@/types/services';
+
+export type { FlexPricing, FlexPricingMode } from '@/types/commercialServices';
+export { FLEX_PRICING_MODE_LABELS } from '@/types/commercialServices';
