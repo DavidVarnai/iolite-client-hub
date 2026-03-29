@@ -1,43 +1,53 @@
 
 
-## Plan: Add/Remove Other Cost Line Items in Investment Plan
+## Plan: Refactor Proposal Config to Use Services Config as Source
 
-### Summary
-Add inline management of Other Cost rows directly in the Growth Model Investment Plan — add new rows via popover, delete with confirmation when amounts exist.
+### Problem
+The "Configure Proposal" screen duplicates Services Config — it asks users to select services/packages again even though they've already been configured. Since Services Config is now the single source of truth for `onboarding.proposedAgencyServices`, the Proposal tab should generate directly from that data.
 
-### Changes (single file)
+### New Proposal Config Flow
 
-**`src/components/client/growth/InvestmentPlan.tsx`**
+**If services exist in Services Config** → Show a summary of configured services + a "Generate Proposal" button. No re-selection needed.
 
-1. **Extend `EditableGrid`** with optional `onDelete?: (rowId: string) => void` prop
-   - When provided, render a small `Trash2` icon button as the last column on each row
-   - On click: if row total is 0, delete immediately; if > 0, show an `AlertDialog` confirmation
+**If no services configured** → Show an empty state with a CTA to Services Config.
 
-2. **Add "Add Other Cost" button + popover** below the Other Costs grid
-   - Uses `Popover` with a compact form: Name input (required) + Billing Type select (monthly / one_time / custom_schedule)
-   - On submit, calls a new `handleAddOtherCost(name, billingType)` that appends to `scenario.budgetLineItems`:
-     ```
-     { id: `bli-other-${Date.now()}`, scenarioId: scenario.id, category: 'other',
-       name, billingType, isInternal: false, notes: '', monthlyRecords: [] }
-     ```
+### Changes
 
-3. **Add `handleDeleteOtherCost(rowId)`** — filters the line item from `scenario.budgetLineItems` and calls `onUpdate`
+**`src/components/client/proposal/ProposalConfigPanel.tsx`** — Full rewrite
 
-4. **Empty state** — if `otherItems.length === 0`, show a muted helper text: "No other costs added yet. Add software, tools, subscriptions, or vendor costs."
+Replace the current bundle/service/package selection UI with:
 
-5. Pass `onDelete={handleDeleteOtherCost}` only to the Other Costs `EditableGrid`, not Media Budget
+1. **Header**: "Generate Proposal" (not "Configure Proposal")
+2. **Services summary card**: Read-only list from `onboarding.proposedAgencyServices` showing service name, package/flex pricing, and monthly fee — with a link to "Edit in Services Config"
+3. **Growth Model status card**: Keep as-is (shows whether projections will be included)
+4. **Proposal options** (lightweight):
+   - Which sections to include (checkboxes for: Projections, Timeline, Pricing Breakdown) — driven by existing `proposalDefaults`
+5. **Footer**: Total from services + "Generate Proposal" button
+6. **Empty state**: If `proposedAgencyServices` is empty, show message + CTA to Services Config tab
 
-### New imports needed
-- `Plus, Trash2` from lucide-react
-- `Popover, PopoverTrigger, PopoverContent` from ui/popover
-- `AlertDialog` components from ui/alert-dialog
-- `Select` components from ui/select
-- `Button` from ui/button
-- `useState` from react
+**`src/components/client/proposal/proposalGeneration.ts`** — Update `GenerationConfig` and `generateProposal`
+
+- Remove `selectedServiceLineIds`, `selectedPackageIds`, `selectedAddOnIds` from `GenerationConfig`
+- Instead, read `proposedAgencyServices` from onboarding data (passed in or fetched)
+- Build pricing lines from `proposedAgencyServices` using `resolveServiceFee` / `resolveSetupFee`
+- Keep Growth Model projection extraction as-is
+
+**`src/components/client/proposal/ProposalView.tsx`** — Minor updates
+
+- Pass `onboarding` or `proposedAgencyServices` to `handleGenerate` instead of service selection config
+- Remove the `CommercialSummary` section from the generated proposal view (it's now shown in the config panel and the pricing table already covers it)
 
 ### What stays the same
-- Data model (`BudgetLineItem`) — no changes
-- Media Budget grid — no add/delete
-- Agency Fees summary card — untouched
-- All existing grid editing behavior
+- ProposalView document rendering (executive summary, strategy, scope, timeline, projections)
+- EditableText inline editing
+- Proposal status management
+- ProposalDefaults from Admin
+- Growth Model projection extraction
+
+### Files changed
+| File | Change |
+|------|--------|
+| `src/components/client/proposal/ProposalConfigPanel.tsx` | Rewrite: services summary from proposedAgencyServices, remove selection UI |
+| `src/components/client/proposal/proposalGeneration.ts` | Update GenerationConfig + generateProposal to use proposedAgencyServices |
+| `src/components/client/proposal/ProposalView.tsx` | Pass proposedAgencyServices to generation; simplify |
 
