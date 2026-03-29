@@ -4,7 +4,7 @@
  */
 import { useState, useMemo, useCallback } from 'react';
 import {
-  FileText, Sparkles, Check, DollarSign,
+  FileText, Sparkles, Check, Target, DollarSign,
   TrendingUp, Calendar, ChevronRight, Clock, BarChart3,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
