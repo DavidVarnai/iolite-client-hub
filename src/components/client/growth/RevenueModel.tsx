@@ -49,7 +49,7 @@ function fmt(n: number): string {
 
 export default function RevenueModel({ model, scenario, onUpdate }: Props) {
   const months = useMemo(() => generateMonths(model.startMonth, model.monthCount), [model]);
-  const perf = model.performanceInputs;
+  const perf = model.performanceInputs ?? { targetCpa: 0, closeRate: 0, avgDealValue: 0 };
 
   const updatePerf = useCallback((patch: Partial<PerformanceInputs>) => {
     if (!onUpdate) return;
