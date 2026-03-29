@@ -66,7 +66,7 @@ export default function ProposalView({ proposalMode = false }: { proposalMode?: 
     refresh();
     setActiveProposalId(proposal.id);
     setShowConfig(false);
-    toast.success('Proposal generated from system data');
+    toast.success('Proposal generated from Services Config data');
   }, [client.id, refresh]);
 
   const handleUpdate = (proposal: Proposal) => {
