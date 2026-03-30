@@ -1,9 +1,12 @@
 import { useMemo, useCallback } from 'react';
 import type { GrowthModel, GrowthModelScenario, PerformanceInputs } from '@/types/growthModel';
+import { DEFAULT_RAMP_CURVE } from '@/types/growthModel';
 import { calcSimpleProjection, calcBreakEven, calcROM } from '@/lib/growthModelCalculations';
 import { generateMonths, formatMonth } from '@/lib/growthModelTransformers';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
+import { Button } from '@/components/ui/button';
+import { RotateCcw } from 'lucide-react';
 
 interface Props {
   model: GrowthModel;
@@ -11,16 +14,12 @@ interface Props {
   onUpdate?: (model: GrowthModel) => void;
 }
 
-// Ramp-up curve: reflects realistic optimization timeline
-const RAMP_CURVE = [0, 0.15, 0.35, 0.60, 0.80, 1.0];
-const RAMP_LABELS = ['Setup', 'Early Data', 'Initial Optimization', 'Benchmark Setting', 'Scaling', 'Steady State'];
-
-function getRampMultiplier(monthIndex: number): number {
-  return monthIndex < RAMP_CURVE.length ? RAMP_CURVE[monthIndex] : 1.0;
-}
-
-function getRampLabel(monthIndex: number): string {
-  if (monthIndex < RAMP_LABELS.length) return RAMP_LABELS[monthIndex];
+function getRampLabel(pct: number): string {
+  if (pct === 0) return 'Setup';
+  if (pct < 30) return 'Early Data';
+  if (pct < 60) return 'Initial Optimization';
+  if (pct < 80) return 'Benchmark Setting';
+  if (pct < 100) return 'Scaling';
   return 'Steady State';
 }
 
@@ -47,9 +46,20 @@ function fmt(n: number): string {
   return n.toLocaleString('en-US', { style: 'currency', currency: 'USD', minimumFractionDigits: 0, maximumFractionDigits: 0 });
 }
 
+/** Build a ramp array matching monthCount, using model.rampCurve or default */
+function buildRampCurve(model: GrowthModel): number[] {
+  const base = model.rampCurve ?? [...DEFAULT_RAMP_CURVE];
+  const result: number[] = [];
+  for (let i = 0; i < model.monthCount; i++) {
+    result.push(i < base.length ? base[i] : 1.0);
+  }
+  return result;
+}
+
 export default function RevenueModel({ model, scenario, onUpdate }: Props) {
   const months = useMemo(() => generateMonths(model.startMonth, model.monthCount), [model]);
   const perf = model.performanceInputs ?? { targetCpa: 0, closeRate: 0, avgDealValue: 0 };
+  const rampCurve = useMemo(() => buildRampCurve(model), [model]);
 
   const updatePerf = useCallback((patch: Partial<PerformanceInputs>) => {
     if (!onUpdate) return;
@@ -59,6 +69,25 @@ export default function RevenueModel({ model, scenario, onUpdate }: Props) {
       updatedAt: new Date().toISOString(),
     });
   }, [model, onUpdate]);
+
+  const updateRamp = useCallback((monthIndex: number, pctValue: number) => {
+    if (!onUpdate) return;
+    const newCurve = buildRampCurve(model);
+    newCurve[monthIndex] = Math.max(0, Math.min(100, pctValue)) / 100;
+    onUpdate({
+      ...model,
+      rampCurve: newCurve,
+      updatedAt: new Date().toISOString(),
+    });
+  }, [model, onUpdate]);
+
+  const resetRamp = useCallback(() => {
+    if (!onUpdate) return;
+    const { rampCurve: _, ...rest } = model;
+    onUpdate({ ...rest, updatedAt: new Date().toISOString() } as GrowthModel);
+  }, [model, onUpdate]);
+
+  const isCustomRamp = !!model.rampCurve;
 
   // Monthly media spend per month
   const monthlySpend = useMemo(() => {
@@ -81,8 +110,9 @@ export default function RevenueModel({ model, scenario, onUpdate }: Props) {
     let cumSpend = 0;
 
     return monthlySpend.map((ms, i) => {
-      const ramp = getRampMultiplier(i);
-      const rampLabel = getRampLabel(i);
+      const ramp = rampCurve[i] ?? 1.0;
+      const rampPct = Math.round(ramp * 100);
+      const rampLabel = getRampLabel(rampPct);
       const mediaOnly = scenario.mediaChannelPlans.reduce((s, mp) => {
         const rec = mp.monthlyRecords.find(r => r.month === ms.month);
         return s + (rec?.plannedBudget || 0);
@@ -104,10 +134,10 @@ export default function RevenueModel({ model, scenario, onUpdate }: Props) {
         cac,
         rom,
         rampLabel,
-        rampPct: Math.round(ramp * 100),
+        rampPct,
       };
     });
-  }, [monthlySpend, scenario, perf]);
+  }, [monthlySpend, scenario, perf, rampCurve]);
 
   const totalRevenue = revenueTable.reduce((s, r) => s + r.revenue, 0);
   const totalSpend = revenueTable.reduce((s, r) => s + r.spend, 0);
@@ -141,14 +171,22 @@ export default function RevenueModel({ model, scenario, onUpdate }: Props) {
         </CardContent>
       </Card>
 
-      {/* Ramp-up visualization */}
+      {/* Editable Ramp-up visualization */}
       <div className="panel p-4">
-        <p className="text-xs font-medium text-foreground mb-2">Performance Ramp-Up Curve</p>
+        <div className="flex items-center justify-between mb-2">
+          <p className="text-xs font-medium text-foreground">Performance Ramp-Up Curve</p>
+          {isCustomRamp && onUpdate && (
+            <Button variant="ghost" size="sm" className="h-6 text-[10px] gap-1 text-muted-foreground" onClick={resetRamp}>
+              <RotateCcw className="h-3 w-3" />
+              Reset to Default
+            </Button>
+          )}
+        </div>
         <p className="text-[11px] text-muted-foreground mb-3">
-          Results follow a realistic ramp-up: ~3 months to see early results, then 3 months of optimization before reaching steady state.
+          Adjust each month's ramp percentage to match the expected optimization timeline.
         </p>
         <div className="flex gap-1">
-          {RAMP_CURVE.map((pct, i) => (
+          {rampCurve.map((pct, i) => (
             <div key={i} className="flex-1 text-center">
               <div className="h-16 bg-muted rounded-sm relative overflow-hidden">
                 <div
@@ -157,7 +195,18 @@ export default function RevenueModel({ model, scenario, onUpdate }: Props) {
                 />
               </div>
               <p className="text-[9px] text-muted-foreground mt-1">M{i + 1}</p>
-              <p className="text-[9px] font-medium text-foreground">{Math.round(pct * 100)}%</p>
+              {onUpdate ? (
+                <Input
+                  type="number"
+                  min={0}
+                  max={100}
+                  value={Math.round(pct * 100)}
+                  onChange={(e) => updateRamp(i, Number(e.target.value) || 0)}
+                  className="h-5 w-full text-[9px] text-center tabular-nums px-0 border-border/50 mt-0.5"
+                />
+              ) : (
+                <p className="text-[9px] font-medium text-foreground">{Math.round(pct * 100)}%</p>
+              )}
             </div>
           ))}
         </div>
@@ -212,8 +261,8 @@ export default function RevenueModel({ model, scenario, onUpdate }: Props) {
                     </span>
                   </td>
                   <td className="px-3 py-2 text-right tabular-nums text-muted-foreground">{row.rampPct}%</td>
-                  <td className="px-3 py-2 text-right tabular-nums text-foreground">{row.leads}</td>
-                  <td className="px-3 py-2 text-right tabular-nums text-foreground">{row.customers}</td>
+                  <td className="px-3 py-2 text-right tabular-nums text-foreground">{Math.round(row.leads)}</td>
+                  <td className="px-3 py-2 text-right tabular-nums text-foreground">{Math.round(row.customers)}</td>
                   <td className="px-3 py-2 text-right tabular-nums text-foreground">{fmt(row.revenue)}</td>
                   <td className="px-3 py-2 text-right tabular-nums text-foreground">{fmt(row.cumRevenue)}</td>
                   <td className="px-3 py-2 text-right tabular-nums text-muted-foreground">{row.cac > 0 ? fmt(row.cac) : '—'}</td>
