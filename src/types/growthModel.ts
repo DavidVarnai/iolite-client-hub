@@ -47,7 +47,10 @@ export interface GrowthModel {
   actuals: MonthlyActual[];
   narratives: ModelNarrative[];
   snapshots: ModelSnapshot[];
+  rampCurve?: number[]; // decimals 0–1 per month; falls back to DEFAULT_RAMP_CURVE
 }
+
+export const DEFAULT_RAMP_CURVE = [0, 0.15, 0.35, 0.60, 0.80, 1.0];
 
 export interface GrowthModelScenario {
   id: string;
