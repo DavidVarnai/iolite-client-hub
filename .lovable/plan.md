@@ -1,53 +1,28 @@
 
 
-## Plan: Refactor Proposal Config to Use Services Config as Source
+## Plan: Editable Ramp-Up Percentages
 
 ### Problem
-The "Configure Proposal" screen duplicates Services Config — it asks users to select services/packages again even though they've already been configured. Since Services Config is now the single source of truth for `onboarding.proposedAgencyServices`, the Proposal tab should generate directly from that data.
+The ramp curve is hardcoded (`[0, 0.15, 0.35, 0.60, 0.80, 1.0]`). Users can't adjust it to match their client's realistic timeline.
 
-### New Proposal Config Flow
-
-**If services exist in Services Config** → Show a summary of configured services + a "Generate Proposal" button. No re-selection needed.
-
-**If no services configured** → Show an empty state with a CTA to Services Config.
+### Approach
+Store the ramp curve on the `GrowthModel` and let users edit each month's percentage inline.
 
 ### Changes
 
-**`src/components/client/proposal/ProposalConfigPanel.tsx`** — Full rewrite
+**`src/types/growthModel.ts`** — Add optional field to `GrowthModel`
+- `rampCurve?: number[]` — array of decimals (0–1) per month. Falls back to the current default if missing.
 
-Replace the current bundle/service/package selection UI with:
+**`src/components/client/growth/RevenueModel.tsx`**
+1. Read `model.rampCurve` (fallback to current hardcoded default if undefined)
+2. Replace the static ramp visualization with **editable percentage inputs** per month — small number inputs (0–100) inside the existing ramp bar UI
+3. On change, call `onUpdate` with the updated `rampCurve` array
+4. When `monthCount` changes (more months than ramp entries), pad with `1.0`; when fewer, trim
+5. Keep labels auto-derived: 0% = "Setup", <60% = early phases, <100% = scaling, 100% = "Steady State"
+6. Add a "Reset to Default" link that restores the hardcoded curve
 
-1. **Header**: "Generate Proposal" (not "Configure Proposal")
-2. **Services summary card**: Read-only list from `onboarding.proposedAgencyServices` showing service name, package/flex pricing, and monthly fee — with a link to "Edit in Services Config"
-3. **Growth Model status card**: Keep as-is (shows whether projections will be included)
-4. **Proposal options** (lightweight):
-   - Which sections to include (checkboxes for: Projections, Timeline, Pricing Breakdown) — driven by existing `proposalDefaults`
-5. **Footer**: Total from services + "Generate Proposal" button
-6. **Empty state**: If `proposedAgencyServices` is empty, show message + CTA to Services Config tab
+**No other files change.** The `revenueTable` useMemo already reads ramp per index — it will just read from the model field instead of the constant.
 
-**`src/components/client/proposal/proposalGeneration.ts`** — Update `GenerationConfig` and `generateProposal`
-
-- Remove `selectedServiceLineIds`, `selectedPackageIds`, `selectedAddOnIds` from `GenerationConfig`
-- Instead, read `proposedAgencyServices` from onboarding data (passed in or fetched)
-- Build pricing lines from `proposedAgencyServices` using `resolveServiceFee` / `resolveSetupFee`
-- Keep Growth Model projection extraction as-is
-
-**`src/components/client/proposal/ProposalView.tsx`** — Minor updates
-
-- Pass `onboarding` or `proposedAgencyServices` to `handleGenerate` instead of service selection config
-- Remove the `CommercialSummary` section from the generated proposal view (it's now shown in the config panel and the pricing table already covers it)
-
-### What stays the same
-- ProposalView document rendering (executive summary, strategy, scope, timeline, projections)
-- EditableText inline editing
-- Proposal status management
-- ProposalDefaults from Admin
-- Growth Model projection extraction
-
-### Files changed
-| File | Change |
-|------|--------|
-| `src/components/client/proposal/ProposalConfigPanel.tsx` | Rewrite: services summary from proposedAgencyServices, remove selection UI |
-| `src/components/client/proposal/proposalGeneration.ts` | Update GenerationConfig + generateProposal to use proposedAgencyServices |
-| `src/components/client/proposal/ProposalView.tsx` | Pass proposedAgencyServices to generation; simplify |
+### UI
+The existing ramp visualization bars become interactive — each bar gets a small `%` input at the bottom. Compact, consistent with current styling.
 
