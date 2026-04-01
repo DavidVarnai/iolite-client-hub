@@ -22,9 +22,10 @@ import UnitEconomics from '@/components/client/UnitEconomics';
 import ProposalView from '@/components/client/proposal/ProposalView';
 import ServicesConfig from '@/components/client/ServicesConfig';
 import MarketIntelligenceTab from '@/components/client/marketIntelligence/MarketIntelligenceTab';
+import StrategyPortalTab from '@/components/client/strategyPortal/StrategyPortalTab';
 
 const TABS = [
-  'overview', 'intelligence', 'strategy', 'services-config', 'growth-model', 'proposal', 'campaigns', 'performance', 'meetings',
+  'overview', 'intelligence', 'strategy', 'services-config', 'growth-model', 'proposal', 'strategy-portal', 'campaigns', 'performance', 'meetings',
   'comments', 'tasks', 'communications', 'documents', 'unit-economics', 'settings',
 ] as const;
 
@@ -211,6 +212,7 @@ function ClientHubContentInner({
         />
       );
       case 'proposal': return <ProposalView proposalMode={proposalMode} />;
+      case 'strategy-portal': return <StrategyPortalTab />;
       case 'services-config': return <ServicesConfig />;
       case 'campaigns': return <Campaigns client={client} />;
       case 'performance': return <ClientPerformance />;
@@ -300,7 +302,7 @@ function ClientHubContentInner({
               activeTab === t ? 'tab-active' : 'tab-inactive'
             }`}
           >
-            {t === 'growth-model' ? 'Growth Model' : t === 'unit-economics' ? 'Unit Economics' : t === 'proposal' ? 'Proposal' : t === 'intelligence' ? 'Intelligence' : t === 'services-config' ? 'Services Config' : t}
+            {t === 'growth-model' ? 'Growth Model' : t === 'unit-economics' ? 'Unit Economics' : t === 'proposal' ? 'Proposal' : t === 'intelligence' ? 'Intelligence' : t === 'services-config' ? 'Services Config' : t === 'strategy-portal' ? 'Strategy Portal' : t}
           </button>
         ))}
       </div>
