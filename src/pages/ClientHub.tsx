@@ -212,6 +212,7 @@ function ClientHubContentInner({
         />
       );
       case 'proposal': return <ProposalView proposalMode={proposalMode} />;
+      case 'strategy-portal': return <StrategyPortalTab />;
       case 'services-config': return <ServicesConfig />;
       case 'campaigns': return <Campaigns client={client} />;
       case 'performance': return <ClientPerformance />;
