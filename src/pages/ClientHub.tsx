@@ -22,9 +22,10 @@ import UnitEconomics from '@/components/client/UnitEconomics';
 import ProposalView from '@/components/client/proposal/ProposalView';
 import ServicesConfig from '@/components/client/ServicesConfig';
 import MarketIntelligenceTab from '@/components/client/marketIntelligence/MarketIntelligenceTab';
+import StrategyPortalTab from '@/components/client/strategyPortal/StrategyPortalTab';
 
 const TABS = [
-  'overview', 'intelligence', 'strategy', 'services-config', 'growth-model', 'proposal', 'campaigns', 'performance', 'meetings',
+  'overview', 'intelligence', 'strategy', 'services-config', 'growth-model', 'proposal', 'strategy-portal', 'campaigns', 'performance', 'meetings',
   'comments', 'tasks', 'communications', 'documents', 'unit-economics', 'settings',
 ] as const;
 
